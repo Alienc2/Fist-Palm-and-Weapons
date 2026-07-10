@@ -1,5 +1,3 @@
-# Fist-Palm-and-Weapons
-Fist-Palm-and-Weapons web page game
 # Fist Palm and Weapons — 遊戲規格重整草案
 
 本文件整理 2026/07/10 最新補充規格，目標係作為重構版網頁對戰遊戲的正式設計基礎。整體架構建議採用 Node.js + Socket.IO 單一 server 加房間制，因為 Socket.IO rooms 原生支援 socket 加入、離開及向指定房間廣播事件，適合 2 至 4 人同步選牌與同步回合解析的玩法。[web:11][web:19][web:25]

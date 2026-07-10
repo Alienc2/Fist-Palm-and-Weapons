@@ -1,0 +1,24 @@
+# Node.js dependencies
+node_modules/
+
+# Build 輸出（CSV → JSON）
+generated/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor 垃圾檔
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code 個人設定（如唔想共享）
+.vscode/
+
+# Coverage / cache（之後用 Jest / vitest 可以加）
+coverage/
+.cache/
+
+npm-debug.log*

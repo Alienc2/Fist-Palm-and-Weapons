@@ -1,0 +1,2 @@
+id,name_zh,difficulty,attack_weight,defense_weight,move_weight,buy_weight,recover_weight,combo_weight,description
+ai_normal,標準AI,normal,1.0,1.0,1.0,0.8,0.8,0.5,"標準平衡型 AI。"

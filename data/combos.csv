@@ -1,0 +1,2 @@
+id,combo_type,required_cards,required_board_pattern,effect_type,effect_params,duration,description
+combo_same_attack_3,sequence,"type:attack;count:3","none","damage_bonus","{\"last_attack_bonus\":1}","instant","連續3張攻擊，第3下攻擊傷害+1。"

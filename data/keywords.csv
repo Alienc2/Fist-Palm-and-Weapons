@@ -1,0 +1,10 @@
+id,category,description
+basic,group,基本卡牌
+shop,group,商店卡牌
+melee,range,近身攻擊
+ranged,range,遠程攻擊
+guard,effect,防禦效果
+counter,effect,反擊效果
+move,effect,移動效果
+advanced,effect,進階攻擊，可觸發擊出場外判定
+combo_trigger,effect,可用於連續技條件

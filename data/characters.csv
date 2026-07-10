@@ -1,0 +1,2 @@
+id,name_zh,role,initial_hp,initial_mp,initial_hand_size,token_color,passive_id,passive_params,description
+char_attack,破軍,attack,9,3,4,red,front_damage_bonus,"{\"value\":1}","正面攻擊傷害+1。"

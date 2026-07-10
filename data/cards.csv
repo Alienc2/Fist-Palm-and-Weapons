@@ -1,0 +1,2 @@
+id,name_zh,alias_group,group,type,subtype,mp_cost,buy_cost,range_min,range_max,damage,block_value,hp_gain,mp_gain,draw_count,move_min,move_max,stock,persist_until_triggered,keywords,target_rule,description_template,enabled
+basic_punch,翻鯉逆流拳,基本拳,basic,attack,punch,1,,1,1,2,0,0,0,0,0,0,,false,"basic,melee","single","對敵人造成2點傷害，距離1。",true
