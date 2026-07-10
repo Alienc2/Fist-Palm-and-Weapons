@@ -1,2 +1,5 @@
 id,name_zh,role,initial_hp,initial_mp,initial_hand_size,token_color,passive_id,passive_params,description
 char_attack,破軍,attack,9,3,4,red,front_damage_bonus,"{\"value\":1}","正面攻擊傷害+1。"
+char_defense,玄武,defense,12,2,4,blue,front_defense_bonus,"{\"value\":1}","正面防禦加成+1。"
+char_move,飛翎,move,8,4,5,green,free_facing_change,"{\"per_round\":1}","每回合免費轉向1次。"
+char_balanced,無鋒,balanced,10,3,4,yellow,first_shop_discount,"{\"mp_discount\":1}","本局首次購買咭牌費用-1MP。"

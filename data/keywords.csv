@@ -5,6 +5,7 @@ melee,range,近身攻擊
 ranged,range,遠程攻擊
 guard,effect,防禦效果
 counter,effect,反擊效果
-move,effect,移動效果
+dash,effect,高速移動
+persist_guard,effect,防禦殘留到被觸發或回合結束
 advanced,effect,進階攻擊，可觸發擊出場外判定
 combo_trigger,effect,可用於連續技條件
