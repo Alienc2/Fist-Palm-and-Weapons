@@ -37,11 +37,14 @@ describe("facing 修正", () => {
 });
 
 describe("簡單一回合攻擊、防禦、Draw/Discard", () => {
-  test("攻擊＋防禦殘留＋抽牌＋棄到上限", () => {
+  test("攻擊命中時，會觸發防禦殘留，並完成抽牌與手牌上限檢查", () => {
     const state = createMatch();
     const [p1, p2] = state.players;
 
-    // P1: 防禦、P2: 攻擊
+    // 將玩家位置拉近，確保攻擊會命中，先能測到防禦殘留
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
     const p1Defense = p1.hand.find((c) => c.type === "defense");
     const p2Attack = p2.hand.find((c) => c.type === "attack");
 
@@ -50,11 +53,25 @@ describe("簡單一回合攻擊、防禦、Draw/Discard", () => {
 
     playOneTurn(state);
 
-    // 檢查防禦殘留被用掉（hp 減少但有 log）
     expect(state.log.some((msg) => msg.includes("防禦殘留觸發"))).toBe(true);
-    // 回合後手牌不超過8
     state.players.forEach((p) => {
       expect(p.hand.length).toBeLessThanOrEqual(8);
     });
+  });
+
+  test("距離不符時，不會觸發防禦殘留", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    const p1Defense = p1.hand.find((c) => c.type === "defense");
+    const p2Attack = p2.hand.find((c) => c.type === "attack");
+
+    submitSelection(state, "P1", [{ card: p1Defense }]);
+    submitSelection(state, "P2", [{ card: p2Attack }]);
+
+    playOneTurn(state);
+
+    expect(state.log.some((msg) => msg.includes("距離不符"))).toBe(true);
+    expect(state.log.some((msg) => msg.includes("防禦殘留觸發"))).toBe(false);
   });
 });

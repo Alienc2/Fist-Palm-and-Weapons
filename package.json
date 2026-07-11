@@ -8,7 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:data": "node scripts/build-data.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:rules": "jest --runInBand tests/rules"
   },
   "repository": {
     "type": "git",
