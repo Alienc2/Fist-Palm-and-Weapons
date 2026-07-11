@@ -1,74 +1,61 @@
 # CONTEXT.md
 
+---
+status: active
+updated: 2026-07-12 V2
+phase: "Phase B planning"
+---
+
 ## 專案名稱
 Fist Palm and Weapons
 
-## 當前目標
-根據 `docs/GAME_SPEC.md`，逐步建立一個可在網頁運行的回合制對戰卡牌遊戲。開發策略採用由內到外：
-1. 先完成 spec
-2. 再完成資料骨架
-3. 再完成純 rules engine
-4. 再完成測試
-5. 然後才接 UI、多人連線、AI、部署
+## Past
+專案由 `docs/GAME_SPEC.md` 驅動，開發順序刻意採用：
+1. 先規格
+2. 再資料骨架
+3. 再純 rules engine
+4. 再單元測試
+5. 最後先接多人、UI、AI、部署
 
-## Tech Stack（目前）
+呢個決定係為咗先將戰鬥規則固定，避免 UI / network 把問題複雜化。
+
+已完成的歷程：
+- 建立 `GAME_SPEC.md`
+- 建立 CSV 資料骨架
+- 建立 CSV → JSON build script
+- 建立純 rules engine prototype
+- 建立 Jest 規則測試
+
+## Current
+
+### 專案目前狀態
+目前屬於：
+- rules engine prototype 已驗證
+- data-driven engine 未完成
+- multiplayer / UI / AI 未開始
+
+### 當前技術棧
 - Node.js
-- CommonJS modules
+- CommonJS
 - npm
 - Jest
 - csvtojson
-- 未接前端框架
-- 未接 Socket.IO（規劃中）
 
-## 規格來源
-主規格文件：
+### 目前主要檔案
+#### 規格與文件
 - `docs/GAME_SPEC.md`
+- `CODEX_HANDOFF.md`
+- `CONTEXT.md`
 
-目前規格重點包括：
-- 地圖大小：5 × 5
-- 座標：0-based
-- 起始位置：2 至 4 人模式有固定起點
-- 距離：曼哈頓距離
-- 朝向：上 / 下 / 左 / 右
-- 相對面向：front / side / back
-- 攻擊剋制：拳剋武器、武器剋掌、掌剋拳
-- 基本卡：攻擊 / 防禦 / 移動 / 購買
-- 商店卡：進階攻擊 / 防禦 / 反擊 / 回復 / 高速移動
-- 回合 phase：SELECT_CARDS → READY_CHECK → RESOLVE_TURN → END_TURN → DRAW_PHASE → DISCARD_TO_LIMIT → ROUND_START
-- 支援多人對戰與 AI（後續）
-
-## 已完成進度
-
-### 1. Spec / docs
-已完成：
-- `docs/GAME_SPEC.md`
-
-用途：
-- 作為目前所有規則與資料設計的主要依據
-- 後續 code / tests / UI 都應對照本文件實作
-
-### 2. Data layer
-已完成資料骨架檔案：
+#### 資料層
 - `data/cards.csv`
 - `data/characters.csv`
 - `data/keywords.csv`
 - `data/ai_profiles.csv`
 - `data/combos.csv`
+- `generated/*.json`
 
-已完成 build script：
-- `scripts/build-data.js`
-
-目前可將 CSV build 成：
-- `generated/cards.json`
-- `generated/characters.json`
-- `generated/keywords.json`
-- `generated/ai_profiles.json`
-- `generated/combos.json`
-
-### 3. Rules engine（目前狀態）
-已完成最小可跑版本：
-
-#### 已有檔案
+#### 規則層
 - `server/game/gameEngine.js`
 - `server/game/state/createInitialState.js`
 - `server/game/rules/distance.js`
@@ -77,124 +64,107 @@ Fist Palm and Weapons
 - `server/game/rules/cardResolver.js`
 - `server/game/rules/turnEngine.js`
 
-#### 已實作能力
-- 建立簡化 match state
-- 建立簡化玩家資料
-- 建立簡化 card instance / basic deck
-- 曼哈頓距離
-- 朝向修正
-- 基本 attack resolve
-- 基本 defense resolve
-- 防禦殘留一次性觸發
-- move resolve
-- buy 行為 log
-- end turn / draw / discard to limit
-- 起手玩家交錯揭牌的最小結構
-
-#### 尚未完成
-- 真正由 CSV / JSON 載入牌庫
-- 完整 MP 消耗與驗證
-- 商店購買與庫存
-- 反擊完整連鎖
-- 多目標
-- combo
-- 角色被動
-- AI
-- 多人同步
-- UI
-
-### 4. Tests
-已完成：
+#### 測試層
 - `tests/rules/gameEngine.test.js`
 
-已通過測試項目：
-1. 曼哈頓距離
-2. facing 修正
-3. 命中時防禦殘留觸發
-4. 距離不足時不觸發防禦殘留
+### 已完成功能
+#### Build
+- 可以將 CSV build 成 JSON
+- `build:data` script 已可執行
 
-目前測試狀態：
-- `npm run test:rules` 可通過
+#### Rules engine
+- 建立簡化 match state
+- 建立簡化 player / deck / hand
+- 曼哈頓距離
+- facing 修正
+- attack / defense / move / buy 原型
+- 防禦殘留
+- advanced edge KO
+- counter deterministic success rate
+- advantage 真正依 defender / revealed subtype 生效
+- resolveTurn 交錯揭牌順序
 
-## 編寫策略（總編寫計劃）
+#### Testing
+最新結果：
+- `npm run test:rules`
+- 1 suite passed
+- 16 tests passed
 
-### Stage 1：補完純 rules engine correctness
-目標：令 engine 在不接 UI 的情況下，足以完整模擬單局規則。
+已覆蓋：
+1. distance
+2. facing
+3. defense persistence hit / miss
+4. move valid / invalid
+5. buy log
+6. edge KO
+7. counter deterministic cases
+8. advantage strong / weak / neutral
+9. resolveTurn interleaving order
 
-接下來應完成：
-- `move` 測試與非法輸入保護
-- `buy` 測試與 MP 扣減
-- `counter` 規則與測試
-- `edge KO` 規則與測試
-- `advantage` 真正按對手類型判定
-- `turnEngine` 多張卡交錯揭牌測試
-- hand / discard / draw 更多邊界 case
-
-### Stage 2：資料驅動化
-目標：由 hardcoded rules prototype 過渡到 data-driven engine。
-
-要做：
-- `createInitialState.js` 不再硬編牌
-- 由 `generated/cards.json` 載入牌庫
-- 載入 `characters.json`
-- 建立 card loader / validator
-- schema 驗證 CSV 欄位
-
-### Stage 3：擴規則
-目標：把 `GAME_SPEC.md` 內主要戰鬥系統補齊。
-
-要做：
-- 商店購買系統
-- 高階防禦
-- 高速移動
-- 反擊連鎖 ×2
-- 邊緣擊出場外機率
+### 目前未完成
+- cards / characters 正式由 generated JSON 載入
+- schema validator
+- 商店實購 / 庫存 / MP 扣減
+- 完整 counter chain
+- combo
+- 多目標
 - 角色被動
-- combo 系統
-- 多目標 targeting
+- integration tests
+- Socket.IO multiplayer
+- client UI
+- AI
 
-### Stage 4：多人系統
-目標：server authoritative match。
+### 目前風險
+1. `createInitialState.js` 仍為 prototype
+2. `lastRevealedSubtype` / `guardSubtype` 只是過渡設計
+3. 規則雖有 16 個 tests，但仍主要是 unit test，未有 integration coverage
+4. data layer 與 engine 未完全接通
 
-要做：
-- Socket.IO server
-- room 管理
-- match events
-- lobby / room state
-- online 2 人對戰
-- 再擴到 3 / 4 人
+## Future
 
-### Stage 5：前端 UI
-目標：讓玩家可實際操作遊戲。
+### 下一個里程碑
+完成 Phase B：資料正式接入 engine。
 
-要做：
+### Phase B 任務
+1. 建立 `shared/cardLoader.js`
+2. 從 `generated/cards.json` 讀卡牌
+3. 取代 hardcoded `createBasicDeck()`
+4. 加欄位檢查與 validator
+5. 從 `generated/characters.json` 建玩家初始狀態
+6. 讓 `createInitialState()` 變成真正資料驅動
+
+### 之後里程碑
+#### Phase C：擴規則
+- shopResolver
+- stackResolver
+- comboResolver
+- targeting
+- characters passive
+- elimination 正式化
+
+#### Phase D：多人對戰
+- Socket.IO room / lobby / match
+- online 2P
+- online 3P / 4P
+
+#### Phase E：前端 UI
 - board view
 - hand view
-- selected cards view
 - log view
 - shop modal
 - target picker
 - facing picker
 - resolve animation
 
-### Stage 6：AI 與上線
-目標：單人可玩、可部署。
+#### Phase F：AI 與部署
+- AI profiles
+- board evaluation
+- local run scripts
+- integration tests
+- deployment
 
-要做：
-- `ai_profiles.csv` 接入
-- AI 評估盤面
-- AI 行動選擇
-- 本機啟動腳本
-- 測試腳本
-- 部署流程
-- release checklist
-
-## 目前風險
-1. engine 仍係 prototype，未接真正資料檔
-2. 規則覆蓋未完整，現在通過的 test 仍然很少
-3. `advantage` 邏輯仍未完整
-4. `buy` / `counter` / `combo` 尚未進入可用狀態
-5. 未做 integration test
-6. 未做 UI，未做多人同步
-
-## 不應隨便修
+## 工作規則
+- 改規則前先對照 `docs/GAME_SPEC.md`
+- 重要修改先補測試，再補功能
+- 每完成重要 slice 更新 `CODEX_HANDOFF.md` 與 `CONTEXT.md`
+- 若規格變更，先改 spec，再改 test，再改 code

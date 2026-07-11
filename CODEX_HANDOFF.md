@@ -1,37 +1,47 @@
-# CODEX_HANDOFF.md
+# CODEX_HANDOFF.md V2 260712
 
 ## 專案名稱
 Fist Palm and Weapons
 
-## 專案簡介
-這是一個以網頁形式實作的回合制對戰卡牌遊戲專案。現階段以 `docs/GAME_SPEC.md` 為單一規格來源，先完成資料骨架、CSV → JSON build 流程，以及純規則 engine 的最小可跑版本，之後再擴充多人連線、AI、完整卡牌內容、UI 與部署。
+## 當前階段
+Phase A（純 rules engine 測試與 correctness）已完成目前規劃範圍，準備進入 Phase B（資料正式接入 engine）。
 
-## 目前已完成項目
+## 今次交接摘要
+目前專案已完成：
+- `docs/GAME_SPEC.md`
+- `data/*.csv` 資料骨架
+- `scripts/build-data.js` CSV → JSON build 流程
+- 純 rules engine 最小可跑版本
+- `tests/rules/gameEngine.test.js` 單元測試保護網
 
-### 1. 文件與資料骨架
-已建立以下檔案／資料夾：
+最新驗證結果：
+- `npm run test:rules`
+- Test Suites: 1 passed, 1 total
+- Tests: 16 passed, 16 total
+
+## 已完成功能（已驗證）
+
+### 文件與資料骨架
+已存在：
 - `docs/GAME_SPEC.md`
 - `data/cards.csv`
 - `data/characters.csv`
 - `data/keywords.csv`
 - `data/ai_profiles.csv`
 - `data/combos.csv`
-- `scripts/build-data.js` 或 `scripts/build-data.mjs`
-- `generated/`（build 輸出目錄）
 
-### 2. CSV → JSON build 流程
-已安裝 `csvtojson`。
-已可透過以下指令產生 JSON：
+### Build 流程
+已完成：
+- `scripts/build-data.js`
+- 可將 `data/*.csv` build 到 `generated/*.json`
+
+常用指令：
 ```powershell
 node scripts/build-data.js
 ```
 
-目前用途：
-- 將 `/data/*.csv` 轉成 `/generated/*.json`
-- 供之後 client / server 共用資料
-
-### 3. 純規則 engine（最小可跑）
-已建立最小版 rules engine 與相關檔案：
+### 純 rules engine
+已完成檔案：
 - `server/game/gameEngine.js`
 - `server/game/state/createInitialState.js`
 - `server/game/rules/distance.js`
@@ -40,148 +50,115 @@ node scripts/build-data.js
 - `server/game/rules/cardResolver.js`
 - `server/game/rules/turnEngine.js`
 
-目前 engine 能力：
-- 曼哈頓距離判定
-- 朝向 front / side / back 修正
-- 基本攻擊
-- 基本防禦與防禦殘留
-- 基本移動
-- 基本購買入口 log
-- Draw phase
-- Discard to hand limit
-- 邊緣 + 進階攻擊擊出場外的簡化判定
-
-### 4. 測試
-已安裝 `jest`。
-已建立測試檔：
-- `tests/rules/gameEngine.test.js`
-
-目前已通過測試：
-1. 曼哈頓距離：直線 1、斜線 2
-2. 朝向修正：front / back / side
-3. 攻擊命中時會觸發防禦殘留
-4. 距離不符時不會觸發防禦殘留
-
-已驗證指令：
-```powershell
-npm run test:rules
-```
-
-最近一次測試結果：
-- Test Suites: 1 passed, 1 total
-- Tests: 4 passed, 4 total
-
-## 今次已解決的重要問題
-
-### 1. npm / package.json 問題
-曾出現：
-- `npm not found`
-- `Missing script: test:rules`
-- `Invalid package.json`
-
-現已修正：
-- Node / npm 可正常執行
-- `package.json` 為合法 JSON
-- `scripts.test:rules` 已加入
-- `jest` 與 `csvtojson` 已安裝
-
-### 2. 防禦殘留測試失敗 root cause
-曾經 `防禦殘留觸發` 測試失敗，原因不是 engine 邏輯錯，而是測試場景下雙方距離為 4，攻擊根本未命中，`resolveAttack()` 提前因距離不符而 return。
-後來已修正測試場景，將玩家距離拉近，測試成功通過。
-
-## 目前已知限制／技術債
-
-### 1. 卡牌資料仍未正式接入 generated JSON
-目前 `createInitialState.js` 內仍使用簡化版硬編 deck。
-尚未從 `generated/cards.json` 正式讀入資料。
-
-### 2. 剋制邏輯未完全接上 defender 類型
-`cardResolver.js` 內 `getAdvantageModifiers(card.subtype, card.subtype)` 目前仍屬簡化寫法，未真正以對手攻擊／防禦／反擊類型作比較。
-
-### 3. 商店、反擊連鎖、多目標仍未完成
-以下仍屬最小骨架或未實作：
-- 商店實際購買與庫存扣減
-- 反擊成功率完整測試
-- 反擊連鎖 ×2 stack resolve
-- 多目標 targeting
-- Combo 解析
-- AI 決策
-- Socket.IO 房間與同步
-- 前端 UI
-
-### 4. 規則測試覆蓋率仍不足
-現時只測到：
-- 距離
-- facing
+目前 engine 已可驗證：
+- 曼哈頓距離
+- front / side / back facing 修正
+- 基本 attack / defense
 - 防禦殘留
-- hand limit
+- move 合法 / 非法步數
+- buy 基本 log
+- advanced edge KO
+- counter 成功率（deterministic）
+- advantage 真正依 defender / revealed subtype 生效
+- resolveTurn 多張牌交錯揭牌順序
+- draw / discard to hand limit
 
-尚未測：
-- move 合法／非法步數
-- buy
-- edge KO
-- counter 100 / 80 / 60
-- round flow 多張卡交錯解析
-- advanced attack
-- discard 行為細節
+## 最新通過測試（16 項）
+1. 曼哈頓距離：直線 1、斜線 2
+2. facing：front / back / side
+3. 攻擊命中時觸發防禦殘留
+4. 距離不足時不觸發防禦殘留
+5. 合法移動會更新位置
+6. 非法移動不會更新位置
+7. basic_buy 會寫入商店 log
+8. advanced attack 在邊緣可擊出場外
+9. counter 100% 成功率 case
+10. counter 80% 成功率失敗 case
+11. counter 60% 成功率失敗 case
+12. advantage：拳打武器有加成
+13. advantage：拳打掌有減成
+14. advantage：無 defender subtype 時視為 neutral
+15. resolveTurn 在先手為 P1 時交錯揭牌順序正確
+16. resolveTurn 在先手為 P2 時交錯揭牌順序正確
 
-## 後續建議執行順序
+## 已知技術債 / 限制
 
-### Phase A：補足純 rules engine 測試與 correctness
-優先補測試，再補功能：
-1. `move` 合法與非法步數測試
-2. `buy` 基本流程測試
-3. `advanced edge KO` 測試
-4. `counter` 成功率與 deterministic 測試（mock `Math.random()`）
-5. `advantage` 真正對 defender type / incoming type 生效
-6. `resolveTurn()` 多張牌交錯揭牌測試
+### 1. 仍屬 prototype data model
+`createInitialState.js` 仍然用簡化 hardcoded deck / player model，未正式從 `generated/cards.json` / `generated/characters.json` 載入。
+
+### 2. advantage 仍係過渡設計
+目前依賴：
+- `opponent.lastRevealedSubtype`
+- `opponent.guardSubtype`
+作為 defender 類型來源。
+此設計可測、可用，但未必係最終模型。之後可能要升級為更清晰的：
+- `lastResolvedCard`
+- `currentDefenseState`
+- `incomingAttackContext`
+
+### 3. buy / shop 仍未做真正購買
+目前 `resolveBuy()` 只會 log，未做：
+- MP 扣減
+- 庫存扣減
+- 商店卡加入手牌 / 牌庫
+- 共享商店狀態
+
+### 4. counter 仍未完成完整連鎖
+目前只測到成功率與單次反射，未做完整 stack / chain resolve。
+
+### 5. 未接資料正式 schema 驗證
+CSV 雖然可轉 JSON，但未有嚴格 validator 去檢查：
+- 必填欄位
+- subtype 合法值
+- range / damage / stock 格式
+- combo / AI profile 一致性
+
+### 6. 未進入多人同步與 UI
+尚未開始：
+- Socket.IO rooms
+- client state / board UI / hand UI
+- target picker / facing picker
+- AI controller
+- integration tests
+
+## 建議下一步（最安全順序）
 
 ### Phase B：資料正式接入 engine
-1. 由 `generated/cards.json` 取代 `createBasicDeck()`
-2. 加欄位驗證（schema 檢查）
-3. 將 `characters.json` 接入 `createInitialState()`
-4. 將 `combos.json`、`ai_profiles.json` 納入預留接口
+1. 建 `shared/cardLoader.js`
+2. 讀取 `generated/cards.json`
+3. 取代 `createBasicDeck()`
+4. 加 schema validator
+5. 讀取 `generated/characters.json`
+6. 將角色初始 HP / MP / 手牌數接入 `createInitialState()`
 
-### Phase C：完整系統模組
-1. `shopResolver.js`
-2. `counter / stackResolver.js`
-3. `targeting.js`
-4. `eliminationResolver.js`
-5. `comboResolver.js`
+### Phase C：擴規則到規格級
+1. shopResolver
+2. counter stackResolver
+3. comboResolver
+4. targeting / 多目標
+5. eliminationResolver 正式化
+6. passive / characters integration
 
-### Phase D：多人與前端
-1. Socket.IO rooms
-2. client game store
-3. board UI / hand UI / log UI
-4. local mock → online match
+### Phase D：多人與 UI
+1. Socket.IO room / match lifecycle
+2. client local mock UI
+3. online 2P
+4. 3P / 4P
+5. AI
 
-## 建議下次開始前先做的事
-開始新任務前，先閱讀：
-- `docs/GAME_SPEC.md`
-- `CONTEXT.md`
-- `CODEX_HANDOFF.md`
-- 將要修改的 source file
-- 對應 test file
+## 下次工作前建議先讀
+1. `CONTEXT.md`
+2. `CODEX_HANDOFF.md`
+3. `docs/GAME_SPEC.md`
+4. `server/game/rules/*.js`
+5. `tests/rules/gameEngine.test.js`
 
-## 本地開發常用指令
-
-### Build 資料
+## 常用指令
 ```powershell
 node scripts/build-data.js
-```
-
-### 跑規則測試
-```powershell
+npm run
 npm run test:rules
 ```
 
-### 查看 npm scripts
-```powershell
-npm run
-```
-
-## 下個最安全任務
-優先做：
-- 補 `move`、`counter`、`edge KO` 單元測試
-- 修正 `advantage` 真正比較對手類型
-- 將簡化 hardcoded deck 改為讀 `generated/cards.json`
+## 下一個最安全任務
+建立 `shared/cardLoader.js`，將 `generated/cards.json` 真正接入 `createInitialState.js`，並為卡牌欄位加入最小 validator。
