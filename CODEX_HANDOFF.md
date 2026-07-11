@@ -71,3 +71,33 @@ Phase B：資料正式接入 engine
 
 ## 目前測試覆蓋（22 項）
 
+## 建議下一步（最安全順序）
+
+### Phase C：擴規則到規格級
+1. shopResolver
+2. counter stackResolver
+3. comboResolver
+4. targeting / 多目標
+5. eliminationResolver 正式化
+6. passive / characters integration
+
+### Phase D：多人與 UI
+1. Socket.IO room / match lifecycle
+2. client local mock UI
+3. online 2P
+4. 3P / 4P
+5. AI
+
+## 下次工作前建議先讀
+1. `CONTEXT.md`
+2. `CODEX_HANDOFF.md`
+3. `docs/GAME_SPEC.md`
+4. `server/game/rules/*.js`
+5. `tests/rules/gameEngine.test.js`
+
+## 常用指令
+```powershell
+node scripts/build-data.js
+npm run
+npm run test:rules
+```

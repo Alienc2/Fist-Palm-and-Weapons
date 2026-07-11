@@ -11,23 +11,39 @@ function assert(condition, message) {
   }
 }
 
+const ALLOWED_CARD_TYPES = ["attack", "defense", "move", "buy", "counter", "heal"];
+const ALLOWED_GROUPS = ["basic", "shop", "character", "system"];
+
 function validateCard(card) {
   assert(card && typeof card === "object", "card 必須為 object");
   assert(card.id, "card.id 缺失");
   assert(card.type, `card.type 缺失: ${card.id}`);
+  assert(ALLOWED_CARD_TYPES.includes(card.type), `card.type 非法: ${card.id} -> ${card.type}`);
   assert(card.subtype !== undefined, `card.subtype 缺失: ${card.id}`);
   assert(card.name_zh, `card.name_zh 缺失: ${card.id}`);
   assert(card.group, `card.group 缺失: ${card.id}`);
+  assert(ALLOWED_GROUPS.includes(card.group), `card.group 非法: ${card.id} -> ${card.group}`);
 
   if (card.type === "attack") {
     assert(card.range_min !== undefined, `attack range_min 缺失: ${card.id}`);
     assert(card.range_max !== undefined, `attack range_max 缺失: ${card.id}`);
     assert(card.damage !== undefined, `attack damage 缺失: ${card.id}`);
+    assert(Number(card.range_min) <= Number(card.range_max), `attack range_min/range_max 非法: ${card.id}`);
+    assert(Number(card.damage) >= 0, `attack damage 不可小於 0: ${card.id}`);
   }
 
   if (card.type === "move") {
     assert(card.move_min !== undefined, `move move_min 缺失: ${card.id}`);
     assert(card.move_max !== undefined, `move move_max 缺失: ${card.id}`);
+    assert(Number(card.move_min) <= Number(card.move_max), `move move_min/move_max 非法: ${card.id}`);
+  }
+
+  if (card.mp_cost !== undefined) {
+    assert(Number(card.mp_cost) >= 0, `mp_cost 不可小於 0: ${card.id}`);
+  }
+
+  if (card.stock !== undefined && card.stock !== "") {
+    assert(Number(card.stock) >= 0, `stock 不可小於 0: ${card.id}`);
   }
 }
 
@@ -38,6 +54,10 @@ function validateCharacter(character) {
   assert(character.initial_hp !== undefined, `character.initial_hp 缺失: ${character.id}`);
   assert(character.initial_mp !== undefined, `character.initial_mp 缺失: ${character.id}`);
   assert(character.initial_hand_size !== undefined, `character.initial_hand_size 缺失: ${character.id}`);
+
+  assert(Number(character.initial_hp) > 0, `character.initial_hp 必須大於 0: ${character.id}`);
+  assert(Number(character.initial_mp) >= 0, `character.initial_mp 不可小於 0: ${character.id}`);
+  assert(Number(character.initial_hand_size) > 0, `character.initial_hand_size 必須大於 0: ${character.id}`);
 }
 
 function validateAllData() {
