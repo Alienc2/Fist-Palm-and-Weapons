@@ -2,37 +2,40 @@
 
 ---
 status: active
-updated: 2026-07-12 V2
-phase: "Phase B planning"
+updated: 2026-07-12 V3
+phase: "Phase B verified checkpoint 1"
 ---
 
 ## 專案名稱
 Fist Palm and Weapons
 
 ## Past
-專案由 `docs/GAME_SPEC.md` 驅動，開發順序刻意採用：
+
+### 為何這樣做
+此專案依 `docs/GAME_SPEC.md` 推進，開發策略採用：
 1. 先規格
 2. 再資料骨架
 3. 再純 rules engine
 4. 再單元測試
-5. 最後先接多人、UI、AI、部署
+5. 之後才進入資料驅動化、完整系統、多人、UI、AI
 
-呢個決定係為咗先將戰鬥規則固定，避免 UI / network 把問題複雜化。
+目標是先固定核心戰鬥規則，避免 UI / 網絡 / 資料同步把 debugging 難度放大。
 
-已完成的歷程：
-- 建立 `GAME_SPEC.md`
-- 建立 CSV 資料骨架
-- 建立 CSV → JSON build script
-- 建立純 rules engine prototype
-- 建立 Jest 規則測試
+### 已完成里程碑
+- 已建立 `docs/GAME_SPEC.md`
+- 已建立 `data/*.csv` 資料骨架
+- 已建立 `scripts/build-data.js`
+- 已建立純 rules engine prototype
+- 已完成 Phase A rules correctness 與測試
+- 已完成 Phase B 第一輪 data-driven initialization
 
 ## Current
 
-### 專案目前狀態
+### 專案當前狀態
 目前屬於：
 - rules engine prototype 已驗證
-- data-driven engine 未完成
-- multiplayer / UI / AI 未開始
+- data-driven initialization 已驗證第一輪
+- 商店、combo、角色被動、多人、UI、AI 未開始
 
 ### 當前技術棧
 - Node.js
@@ -41,8 +44,9 @@ Fist Palm and Weapons
 - Jest
 - csvtojson
 
-### 目前主要檔案
-#### 規格與文件
+### 目前核心檔案
+
+#### 文件
 - `docs/GAME_SPEC.md`
 - `CODEX_HANDOFF.md`
 - `CONTEXT.md`
@@ -53,9 +57,16 @@ Fist Palm and Weapons
 - `data/keywords.csv`
 - `data/ai_profiles.csv`
 - `data/combos.csv`
-- `generated/*.json`
+- `generated/cards.json`
+- `generated/characters.json`
+- `generated/keywords.json`
+- `generated/ai_profiles.json`
+- `generated/combos.json`
 
-#### 規則層
+#### 載入層
+- `shared/cardLoader.js`
+
+#### 引擎層
 - `server/game/gameEngine.js`
 - `server/game/state/createInitialState.js`
 - `server/game/rules/distance.js`
@@ -66,83 +77,76 @@ Fist Palm and Weapons
 
 #### 測試層
 - `tests/rules/gameEngine.test.js`
+- `tests/rules/cardLoader.test.js`
 
-### 已完成功能
-#### Build
-- 可以將 CSV build 成 JSON
-- `build:data` script 已可執行
+### 已完成能力
 
-#### Rules engine
-- 建立簡化 match state
-- 建立簡化 player / deck / hand
-- 曼哈頓距離
-- facing 修正
-- attack / defense / move / buy 原型
-- 防禦殘留
-- advanced edge KO
-- counter deterministic success rate
-- advantage 真正依 defender / revealed subtype 生效
-- resolveTurn 交錯揭牌順序
+#### Build / Data
+- CSV 可 build 成 JSON
+- 已建立 `cardLoader`
+- 已建立 card / character 最小 validator
+- 已可從 `generated/cards.json` 載入 basic cards
+- 已可從 `generated/characters.json` 載入角色初始化資料
 
-#### Testing
-最新結果：
-- `npm run test:rules`
-- 1 suite passed
-- 16 tests passed
+#### Engine
+- `createInitialState()` 已開始由 generated data 初始化 deck / hand / HP / MP
+- 已保留純 rules engine 的基本戰鬥能力
+- 已加 `turnEngine` 無效選牌防呆
 
-已覆蓋：
+#### Rules correctness
+已測到：
 1. distance
 2. facing
-3. defense persistence hit / miss
+3. defense persistence（hit / miss）
 4. move valid / invalid
 5. buy log
-6. edge KO
+6. advanced edge KO
 7. counter deterministic cases
 8. advantage strong / weak / neutral
 9. resolveTurn interleaving order
 
-### 目前未完成
-- cards / characters 正式由 generated JSON 載入
-- schema validator
-- 商店實購 / 庫存 / MP 扣減
-- 完整 counter chain
-- combo
-- 多目標
-- 角色被動
-- integration tests
-- Socket.IO multiplayer
-- client UI
-- AI
+#### Testing
+最新驗證結果：
+- `npm run test:rules`
+- Test Suites: 2 passed, 2 total
+- Tests: 22 passed, 22 total
 
-### 目前風險
-1. `createInitialState.js` 仍為 prototype
-2. `lastRevealedSubtype` / `guardSubtype` 只是過渡設計
-3. 規則雖有 16 個 tests，但仍主要是 unit test，未有 integration coverage
-4. data layer 與 engine 未完全接通
+### 當前限制
+1. starter deck 組裝規則仍然簡化
+2. validator 只係最小版本
+3. `lastRevealedSubtype` / `guardSubtype` 仍是過渡模型
+4. `buy` 只有 log，未有真正 shop flow
+5. 仍未有 integration tests
+6. 未開始 Socket.IO / UI / AI
+
+### 當前最佳下一步
+最安全下一步係先完成 Phase B 收口，而唔係立即擴規則：
+1. 補 starter deck 組裝規則
+2. 補 validator 覆蓋
+3. 補 data initialization edge-case tests
+4. 預留 `keywords` / `combos` / `ai_profiles` loader 接口
 
 ## Future
 
 ### 下一個里程碑
-完成 Phase B：資料正式接入 engine。
-
-### Phase B 任務
-1. 建立 `shared/cardLoader.js`
-2. 從 `generated/cards.json` 讀卡牌
-3. 取代 hardcoded `createBasicDeck()`
-4. 加欄位檢查與 validator
-5. 從 `generated/characters.json` 建玩家初始狀態
-6. 讓 `createInitialState()` 變成真正資料驅動
+完成 Phase B：
+- data-driven initialization 更完整
+- validator 更可靠
+- starter deck 邏輯更清晰
+- data 異常 case 有測試保護
 
 ### 之後里程碑
-#### Phase C：擴規則
-- shopResolver
-- stackResolver
-- comboResolver
-- targeting
-- characters passive
-- elimination 正式化
 
-#### Phase D：多人對戰
+#### Phase C：規則擴充
+- `shopResolver`
+- 真正 buy / MP / stock 流程
+- `stackResolver`
+- `comboResolver`
+- `targeting`
+- `elimination` 正式化
+- `characters passive`
+
+#### Phase D：多人同步
 - Socket.IO room / lobby / match
 - online 2P
 - online 3P / 4P
@@ -150,6 +154,7 @@ Fist Palm and Weapons
 #### Phase E：前端 UI
 - board view
 - hand view
+- selected cards view
 - log view
 - shop modal
 - target picker
@@ -157,14 +162,14 @@ Fist Palm and Weapons
 - resolve animation
 
 #### Phase F：AI 與部署
-- AI profiles
-- board evaluation
+- `ai_profiles` 接入
+- AI decision making
 - local run scripts
-- integration tests
-- deployment
+- integration / e2e tests
+- deployment flow
 
 ## 工作規則
-- 改規則前先對照 `docs/GAME_SPEC.md`
+- 規則或資料模型有重大改動前，先對照 `docs/GAME_SPEC.md`
 - 重要修改先補測試，再補功能
-- 每完成重要 slice 更新 `CODEX_HANDOFF.md` 與 `CONTEXT.md`
-- 若規格變更，先改 spec，再改 test，再改 code
+- 每完成重要 slice，更新 `CODEX_HANDOFF.md` 與 `CONTEXT.md`
+- 若規格要改，先改 spec，再改 test，再改 code
