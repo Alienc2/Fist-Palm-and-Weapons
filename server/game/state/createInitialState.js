@@ -1,30 +1,49 @@
 // server/game/state/createInitialState.js
 
-function createBasicDeck() {
-  // 暫時簡化：幾張基本攻擊、防禦、移動、購買
-  return [
-    { id: "basic_punch", type: "attack", subtype: "punch", mpCost: 1, rangeMin: 1, rangeMax: 1, damage: 2, keywords: ["basic"] },
-    { id: "basic_palm", type: "attack", subtype: "palm", mpCost: 1, rangeMin: 1, rangeMax: 1, damage: 2, keywords: ["basic"] },
-    { id: "basic_weapon", type: "attack", subtype: "weapon", mpCost: 1, rangeMin: 2, rangeMax: 2, damage: 1, keywords: ["basic"] },
-    { id: "basic_guard", type: "defense", subtype: "any", mpCost: 1, rangeMin: 1, rangeMax: 2, blockValue: 999, keywords: ["basic", "persist_guard"] },
-    { id: "basic_move", type: "move", subtype: "step", mpCost: 1, moveMin: 1, moveMax: 1, keywords: ["basic"] },
-    { id: "basic_buy", type: "buy", subtype: "shop", mpCost: 0, keywords: ["basic", "shop_entry"] },
-  ];
+const {
+  getCardsByGroup,
+  getCharacterById,
+  loadCharacters,
+} = require("../../../shared/cardLoader");
+
+function createStarterDeck() {
+  const basicCards = getCardsByGroup("basic");
+
+  // 先做最小版：每張 basic enabled 卡各取 1 張
+  return basicCards.map((card) => ({ ...card }));
 }
 
-function createPlayer(id, position) {
-  const deck = createBasicDeck();
+function drawInitialHand(deck, handSize) {
+  const hand = [];
+  for (let i = 0; i < handSize; i++) {
+    if (deck.length === 0) break;
+    hand.push(deck.shift());
+  }
+  return hand;
+}
+
+function createPlayer(id, position, characterId) {
+  const fallbackCharacter = loadCharacters()[0];
+  const character = getCharacterById(characterId) || fallbackCharacter;
+
+  const deck = createStarterDeck();
+  const hand = drawInitialHand(deck, character.initialHandSize);
+
   return {
     id,
-    hp: 10,
-    mp: 3,
-    hand: deck.slice(0, 4),
-    deck: deck.slice(4),
+    characterId: character.id,
+    characterName: character.name,
+    hp: character.initialHp,
+    mp: character.initialMp,
+    hand,
+    deck,
     discard: [],
     position: { x: position.x, y: position.y },
     facing: "up",
     selectedCards: [],
     lastDefenseCard: null,
+    lastRevealedSubtype: null,
+    guardSubtype: null,
     isEliminated: false,
   };
 }
@@ -37,8 +56,8 @@ function createInitialState() {
     startingPlayerIndex: 0,
     revealIndex: 0,
     players: [
-      createPlayer("P1", { x: 1, y: 1 }),
-      createPlayer("P2", { x: 3, y: 3 }),
+      createPlayer("P1", { x: 1, y: 1 }, "char_attack"),
+      createPlayer("P2", { x: 3, y: 3 }, "char_defense"),
     ],
     log: [],
   };
