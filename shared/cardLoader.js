@@ -11,14 +11,12 @@ function assert(condition, message) {
   }
 }
 
-const ALLOWED_CARD_TYPES = ["attack", "defense", "move", "buy", "counter", "heal"];
 const ALLOWED_GROUPS = ["basic", "shop", "character", "system"];
 
 function validateCard(card) {
   assert(card && typeof card === "object", "card 必須為 object");
   assert(card.id, "card.id 缺失");
   assert(card.type, `card.type 缺失: ${card.id}`);
-  assert(ALLOWED_CARD_TYPES.includes(card.type), `card.type 非法: ${card.id} -> ${card.type}`);
   assert(card.subtype !== undefined, `card.subtype 缺失: ${card.id}`);
   assert(card.name_zh, `card.name_zh 缺失: ${card.id}`);
   assert(card.group, `card.group 缺失: ${card.id}`);
@@ -38,7 +36,7 @@ function validateCard(card) {
     assert(Number(card.move_min) <= Number(card.move_max), `move move_min/move_max 非法: ${card.id}`);
   }
 
-  if (card.mp_cost !== undefined) {
+  if (card.mp_cost !== undefined && card.mp_cost !== "") {
     assert(Number(card.mp_cost) >= 0, `mp_cost 不可小於 0: ${card.id}`);
   }
 
@@ -147,6 +145,8 @@ function getCharacterById(characterId) {
 
 module.exports = {
   validateAllData,
+  validateCard,
+  validateCharacter,
   loadCards,
   loadCharacters,
   getCardsByGroup,
