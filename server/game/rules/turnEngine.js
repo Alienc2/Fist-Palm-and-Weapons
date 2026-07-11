@@ -67,8 +67,14 @@ function resolveTurn(state) {
 }
 
 function resolveCardByType(state, player, cardEntry) {
+  if (!cardEntry || !cardEntry.card) {
+    state.log.push(`${player.id} 選牌資料無效，跳過`);
+    return;
+  }
+
   const card = cardEntry.card;
   const extra = cardEntry.extra || {};
+
   if (card.type === "attack") {
     resolveAttack(state, player, card);
   } else if (card.type === "defense") {

@@ -45,8 +45,24 @@ describe("簡單一回合攻擊、防禦、Draw/Discard", () => {
     p1.position = { x: 1, y: 1 };
     p2.position = { x: 1, y: 2 };
 
-    const p1Defense = p1.hand.find((c) => c.type === "defense");
-    const p2Attack = p2.hand.find((c) => c.type === "attack");
+    const p1Defense = {
+      id: "test_basic_guard",
+      type: "defense",
+      subtype: "any",
+      mpCost: 1,
+      blockValue: 3,
+    };
+
+    const p2Attack = {
+      id: "test_basic_punch",
+      type: "attack",
+      subtype: "punch",
+      mpCost: 1,
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      keywords: ["basic"],
+    };
 
     submitSelection(state, "P1", [{ card: p1Defense }]);
     submitSelection(state, "P2", [{ card: p2Attack }]);
@@ -63,8 +79,24 @@ describe("簡單一回合攻擊、防禦、Draw/Discard", () => {
     const state = createMatch();
     const [p1, p2] = state.players;
 
-    const p1Defense = p1.hand.find((c) => c.type === "defense");
-    const p2Attack = p2.hand.find((c) => c.type === "attack");
+    const p1Defense = {
+      id: "test_basic_guard",
+      type: "defense",
+      subtype: "any",
+      mpCost: 1,
+      blockValue: 3,
+    };
+
+    const p2Attack = {
+      id: "test_basic_punch",
+      type: "attack",
+      subtype: "punch",
+      mpCost: 1,
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      keywords: ["basic"],
+    };
 
     submitSelection(state, "P1", [{ card: p1Defense }]);
     submitSelection(state, "P2", [{ card: p2Attack }]);
@@ -430,4 +462,36 @@ describe("resolveTurn 交錯揭牌順序", () => {
     expect(p2DefenseIndex).toBeLessThan(p1BuyIndex);
   });  
 
+});
+
+describe("data-driven initialization", () => {
+  test("createMatch 會從角色資料初始化 HP / MP / 手牌數", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    expect(p1.characterId).toBe("char_attack");
+    expect(p2.characterId).toBe("char_defense");
+
+    expect(p1.hp).toBeGreaterThan(0);
+    expect(p1.mp).toBeGreaterThanOrEqual(0);
+    expect(p1.hand.length).toBeGreaterThan(0);
+
+    expect(p2.hp).toBeGreaterThan(0);
+    expect(p2.mp).toBeGreaterThanOrEqual(0);
+    expect(p2.hand.length).toBeGreaterThan(0);
+  });
+
+  test("basic deck 應由 generated/cards.json 載入", () => {
+    const state = createMatch();
+    const [p1] = state.players;
+
+    const allCards = [...p1.hand, ...p1.deck];
+    const allCardIds = allCards.map((card) => card.id);
+
+    expect(allCardIds.length).toBeGreaterThan(0);
+    expect(allCardIds.some((id) => id.startsWith("basic_punch"))).toBe(true);
+    expect(allCards.some((card) => card.type === "defense")).toBe(true);
+    expect(allCards.some((card) => card.type === "move")).toBe(true);
+    expect(allCards.some((card) => card.type === "buy")).toBe(true);
+  });
 });
