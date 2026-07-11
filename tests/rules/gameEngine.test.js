@@ -327,3 +327,107 @@ describe("advantage 規則", () => {
     expect(state.log.some((msg) => msg.includes("造成 3 傷害"))).toBe(true);
   });
 });
+
+describe("resolveTurn 交錯揭牌順序", () => {
+  test("起手玩家與另一玩家會按 reveal index 交錯結算多張牌", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    // 維持 startingPlayerIndex = 0，令 P1 先手
+    state.startingPlayerIndex = 0;
+
+    const p1Move = {
+      id: "basic_move",
+      type: "move",
+      subtype: "step",
+      mpCost: 1,
+      moveMin: 1,
+      moveMax: 1,
+    };
+
+    const p1Buy = {
+      id: "basic_buy",
+      type: "buy",
+      subtype: "shop",
+      mpCost: 0,
+    };
+
+    const p2Defense = {
+      id: "basic_guard",
+      type: "defense",
+      subtype: "any",
+      mpCost: 1,
+      blockValue: 3,
+    };
+
+    const p2Move = {
+      id: "basic_move",
+      type: "move",
+      subtype: "step",
+      mpCost: 1,
+      moveMin: 1,
+      moveMax: 1,
+    };
+
+    submitSelection(state, "P1", [
+      { card: p1Move, extra: { moveDecision: { dx: 1, dy: 0 } } },
+      { card: p1Buy },
+    ]);
+
+    submitSelection(state, "P2", [
+      { card: p2Defense },
+      { card: p2Move, extra: { moveDecision: { dx: -1, dy: 0 } } },
+    ]);
+
+    playOneTurn(state);
+
+    const p1MoveIndex = state.log.findIndex((msg) => msg.includes("P1 移動到 (2,1)"));
+    const p2DefenseIndex = state.log.findIndex((msg) => msg.includes("P2 使用防禦 basic_guard"));
+    const p1BuyIndex = state.log.findIndex((msg) => msg.includes("P1 使用 basic_buy 進入商店"));
+    const p2MoveIndex = state.log.findIndex((msg) => msg.includes("P2 移動到 (2,3)"));
+
+    expect(p1MoveIndex).toBeGreaterThanOrEqual(0);
+    expect(p2DefenseIndex).toBeGreaterThanOrEqual(0);
+    expect(p1BuyIndex).toBeGreaterThanOrEqual(0);
+    expect(p2MoveIndex).toBeGreaterThanOrEqual(0);
+
+    expect(p1MoveIndex).toBeLessThan(p2DefenseIndex);
+    expect(p2DefenseIndex).toBeLessThan(p1BuyIndex);
+    expect(p1BuyIndex).toBeLessThan(p2MoveIndex);
+  });
+
+  test("當 startingPlayerIndex = 1 時，P2 會先於 P1 結算第 1 張牌", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    state.startingPlayerIndex = 1;
+
+    const p1Buy = {
+      id: "basic_buy",
+      type: "buy",
+      subtype: "shop",
+      mpCost: 0,
+    };
+
+    const p2Defense = {
+      id: "basic_guard",
+      type: "defense",
+      subtype: "any",
+      mpCost: 1,
+      blockValue: 3,
+    };
+
+    submitSelection(state, "P1", [{ card: p1Buy }]);
+    submitSelection(state, "P2", [{ card: p2Defense }]);
+
+    playOneTurn(state);
+
+    const p2DefenseIndex = state.log.findIndex((msg) => msg.includes("P2 使用防禦 basic_guard"));
+    const p1BuyIndex = state.log.findIndex((msg) => msg.includes("P1 使用 basic_buy 進入商店"));
+
+    expect(p2DefenseIndex).toBeGreaterThanOrEqual(0);
+    expect(p1BuyIndex).toBeGreaterThanOrEqual(0);
+    expect(p2DefenseIndex).toBeLessThan(p1BuyIndex);
+  });  
+
+});
