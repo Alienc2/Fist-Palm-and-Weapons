@@ -22,7 +22,8 @@ function resolveAttack(state, attacker, card) {
   }
 
   const facingMod = getFacingModifiers(attacker, opponent);
-  const advMod = getAdvantageModifiers(card.subtype, card.subtype); // 簡化：假設同類
+  const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
+  const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
 
   let damage = card.damage + facingMod.damage + advMod.damage;
   if (damage < 0) damage = 0;
@@ -37,6 +38,7 @@ function resolveAttack(state, attacker, card) {
 
   const finalDamage = Math.max(damage - block, 0);
   opponent.hp -= finalDamage;
+  attacker.lastRevealedSubtype = card.subtype || "unknown";
   log(state, `${attacker.id} 使用 ${card.id} 對 ${opponent.id} 造成 ${finalDamage} 傷害`);
 
   // 邊緣 + 進階攻擊擊出場外（簡化：當前卡有 advanced keyword）
@@ -53,6 +55,7 @@ function resolveDefense(state, player, card) {
     id: card.id,
     blockValue: card.blockValue || 3,
   };
+  player.lastRevealedSubtype = card.subtype || "any";
   log(state, `${player.id} 使用防禦 ${card.id}，效果殘留至觸發或回合結束`);
 }
 
@@ -65,11 +68,13 @@ function resolveMove(state, player, card, moveDecision) {
   }
   player.position.x += dx;
   player.position.y += dy;
+  player.lastRevealedSubtype = card.subtype || "step";
   log(state, `${player.id} 移動到 (${player.position.x},${player.position.y})`);
 }
 
 function resolveBuy(state, player, card) {
   // 暫時只 log，同扣 MP；真實商店之後再接 shopResolver
+  player.lastRevealedSubtype = card.subtype || "shop";
   log(state, `${player.id} 使用 ${card.id} 進入商店（暫未實作購買邏輯）`);
 }
 
