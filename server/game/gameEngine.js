@@ -1,25 +1,26 @@
-// matchState
-{
-  matchId: "test-match",
-  phase: "SELECT_CARDS" | "RESOLVE_TURN" | "END_TURN" | "DRAW_PHASE" | "DISCARD_TO_LIMIT" | "ROUND_START",
-  round: 1,
-  startingPlayerIndex: 0,
-  revealIndex: 0,
-  players: [
-    {
-      id: "P1",
-      hp: 10,
-      mp: 3,
-      hand: [cardInstance...],
-      deck: [cardInstance...],
-      discard: [],
-      position: { x: 1, y: 1 },
-      facing: "up",
-      selectedCards: [], // 本回合選牌順序
-      lastDefenseCard: null, // 防禦殘留
-      isEliminated: false,
-    },
-    ...
-  ],
-  log: [],
+// server/game/gameEngine.js
+
+const { createInitialState } = require("./state/createInitialState");
+const { resolveTurn } = require("./rules/turnEngine");
+
+function createMatch() {
+  const state = createInitialState();
+  return state;
 }
+
+// 提交本回合選牌（簡化版）
+function submitSelection(state, playerId, selections) {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) throw new Error("player not found");
+  player.selectedCards = selections; // [{card, extra}]
+}
+
+function playOneTurn(state) {
+  resolveTurn(state);
+}
+
+module.exports = {
+  createMatch,
+  submitSelection,
+  playOneTurn,
+};
