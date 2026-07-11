@@ -238,3 +238,92 @@ describe("counter 規則（deterministic）", () => {
     expect(result.damageToAttacker).toBe(0);
   });
 });
+
+describe("advantage 規則", () => {
+  test("拳打武器時有 advantage，傷害會增加", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    // 令 defender 暫時暴露為 weapon 類型
+    p2.lastRevealedSubtype = "weapon";
+
+    const punchAttack = {
+      id: "basic_punch",
+      type: "attack",
+      subtype: "punch",
+      mpCost: 1,
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      keywords: ["basic"],
+    };
+
+    submitSelection(state, "P1", [{ card: punchAttack }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    // front damage +1，再加 advantage damage +1，總傷害應為 4
+    expect(state.log.some((msg) => msg.includes("造成 4 傷害"))).toBe(true);
+  });
+
+  test("拳打掌時有 disadvantage，傷害會減少", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    // 令 defender 暫時暴露為 palm 類型
+    p2.lastRevealedSubtype = "palm";
+
+    const punchAttack = {
+      id: "basic_punch",
+      type: "attack",
+      subtype: "punch",
+      mpCost: 1,
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      keywords: ["basic"],
+    };
+
+    submitSelection(state, "P1", [{ card: punchAttack }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    // front damage +1，再加 disadvantage damage -1，總傷害應為 2
+    expect(state.log.some((msg) => msg.includes("造成 2 傷害"))).toBe(true);
+  });
+
+  test("無 defender subtype 時，advantage 視為 neutral", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    const punchAttack = {
+      id: "basic_punch",
+      type: "attack",
+      subtype: "punch",
+      mpCost: 1,
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      keywords: ["basic"],
+    };
+
+    submitSelection(state, "P1", [{ card: punchAttack }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    // 只有 front damage +1，總傷害應為 3
+    expect(state.log.some((msg) => msg.includes("造成 3 傷害"))).toBe(true);
+  });
+});

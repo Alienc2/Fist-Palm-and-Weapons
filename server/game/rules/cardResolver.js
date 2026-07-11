@@ -56,6 +56,7 @@ function resolveDefense(state, player, card) {
     blockValue: card.blockValue || 3,
   };
   player.lastRevealedSubtype = card.subtype || "any";
+  player.guardSubtype = card.subtype || "any";
   log(state, `${player.id} 使用防禦 ${card.id}，效果殘留至觸發或回合結束`);
 }
 
