@@ -13,6 +13,13 @@ function createStarterDeck() {
   return basicCards.map((card) => ({ ...card }));
 }
 
+function createShopState() {
+  const shopCards = getCardsByGroup("shop");
+  return {
+    cards: shopCards.map((card) => ({ ...card })),
+  };
+}
+
 function drawInitialHand(deck, handSize) {
   const hand = [];
   for (let i = 0; i < handSize; i++) {
@@ -59,6 +66,7 @@ function createInitialState() {
       createPlayer("P1", { x: 1, y: 1 }, "char_attack"),
       createPlayer("P2", { x: 3, y: 3 }, "char_defense"),
     ],
+    shop: createShopState(),
     log: [],
   };
 }

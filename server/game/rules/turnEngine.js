@@ -82,8 +82,8 @@ function resolveCardByType(state, player, cardEntry) {
   } else if (card.type === "move") {
     resolveMove(state, player, card, extra.moveDecision || { dx: 0, dy: 0 });
   } else if (card.type === "buy") {
-    resolveBuy(state, player, card);
-  }
+    resolveBuy(state, player, card, extra);
+  } 
 }
 
 module.exports = {

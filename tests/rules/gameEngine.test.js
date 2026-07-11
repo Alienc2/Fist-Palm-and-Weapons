@@ -178,6 +178,99 @@ describe("buy 規則", () => {
   });
 });
 
+describe("shopResolver / buy 流程", () => {
+  test("使用 buy 卡並指定 shopCardId 時，會成功購買並加入 discard", () => {
+    const state = createMatch();
+    const [p1] = state.players;
+
+    p1.mp = 99;
+
+    const buyCard = {
+      id: "basic_buy",
+      type: "buy",
+      subtype: "shop",
+      mpCost: 0,
+    };
+
+    const targetShopCard = state.shop.cards.find((card) => card.stock > 0 && card.buyCost >= 0);
+    expect(targetShopCard).toBeTruthy();
+
+    const beforeStock = targetShopCard.stock;
+    const beforeDiscard = p1.discard.length;
+    const beforeMp = p1.mp;
+
+    submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    expect(p1.discard.length).toBe(beforeDiscard + 1);
+    expect(p1.mp).toBe(beforeMp - targetShopCard.buyCost);
+
+    const updatedShopCard = state.shop.cards.find((card) => card.id === targetShopCard.id);
+    expect(updatedShopCard.stock).toBe(beforeStock - 1);
+    expect(state.log.some((msg) => msg.includes("購買"))).toBe(true);
+  });
+
+  test("MP 不足時不會成功購買", () => {
+    const state = createMatch();
+    const [p1] = state.players;
+
+    p1.mp = 0;
+
+    const buyCard = {
+      id: "basic_buy",
+      type: "buy",
+      subtype: "shop",
+      mpCost: 0,
+    };
+
+    const expensiveShopCard = state.shop.cards.find((card) => card.buyCost > 0);
+    expect(expensiveShopCard).toBeTruthy();
+
+    const beforeStock = expensiveShopCard.stock;
+    const beforeDiscard = p1.discard.length;
+
+    submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: expensiveShopCard.id } }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    expect(p1.discard.length).toBe(beforeDiscard);
+    const updatedShopCard = state.shop.cards.find((card) => card.id === expensiveShopCard.id);
+    expect(updatedShopCard.stock).toBe(beforeStock);
+    expect(state.log.some((msg) => msg.includes("MP 不足"))).toBe(true);
+  });
+
+  test("庫存為 0 時不會成功購買", () => {
+    const state = createMatch();
+    const [p1] = state.players;
+
+    p1.mp = 99;
+
+    const buyCard = {
+      id: "basic_buy",
+      type: "buy",
+      subtype: "shop",
+      mpCost: 0,
+    };
+
+    const targetShopCard = state.shop.cards.find((card) => card.stock > 0 && card.buyCost >= 0);
+    expect(targetShopCard).toBeTruthy();
+
+    targetShopCard.stock = 0;
+    const beforeDiscard = p1.discard.length;
+
+    submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    expect(p1.discard.length).toBe(beforeDiscard);
+    expect(state.log.some((msg) => msg.includes("已無庫存"))).toBe(true);
+  });
+});
+
 describe("advanced edge KO 規則", () => {
   test("邊緣 + HP 低於 3 + advanced 攻擊命中時會出場", () => {
     const state = createMatch();

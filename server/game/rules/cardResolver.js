@@ -3,6 +3,7 @@
 const { isWithinRange, isEdgePosition } = require("./distance");
 const { getFacingModifiers } = require("./facing");
 const { getAdvantageModifiers } = require("./advantage");
+const { buyFromShop } = require("./shopResolver");
 
 function log(state, msg) {
   state.log.push(msg);
@@ -73,10 +74,16 @@ function resolveMove(state, player, card, moveDecision) {
   log(state, `${player.id} 移動到 (${player.position.x},${player.position.y})`);
 }
 
-function resolveBuy(state, player, card) {
-  // 暫時只 log，同扣 MP；真實商店之後再接 shopResolver
+function resolveBuy(state, player, card, extra = {}) {
   player.lastRevealedSubtype = card.subtype || "shop";
-  log(state, `${player.id} 使用 ${card.id} 進入商店（暫未實作購買邏輯）`);
+  log(state, `${player.id} 使用 ${card.id} 進入商店`);
+
+  if (!extra.shopCardId) {
+    log(state, `${player.id} 未指定要購買的商店卡`);
+    return;
+  }
+
+  buyFromShop(state, player, extra.shopCardId);
 }
 
 function resolveCounter(state, defender, card, incomingDamage, incomingSubtype) {
