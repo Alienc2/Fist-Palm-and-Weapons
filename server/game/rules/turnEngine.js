@@ -1,6 +1,7 @@
 // server/game/rules/turnEngine.js
 
 const { resolveAttack, resolveDefense, resolveMove, resolveBuy } = require("./cardResolver");
+const { resolveEliminations } = require("./eliminationResolver");
 
 function startRound(state) {
   state.phase = "ROUND_START";
@@ -52,11 +53,13 @@ function resolveTurn(state) {
     const firstCard = attackerFirst.selectedCards[i];
     if (firstCard) {
       resolveCardByType(state, attackerFirst, firstCard);
+      resolveEliminations(state);
     }
 
     const secondCard = attackerSecond.selectedCards[i];
     if (secondCard) {
       resolveCardByType(state, attackerSecond, secondCard);
+      resolveEliminations(state);
     }
   }
 

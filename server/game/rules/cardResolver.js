@@ -1,6 +1,6 @@
 // server/game/rules/cardResolver.js
 
-const { isWithinRange, isEdgePosition } = require("./distance");
+const { isWithinRange } = require("./distance");
 const { getFacingModifiers } = require("./facing");
 const { getAdvantageModifiers } = require("./advantage");
 const { buyFromShop } = require("./shopResolver");
@@ -38,16 +38,20 @@ function resolveAttack(state, attacker, card) {
   }
 
   const finalDamage = Math.max(damage - block, 0);
-  opponent.hp -= finalDamage;
-  attacker.lastRevealedSubtype = card.subtype || "unknown";
-  log(state, `${attacker.id} 使用 ${card.id} 對 ${opponent.id} 造成 ${finalDamage} 傷害`);
 
-  // 邊緣 + 進階攻擊擊出場外（簡化：當前卡有 advanced keyword）
-  if (finalDamage > 0 && isEdgePosition(opponent.position) && opponent.hp < 3 && card.keywords.includes("advanced")) {
-    // 簡化：100% 觸發，你之後改機率
-    opponent.isEliminated = true;
-    log(state, `${opponent.id} 在邊緣被進階攻擊擊出場外！`);
-  }
+  opponent.hp -= finalDamage;
+  opponent.lastDamageContext = {
+    sourceCardId: card.id,
+    sourceGroup: card.group || null,
+    sourceType: card.type || null,
+  };
+
+  attacker.lastRevealedSubtype = card.subtype || "unknown";
+
+  log(
+    state,
+    `${attacker.id} 使用 ${card.id} 命中 ${opponent.id}，造成 ${finalDamage} 傷害（${opponent.hp} HP）`
+  );
 }
 
 function resolveDefense(state, player, card) {

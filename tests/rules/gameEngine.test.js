@@ -296,8 +296,39 @@ describe("advanced edge KO 規則", () => {
 
     playOneTurn(state);
 
+    console.log("EDGE_KO_LOG", state.log);
+
     expect(p2.isEliminated).toBe(true);
-    expect(state.log.some((msg) => msg.includes("擊出場外"))).toBe(true);
+    expect(
+      state.log.some((msg) => msg.includes("邊緣") && msg.includes("出場"))
+    ).toBe(true);
+  });
+  test("一般攻擊令目標 HP 歸零時會出場", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p2.hp = 1;
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    const attackCard = {
+      id: "test_attack_lethal",
+      type: "attack",
+      subtype: "punch",
+      group: "basic",
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 2,
+      mpCost: 0,
+    };
+
+    submitSelection(state, "P1", [{ card: attackCard }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    expect(p2.isEliminated).toBe(true);
+    expect(state.log.some((msg) => msg.includes("HP 歸零"))).toBe(true);
   });
 });
 
