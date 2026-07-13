@@ -16,7 +16,18 @@ function createStarterDeck() {
 function createShopState() {
   const shopCards = getCardsByGroup("shop");
   return {
-    cards: shopCards.map((card) => ({ ...card })),
+    cards: shopCards.map((card) => ({
+      ...card,
+      buyCost:
+        card.buyCost ??
+        card.mpCost ??
+        card.mp_cost ??
+        card.cost ??
+        0,
+      stock:
+        card.stock ??
+        0,
+    })),
   };
 }
 
