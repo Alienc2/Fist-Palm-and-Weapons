@@ -5,19 +5,21 @@ const {
   getDefaultEnemyTarget,
   getSelfChosenEnemyTargets,
   getTargets,
+  isTargetStillLegal,
+  retargetDeclaredTargets,
 } = require("../../server/game/rules/targetingResolver");
 
-describe("targetingResolver", () => {
-  function createState() {
-    return {
-      players: [
-        { id: "P1", isEliminated: false },
-        { id: "P2", isEliminated: false },
-        { id: "P3", isEliminated: false },
-      ],
-    };
-  }
+function createState() {
+  return {
+    players: [
+      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
+      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
+      { id: "P3", isEliminated: false, position: { x: 2, y: 1 } },
+    ],
+  };
+}
 
+describe("targetingResolver", () => {
   test("getEnemies 會回傳所有未淘汰敵人", () => {
     const state = createState();
     const player = state.players[0];
@@ -71,4 +73,80 @@ describe("targetingResolver", () => {
 
     expect(targets.map((p) => p.id)).toEqual(["P3"]);
   });
+});
+
+test("all_enemies 會回傳所有未淘汰敵人", () => {
+  const state = createState();
+  const player = state.players[0];
+
+  const targets = getTargets(state, player, { targeting: "all_enemies" });
+
+  expect(targets.map((p) => p.id)).toEqual(["P2", "P3"]);
+});
+
+test("adjacent_enemies 只會回傳相鄰敵人", () => {
+  const state = {
+    players: [
+      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
+      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
+      { id: "P3", isEliminated: false, position: { x: 3, y: 3 } },
+    ],
+  };
+
+  const targets = getTargets(state, state.players[0], { targeting: "adjacent_enemies" });
+
+  expect(targets.map((p) => p.id)).toEqual(["P2"]);
+});
+
+test("cross_enemies 只會回傳同 x 或同 y 的敵人", () => {
+  const state = {
+    players: [
+      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
+      { id: "P2", isEliminated: false, position: { x: 1, y: 3 } },
+      { id: "P3", isEliminated: false, position: { x: 3, y: 2 } },
+      { id: "P4", isEliminated: false, position: { x: 2, y: 1 } },
+    ],
+  };
+
+  const targets = getTargets(state, state.players[0], { targeting: "cross_enemies" });
+
+  expect(targets.map((p) => p.id)).toEqual(["P2", "P4"]);
+});
+
+test("isTargetStillLegal 會拒絕已淘汰目標", () => {
+  const state = {
+    players: [
+      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
+      { id: "P2", isEliminated: true, position: { x: 1, y: 2 } },
+    ],
+  };
+
+  const result = isTargetStillLegal(
+    state,
+    state.players[0],
+    { targeting: "single_enemy" },
+    state.players[1]
+  );
+
+  expect(result).toBe(false);
+});
+
+test("retargetDeclaredTargets 會在新目標合法時改變目標", () => {
+  const state = {
+    players: [
+      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
+      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
+      { id: "P3", isEliminated: false, position: { x: 1, y: 3 } },
+    ],
+  };
+
+  const result = retargetDeclaredTargets(
+    state,
+    state.players[0],
+    { targeting: "single_enemy" },
+    [state.players[1]],
+    { retargetToId: "P3" }
+  );
+
+  expect(result.map((p) => p.id)).toEqual(["P3"]);
 });

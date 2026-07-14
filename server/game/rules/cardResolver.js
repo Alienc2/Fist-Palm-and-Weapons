@@ -3,7 +3,11 @@
 const { isWithinRange } = require("./distance");
 const { getFacingModifiers } = require("./facing");
 const { getAdvantageModifiers } = require("./advantage");
-const { getTargets } = require("./targetingResolver");
+const {
+  getTargets,
+  isTargetStillLegal,
+  retargetDeclaredTargets,
+} = require("./targetingResolver");
 const { buyFromShop } = require("./shopResolver");
 
 function log(state, msg) {
@@ -15,15 +19,26 @@ function getOpponent(state, attackerId) {
 }
 
 function resolveAttack(state, attacker, card, extra = {}) {
-  const targets = getTargets(state, attacker, card, extra);
-  if (!targets.length) {
+  let declaredTargets = getTargets(state, attacker, card, extra);
+  declaredTargets = retargetDeclaredTargets(state, attacker, card, declaredTargets, extra);
+
+  if (!declaredTargets.length) {
     log(state, `${attacker.id} 使用 ${card.id}，但沒有合法目標`);
+    return;
+  }
+
+  const legalTargets = declaredTargets.filter((target) =>
+    isTargetStillLegal(state, attacker, card, target)
+  );
+
+  if (!legalTargets.length) {
+    log(state, `${attacker.id} 使用 ${card.id}，但目標已失效`);
     return;
   }
 
   attacker.lastRevealedSubtype = card.subtype || "unknown";
 
-  for (const opponent of targets) {
+  for (const opponent of legalTargets) {
     if (!isWithinRange(attacker.position, opponent.position, card.rangeMin, card.rangeMax)) {
       log(state, `${attacker.id} 使用 ${card.id} 指向 ${opponent.id}，但距離不符`);
       continue;
