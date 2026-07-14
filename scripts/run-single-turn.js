@@ -8,7 +8,8 @@ const { createMatch, submitSelection, playOneTurn } = gameEngine;
 function getCard(cardId) {
   const card = cards.find((item) => item.id === cardId);
   if (!card) {
-    throw new Error(`找不到 card: ${cardId}`);
+    const availableIds = cards.slice(0, 20).map((item) => item.id).join(", ");
+    throw new Error(`找不到 card: ${cardId}；可用 card id 範例：${availableIds}`);
   }
   return card;
 }
