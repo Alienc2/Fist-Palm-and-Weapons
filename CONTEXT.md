@@ -343,3 +343,39 @@ Verified by:
 Result:
 - 5 / 5 suites passed
 - 57 / 57 tests passed
+
+## SLICE-37 single-turn debug runner
+
+### Verified local command
+```powershell
+node .\scripts\run-single-turn.js
+```
+
+### Current purpose
+A local single-turn rules verification entrypoint for Windows 11 + VS Code PowerShell.
+
+### Data dependency
+Card data used by runtime must be regenerated before local runner verification.
+
+Current workflow:
+1. Update card source data
+2. Run:
+   ```powershell
+   node .\scripts\build-data.js
+   ```
+3. Then run:
+   ```powershell
+   node .\scripts\run-single-turn.js
+   ```
+
+### Verified scenario
+- P1 selects `basic_move_1` with `extra: { dx: 1, dy: 0 }`
+- P2 selects `basic_guard_2` with `extra: {}`
+- Result:
+  - P1 moves from `(1,1)` to `(2,1)`
+  - P2 defense is applied
+  - Turn log shows both actions
+
+### Important note
+Do not assume card ids from historical CSV/JSON versions.
+Always regenerate JSON from the latest card data before debugging runner behavior.
