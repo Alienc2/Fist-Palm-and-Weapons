@@ -10,7 +10,8 @@
   "scripts": {
     "build:data": "node scripts/build-data.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:rules": "jest --runInBand tests/rules"
+    "test:rules": "jest --runInBand tests/rules",
+    "debug:turn": "node scripts/run-single-turn.js"
   },
   "repository": {
     "type": "git",
