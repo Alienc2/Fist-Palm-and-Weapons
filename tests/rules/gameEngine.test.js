@@ -192,14 +192,24 @@ describe("shopResolver / buy 流程", () => {
       mpCost: 0,
     };
 
-    const targetShopCard = state.shop.cards.find((card) => card.stock > 0 && card.buyCost >= 0);
-    expect(targetShopCard).toBeTruthy();
+    state.shop.cards = [
+      {
+        id: "test_shop_card_1",
+        type: "recover",
+        subtype: "shop",
+        name_zh: "測試商店卡 1",
+        group: "shop",
+        buyCost: 2,
+        stock: 3,
+      },
+    ];
 
+    const targetShopCard = state.shop.cards[0];
     const beforeStock = targetShopCard.stock;
     const beforeDiscard = p1.discard.length;
     const beforeMp = p1.mp;
 
-    submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);
+    submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);    
     submitSelection(state, "P2", []);
 
     playOneTurn(state);
@@ -225,12 +235,21 @@ describe("shopResolver / buy 流程", () => {
       mpCost: 0,
     };
 
-    const expensiveShopCard = state.shop.cards.find((card) => card.buyCost > 0);
-    expect(expensiveShopCard).toBeTruthy();
+    state.shop.cards = [
+      {
+        id: "test_shop_card_2",
+        type: "recover",
+        subtype: "shop",
+        name_zh: "測試商店卡 2",
+        group: "shop",
+        buyCost: 3,
+        stock: 2,
+      },
+    ];
 
+    const expensiveShopCard = state.shop.cards[0];
     const beforeStock = expensiveShopCard.stock;
     const beforeDiscard = p1.discard.length;
-
     submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: expensiveShopCard.id } }]);
     submitSelection(state, "P2", []);
 
@@ -255,10 +274,19 @@ describe("shopResolver / buy 流程", () => {
       mpCost: 0,
     };
 
-    const targetShopCard = state.shop.cards.find((card) => card.stock > 0 && card.buyCost >= 0);
-    expect(targetShopCard).toBeTruthy();
+    state.shop.cards = [
+      {
+        id: "test_shop_card_3",
+        type: "recover",
+        subtype: "shop",
+        name_zh: "測試商店卡 3",
+        group: "shop",
+        buyCost: 1,
+        stock: 0,
+      },
+    ];
 
-    targetShopCard.stock = 0;
+    const targetShopCard = state.shop.cards[0];
     const beforeDiscard = p1.discard.length;
 
     submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);
@@ -280,18 +308,18 @@ describe("advanced edge KO 規則", () => {
     p2.position = { x: 0, y: 2 }; // 邊緣
     p2.hp = 2;
 
-    const advancedAttack = {
-      id: "shop_adv_punch_1",
+    const attackCard = {
+      id: "test_advanced_edge_ko",
       type: "attack",
       subtype: "punch",
-      mpCost: 2,
+      group: "advanced",
       rangeMin: 1,
       rangeMax: 1,
-      damage: 3,
-      keywords: ["advanced"],
+      damage: 1,
+      mpCost: 0,
     };
 
-    submitSelection(state, "P1", [{ card: advancedAttack }]);
+    submitSelection(state, "P1", [{ card: attackCard }]);
     submitSelection(state, "P2", []);
 
     playOneTurn(state);
