@@ -173,3 +173,74 @@ Fist Palm and Weapons
 - 重要修改先補測試，再補功能
 - 每完成重要 slice，更新 `CODEX_HANDOFF.md` 與 `CONTEXT.md`
 - 若規格要改，先改 spec，再改 test，再改 code
+
+## Rules API Contract (authoritative)
+
+### Selection item
+All player selections must use:
+
+```js
+{
+  card: { ...cardData },
+  extra: { ...optionalInputs }
+}
+```
+
+### Resolver signatures
+All card resolvers use:
+
+```js
+resolver(state, player, card, extra)
+```
+
+Current signatures:
+- resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null)
+- resolveDefense(state, player, card, extra = {})
+- resolveMove(state, player, card, extra = {})
+- resolveBuy(state, player, card, extra = {})
+
+### extra payloads
+#### Attack
+```js
+{
+  preferredTargetId?: string,
+  retargetInstruction?: {
+    toTargetId: string
+  }
+}
+```
+
+#### Move
+```js
+{
+  dx: number,
+  dy: number
+}
+```
+
+#### Buy
+```js
+{
+  shopCardId: string
+}
+```
+
+### Deprecated payload shapes
+Do not use:
+- retargetToId
+- moveDecision.dx / moveDecision.dy
+- to.x / to.y for move
+- card.extra
+- resolver-specific ad hoc payload shapes
+
+### Stack boundary
+Currently only:
+- attack
+- counter
+
+go through stackResolver.
+
+Currently these resolve immediately:
+- defense
+- move
+- buy

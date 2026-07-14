@@ -2,6 +2,12 @@
 
 const { resolveAttack, resolveDefense, resolveMove, resolveBuy } = require("./cardResolver");
 const { resolveEliminations } = require("./eliminationResolver");
+const {
+  createStackItem,
+  pushStackItem,
+  resolveStack,
+  findTopCounterableAttack,
+} = require("./stackResolver");
 
 function startRound(state) {
   state.phase = "ROUND_START";
@@ -53,21 +59,25 @@ function resolveTurn(state) {
     const firstCard = attackerFirst.selectedCards[i];
     if (firstCard) {
       resolveCardByType(state, attackerFirst, firstCard);
-      resolveEliminations(state);
     }
 
     const secondCard = attackerSecond.selectedCards[i];
     if (secondCard) {
       resolveCardByType(state, attackerSecond, secondCard);
-      resolveEliminations(state);
     }
   }
 
+  resolveStack(state, {
+    log: (currentState, message) => currentState.log.push(message),
+    resolveAttack,
+  });
+
+  resolveEliminations(state);
   endTurn(state);
   drawPhase(state);
   discardToLimit(state);
   startRound(state);
-}
+  }
 
 function resolveCardByType(state, player, cardEntry) {
   if (!cardEntry || !cardEntry.card) {
@@ -78,15 +88,33 @@ function resolveCardByType(state, player, cardEntry) {
   const card = cardEntry.card;
   const extra = cardEntry.extra || {};
 
+  if (!card.type) {
+    state.log.push(`${player.id} 使用 ${card.id || "unknown_card"} 失敗：缺少 card.type`);
+    return;
+  }
+
   if (card.type === "attack") {
-    resolveAttack(state, player, card, extra);
+    const item = createStackItem(state, player, card, extra);
+    pushStackItem(state, item);
+  } else if (card.type === "counter") {
+    const counterTarget = extra?.targetStackItemId
+      ? { id: extra.targetStackItemId }
+      : findTopCounterableAttack(state);
+
+    const item = createStackItem(state, player, card, {
+      ...extra,
+      targetStackItemId: counterTarget?.id || null,
+    });
+    pushStackItem(state, item);
   } else if (card.type === "defense") {
-    resolveDefense(state, player, card);
-  } else if (card.type === "move") {
-    resolveMove(state, player, card, extra.moveDecision || { dx: 0, dy: 0 });
+    resolveDefense(state, player, card, extra);
+  } else if (card.type === "move" || card.type === "movement") {
+    resolveMove(state, player, card, extra);
   } else if (card.type === "buy") {
-    resolveBuy(state, player, card, extra);
-  } 
+  resolveBuy(state, player, card, extra);
+  } else {
+    state.log.push(`${player.id} 使用 ${card.id || "unknown_card"} 失敗：未知 card.type = ${card.type}`);
+  }
 }
 
 module.exports = {

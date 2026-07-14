@@ -812,3 +812,73 @@ describe("target validity contract", () => {
   ).toBe(true);
 });
 });
+
+describe("counter / stackResolver", () => {
+  test("attack 進 stack 後，若無 counter，結算時仍會造成傷害", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    const hpBefore = p2.hp;
+
+    const attackCard = {
+      id: "test_stack_attack",
+      type: "attack",
+      subtype: "punch",
+      group: "advanced",
+      targeting: "single_enemy",
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 1,
+      mpCost: 0,
+    };
+
+    submitSelection(state, "P1", [{ card: attackCard }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    expect(p2.hp).toBeLessThan(hpBefore);
+    expect(state.log.some((msg) => msg.includes("命中 P2"))).toBe(true);
+  });
+
+    test("attack 被 counter 時，不會造成傷害", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+
+    const hpBefore = p2.hp;
+
+    const attackCard = {
+      id: "test_stack_attack_countered",
+      type: "attack",
+      subtype: "punch",
+      group: "advanced",
+      targeting: "single_enemy",
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 1,
+      mpCost: 0,
+    };
+
+    const counterCard = {
+      id: "test_counter_attack",
+      type: "counter",
+      counterType: "attack",
+      mpCost: 0,
+    };
+
+    submitSelection(state, "P1", [{ card: attackCard }]);
+    submitSelection(state, "P2", [{ card: counterCard }]);
+
+    playOneTurn(state);
+
+    expect(p2.hp).toBe(hpBefore);
+    expect(state.log.some((msg) => msg.includes("反制"))).toBe(true);
+    expect(state.log.some((msg) => msg.includes("被反制"))).toBe(true);
+  });
+});

@@ -14,12 +14,9 @@ function log(state, msg) {
   state.log.push(msg);
 }
 
-function getOpponent(state, attackerId) {
-  return state.players.find((p) => p.id !== attackerId);
-}
-
-function resolveAttack(state, attacker, card, extra = {}) {
-  let declaredTargetSet = declareTargetSet(state, attacker, card, extra);
+function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null) {
+  let declaredTargetSet =
+    incomingDeclaredTargetSet || declareTargetSet(state, attacker, card, extra);
 
   if (!declaredTargetSet.targets.length) {
     log(state, `${attacker.id} 使用 ${card.id}，但沒有合法目標`);
@@ -84,8 +81,7 @@ function resolveAttack(state, attacker, card, extra = {}) {
   }
 }
 
-function resolveDefense(state, player, card) {
-  // 將防禦殘留到回合結束或觸發一次
+function resolveDefense(state, player, card, extra = {}) {
   player.lastDefenseCard = {
     id: card.id,
     blockValue: card.blockValue || 3,
@@ -95,13 +91,21 @@ function resolveDefense(state, player, card) {
   log(state, `${player.id} 使用防禦 ${card.id}，效果殘留至觸發或回合結束`);
 }
 
-function resolveMove(state, player, card, moveDecision) {
-  const { dx, dy } = moveDecision; // {dx, dy}
+function resolveMove(state, player, card, extra = {}) {
+  const dx = Number(extra.dx);
+  const dy = Number(extra.dy);
+
+  if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+    log(state, `${player.id} 移動 ${card.id} 失敗：缺少有效座標`);
+    return;
+  }
+
   const steps = Math.abs(dx) + Math.abs(dy);
   if (steps < card.moveMin || steps > card.moveMax) {
     log(state, `${player.id} 移動 ${card.id} 步數不合法`);
     return;
   }
+
   player.position.x += dx;
   player.position.y += dy;
   player.lastRevealedSubtype = card.subtype || "step";
@@ -112,7 +116,7 @@ function resolveBuy(state, player, card, extra = {}) {
   player.lastRevealedSubtype = card.subtype || "shop";
   log(state, `${player.id} 使用 ${card.id} 進入商店`);
 
-  if (!extra.shopCardId) {
+  if (!extra || !extra.shopCardId) {
     log(state, `${player.id} 未指定要購買的商店卡`);
     return;
   }
@@ -121,9 +125,9 @@ function resolveBuy(state, player, card, extra = {}) {
 }
 
 function resolveCounter(state, defender, card, incomingDamage, incomingSubtype) {
-  // 根據剋制關係決定成功率
-  const { strongAgainst, weakAgainst } = require("./advantage").ADV_TABLE[card.subtype] || {};
-  let successRate = 0.8; // 勢回如潮功通用 80% 可用 keywords 判斷
+  const { strongAgainst, weakAgainst } =
+    require("./advantage").ADV_TABLE[card.subtype] || {};
+  let successRate = 0.8;
 
   if (card.id === "shop_counter_1") {
     successRate = 0.8;
@@ -141,7 +145,7 @@ function resolveCounter(state, defender, card, incomingDamage, incomingSubtype) 
     return { reflected: false, damageToAttacker: 0 };
   }
 
-  const reflectedDamage = incomingDamage * 2; // 簡化：直接 X2，真正連鎖由 stack 處理
+  const reflectedDamage = incomingDamage * 2;
   log(state, `${defender.id} 成功反擊 ${card.id}，反彈 ${reflectedDamage} 傷害`);
   return { reflected: true, damageToAttacker: reflectedDamage };
 }
