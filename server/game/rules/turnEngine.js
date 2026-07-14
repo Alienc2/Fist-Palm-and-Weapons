@@ -79,7 +79,7 @@ function resolveCardByType(state, player, cardEntry) {
   const extra = cardEntry.extra || {};
 
   if (card.type === "attack") {
-    resolveAttack(state, player, card);
+    resolveAttack(state, player, card, extra);
   } else if (card.type === "defense") {
     resolveDefense(state, player, card);
   } else if (card.type === "move") {

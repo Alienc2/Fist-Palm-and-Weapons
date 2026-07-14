@@ -3,6 +3,7 @@
 const { isWithinRange } = require("./distance");
 const { getFacingModifiers } = require("./facing");
 const { getAdvantageModifiers } = require("./advantage");
+const { getTargets } = require("./targetingResolver");
 const { buyFromShop } = require("./shopResolver");
 
 function log(state, msg) {
@@ -13,45 +14,49 @@ function getOpponent(state, attackerId) {
   return state.players.find((p) => p.id !== attackerId);
 }
 
-function resolveAttack(state, attacker, card) {
-  const opponent = getOpponent(state, attacker.id);
-  if (!opponent || opponent.isEliminated) return;
-
-  if (!isWithinRange(attacker.position, opponent.position, card.rangeMin, card.rangeMax)) {
-    log(state, `${attacker.id} 攻擊 ${card.id} 距離不符，失敗`);
+function resolveAttack(state, attacker, card, extra = {}) {
+  const targets = getTargets(state, attacker, card, extra);
+  if (!targets.length) {
+    log(state, `${attacker.id} 使用 ${card.id}，但沒有合法目標`);
     return;
   }
 
-  const facingMod = getFacingModifiers(attacker, opponent);
-  const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
-  const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
-
-  let damage = card.damage + facingMod.damage + advMod.damage;
-  if (damage < 0) damage = 0;
-
-  // 防禦殘留
-  let block = 0;
-  if (opponent.lastDefenseCard) {
-    block = opponent.lastDefenseCard.blockValue || 0;
-    log(state, `${opponent.id} 防禦殘留觸發，阻擋 ${block} 傷害`);
-    opponent.lastDefenseCard = null; // 用一次就清
-  }
-
-  const finalDamage = Math.max(damage - block, 0);
-
-  opponent.hp -= finalDamage;
-  opponent.lastDamageContext = {
-    sourceCardId: card.id,
-    sourceGroup: card.group || null,
-    sourceType: card.type || null,
-  };
-
   attacker.lastRevealedSubtype = card.subtype || "unknown";
 
-  log(
-    state,
-    `${attacker.id} 使用 ${card.id} 命中 ${opponent.id}，造成 ${finalDamage} 傷害（${opponent.hp} HP）`
-  );
+  for (const opponent of targets) {
+    if (!isWithinRange(attacker.position, opponent.position, card.rangeMin, card.rangeMax)) {
+      log(state, `${attacker.id} 使用 ${card.id} 指向 ${opponent.id}，但距離不符`);
+      continue;
+    }
+
+    const facingMod = getFacingModifiers(attacker, opponent);
+    const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
+    const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
+
+    let damage = card.damage + facingMod.damage + advMod.damage;
+    if (damage < 0) damage = 0;
+
+    let block = 0;
+    if (opponent.lastDefenseCard) {
+      block = opponent.lastDefenseCard.blockValue || 0;
+      log(state, `${opponent.id} 的防禦殘留生效，減少 ${block} 傷害`);
+      opponent.lastDefenseCard = null;
+    }
+
+    const finalDamage = Math.max(damage - block, 0);
+
+    opponent.hp -= finalDamage;
+    opponent.lastDamageContext = {
+      sourceCardId: card.id,
+      sourceGroup: card.group || null,
+      sourceType: card.type || null,
+    };
+
+    log(
+      state,
+      `${attacker.id} 使用 ${card.id} 命中 ${opponent.id}，造成 ${finalDamage} 傷害（${opponent.hp} HP）`
+    );
+  }
 }
 
 function resolveDefense(state, player, card) {

@@ -69,7 +69,13 @@ describe("簡單一回合攻擊、防禦、Draw/Discard", () => {
 
     playOneTurn(state);
 
-    expect(state.log.some((msg) => msg.includes("防禦殘留觸發"))).toBe(true);
+    expect(
+      state.log.some(
+        (msg) =>
+          msg.includes("防禦殘留") &&
+          (msg.includes("生效") || msg.includes("減少"))
+      )
+    ).toBe(true);
     state.players.forEach((p) => {
       expect(p.hand.length).toBeLessThanOrEqual(8);
     });
@@ -644,5 +650,67 @@ describe("data-driven initialization", () => {
     expect(allCards.every((card) => card.id)).toBe(true);
     expect(allCards.every((card) => card.type)).toBe(true);
     expect(allCardIds.some((id) => id.startsWith("basic_"))).toBe(true);
+  });
+});
+
+describe("targeting / self_chosen_enemies", () => {
+  test("attack 會優先命中 preferredTargetId 指定的敵人", () => {
+    const state = createMatch();
+    const p1 = state.players[0];
+    const p2 = state.players[1];
+
+    const p3 = {
+      ...JSON.parse(JSON.stringify(p2)),
+      id: "P3",
+      hp: p2.hp,
+      mp: p2.mp,
+      isEliminated: false,
+      position: { x: 1, y: 2 },
+      hand: [],
+      deck: [],
+      discard: [],
+      selectedCards: [],
+      lastDefenseCard: null,
+      lastRevealedSubtype: null,
+      lastDamageContext: null,
+    };
+
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 3, y: 3 };
+    p3.position = { x: 1, y: 2 };
+
+    state.players = [p1, p2, p3];
+
+    const p2HpBefore = p2.hp;
+    const p3HpBefore = p3.hp;
+
+    const attackCard = {
+      id: "test_targeted_attack",
+      type: "attack",
+      subtype: "punch",
+      group: "advanced",
+      targeting: "self_chosen_enemies",
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 1,
+      mpCost: 0,
+    };
+
+    submitSelection(state, "P1", [
+      {
+        card: attackCard,
+        extra: { preferredTargetId: "P3" },
+      },
+    ]);
+    submitSelection(state, "P2", []);
+    submitSelection(state, "P3", []);
+
+    playOneTurn(state);
+
+    expect(p2.hp).toBe(p2HpBefore);
+    expect(p3.hp).toBeLessThan(p3HpBefore);
+    expect(
+      state.log.some((msg) => msg.includes("命中 P3"))
+    ).toBe(true);
   });
 });
