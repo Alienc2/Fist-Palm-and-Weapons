@@ -252,3 +252,94 @@ For move-related logs, expected coordinates must be derived from:
 - extra.dy
 
 Do not hardcode legacy coordinates copied from pre-consolidation payloads.
+
+## FIX-36 contract consolidation (2026-07-14)
+
+Rules layer has been consolidated to a single internal payload contract.
+
+### Authoritative selection item
+```js
+{
+  card: { ...cardData },
+  extra: { ...optionalInputs }
+}
+```
+
+### Authoritative resolver signature
+```js
+resolver(state, player, card, extra)
+```
+
+Current resolver usage:
+- resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null)
+- resolveDefense(state, player, card, extra = {})
+- resolveMove(state, player, card, extra = {})
+- resolveBuy(state, player, card, extra = {})
+
+### Authoritative extra payloads
+#### Attack
+```js
+{
+  preferredTargetId?: string,
+  retargetInstruction?: {
+    toTargetId: string
+  }
+}
+```
+
+#### Move
+```js
+{
+  dx: number,
+  dy: number
+}
+```
+
+#### Buy
+```js
+{
+  shopCardId: string
+}
+```
+
+#### Defense
+```js
+{}
+```
+
+### Deprecated payload shapes
+Do not use:
+- moveDecision
+- retargetToId
+- selectedShopCardId
+- to.x / to.y for move
+- card.extra
+- resolver-specific ad hoc payload shapes
+
+### Stack boundary
+Currently these go through stackResolver:
+- attack
+- counter
+
+Currently these resolve immediately:
+- defense
+- move
+- buy
+
+### Test expectation note
+Move-related log expectations must be derived from:
+- initial position
+- extra.dx
+- extra.dy
+
+Do not keep legacy coordinates copied from pre-consolidation tests.
+
+### Validation
+Verified by:
+- npx jest --runInBand tests/rules/gameEngine.test.js -t "move 規則"
+- npx jest --runInBand tests/rules/gameEngine.test.js -t "resolveTurn 交錯揭牌順序"
+- npm run test:rules
+
+Result:
+- 5 / 5 suites passed
+- 57 / 57 tests passed
