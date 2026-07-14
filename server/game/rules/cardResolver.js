@@ -96,7 +96,7 @@ function resolveMove(state, player, card, extra = {}) {
   const dy = Number(extra.dy);
 
   if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
-    log(state, `${player.id} 移動 ${card.id} 失敗：缺少有效座標`);
+    log(state, `${player.id} 移動 ${card.id} 失敗：缺少 extra.dx / extra.dy`);
     return;
   }
 

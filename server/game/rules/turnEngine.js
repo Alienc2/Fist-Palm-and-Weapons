@@ -108,10 +108,10 @@ function resolveCardByType(state, player, cardEntry) {
     pushStackItem(state, item);
   } else if (card.type === "defense") {
     resolveDefense(state, player, card, extra);
-  } else if (card.type === "move" || card.type === "movement") {
+  } else if (card.type === "move") {
     resolveMove(state, player, card, extra);
   } else if (card.type === "buy") {
-  resolveBuy(state, player, card, extra);
+    resolveBuy(state, player, card, extra);
   } else {
     state.log.push(`${player.id} 使用 ${card.id || "unknown_card"} 失敗：未知 card.type = ${card.type}`);
   }

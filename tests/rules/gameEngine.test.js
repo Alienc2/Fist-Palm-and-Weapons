@@ -128,9 +128,7 @@ describe("move 規則", () => {
       moveMax: 1,
     };
 
-    submitSelection(state, "P1", [
-      { card: moveCard, extra: { moveDecision: { dx: 1, dy: 0 } } },
-    ]);
+    submitSelection(state, "P1", [{ card: moveCard, extra: { dx: 1, dy: 0 } }]);
     submitSelection(state, "P2", []);
 
     playOneTurn(state);
@@ -153,7 +151,7 @@ describe("move 規則", () => {
     };
 
     submitSelection(state, "P1", [
-      { card: moveCard, extra: { moveDecision: { dx: 2, dy: 0 } } },
+      { card: moveCard, extra: { dx: 2, dy: 0 } },
     ]);
     submitSelection(state, "P2", []);
 
@@ -558,13 +556,13 @@ describe("resolveTurn 交錯揭牌順序", () => {
     };
 
     submitSelection(state, "P1", [
-      { card: p1Move, extra: { moveDecision: { dx: 1, dy: 0 } } },
+      { card: p1Move, extra: { dx: 1, dy: 0 } },
       { card: p1Buy },
     ]);
 
     submitSelection(state, "P2", [
       { card: p2Defense },
-      { card: p2Move, extra: { moveDecision: { dx: -1, dy: 0 } } },
+      { card: p2Move, extra: { dx: -1, dy: 0 } },
     ]);
 
     playOneTurn(state);

@@ -244,3 +244,11 @@ Currently these resolve immediately:
 - defense
 - move
 - buy
+
+### Test expectation note
+For move-related logs, expected coordinates must be derived from:
+- initial position
+- extra.dx
+- extra.dy
+
+Do not hardcode legacy coordinates copied from pre-consolidation payloads.
