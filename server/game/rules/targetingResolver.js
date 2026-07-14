@@ -58,6 +58,10 @@ module.exports = {
   getCrossEnemyTargets,
   isTargetStillLegal,
   retargetDeclaredTargets,
+  declareTargetSet,
+  hydrateDeclaredTargets,
+  validateDeclaredTargets,
+  applyRetargetInstruction,
   getTargets,
 };
 
@@ -136,3 +140,71 @@ function retargetDeclaredTargets(state, sourcePlayer, card, declaredTargets, ext
   return [candidate];
 }
 
+function declareTargetSet(state, sourcePlayer, card, extra = {}) {
+  const rawTargets = getTargets(state, sourcePlayer, card, extra);
+
+  return {
+    targeting: card.targeting || "single_enemy",
+    requiredTargets: card.requiredTargets ?? 1,
+    allowPartialResolution: card.allowPartialResolution ?? true,
+    targets: rawTargets.map((target) => ({ id: target.id })),
+  };
+}
+
+function hydrateDeclaredTargets(state, declaredTargetSet) {
+  return declaredTargetSet.targets
+    .map((targetRef) => state.players.find((p) => p.id === targetRef.id))
+    .filter(Boolean);
+}
+
+function validateDeclaredTargets(state, sourcePlayer, card, declaredTargetSet) {
+  const hydratedTargets = hydrateDeclaredTargets(state, declaredTargetSet);
+
+  const legalTargets = hydratedTargets.filter((target) =>
+    isTargetStillLegal(state, sourcePlayer, card, target)
+  );
+
+  const requiredTargets = declaredTargetSet.requiredTargets ?? 1;
+  const allowPartialResolution = declaredTargetSet.allowPartialResolution ?? true;
+
+  if (allowPartialResolution) {
+    return {
+      isValid: legalTargets.length > 0,
+      legalTargets,
+      invalidTargetIds: declaredTargetSet.targets
+        .map((t) => t.id)
+        .filter((id) => !legalTargets.some((target) => target.id === id)),
+    };
+  }
+
+  return {
+    isValid: legalTargets.length >= requiredTargets,
+    legalTargets: legalTargets.length >= requiredTargets ? legalTargets : [],
+    invalidTargetIds: declaredTargetSet.targets
+      .map((t) => t.id)
+      .filter((id) => !legalTargets.some((target) => target.id === id)),
+  };
+}
+
+function applyRetargetInstruction(state, sourcePlayer, card, declaredTargetSet, extra = {}) {
+  if (!extra.retargetInstruction?.toTargetId) {
+    return declaredTargetSet;
+  }
+
+  const candidate = state.players.find(
+    (p) => p.id === extra.retargetInstruction.toTargetId
+  );
+
+  if (!candidate) {
+    return declaredTargetSet;
+  }
+
+  if (!isTargetStillLegal(state, sourcePlayer, card, candidate)) {
+    return declaredTargetSet;
+  }
+
+  return {
+    ...declaredTargetSet,
+    targets: [{ id: candidate.id }],
+  };
+}

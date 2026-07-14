@@ -716,60 +716,99 @@ describe("targeting / self_chosen_enemies", () => {
 });
 
 describe("target invalidation / retargeting", () => {
-  test("attack 帶 retargetToId 時，會改為命中新目標", () => {
-    const state = createMatch();
-    const p1 = state.players[0];
-    const p2 = state.players[1];
+  test("attack 帶 retargetInstruction.toTargetId 時，會改為命中新目標", () => {
+  const state = createMatch();
+  const p1 = state.players[0];
+  const p2 = state.players[1];
 
-    const p3 = {
-      ...JSON.parse(JSON.stringify(p2)),
-      id: "P3",
-      isEliminated: false,
-      hp: 5,
-      position: { x: 1, y: 2 },
-      hand: [],
-      deck: [],
-      discard: [],
-      selectedCards: [],
-      lastDefenseCard: null,
-      lastRevealedSubtype: null,
-      lastDamageContext: null,
-    };
+  const p3 = {
+    ...JSON.parse(JSON.stringify(p2)),
+    id: "P3",
+    isEliminated: false,
+    hp: 5,
+    position: { x: 1, y: 2 },
+    hand: [],
+    deck: [],
+    discard: [],
+    selectedCards: [],
+    lastDefenseCard: null,
+    lastRevealedSubtype: null,
+    lastDamageContext: null,
+  };
 
-    p1.position = { x: 1, y: 1 };
-    p2.position = { x: 3, y: 3 };
-    p3.position = { x: 1, y: 2 };
+  p1.position = { x: 1, y: 1 };
+  p2.position = { x: 3, y: 3 };
+  p3.position = { x: 1, y: 2 };
 
-    state.players = [p1, p2, p3];
+  state.players = [p1, p2, p3];
 
-    const p2HpBefore = p2.hp;
-    const p3HpBefore = p3.hp;
+  const p2HpBefore = p2.hp;
+  const p3HpBefore = p3.hp;
 
-    const attackCard = {
-      id: "test_retarget_attack",
-      type: "attack",
-      subtype: "punch",
-      group: "advanced",
-      targeting: "single_enemy",
-      rangeMin: 1,
-      rangeMax: 1,
-      damage: 1,
-      mpCost: 0,
-    };
+  const attackCard = {
+    id: "test_retarget_attack",
+    type: "attack",
+    subtype: "punch",
+    group: "advanced",
+    targeting: "single_enemy",
+    rangeMin: 1,
+    rangeMax: 1,
+    damage: 1,
+    mpCost: 0,
+  };
 
-    submitSelection(state, "P1", [
-      {
-        card: attackCard,
-        extra: { retargetToId: "P3" },
+  submitSelection(state, "P1", [
+    {
+      card: attackCard,
+      extra: {
+        retargetInstruction: { toTargetId: "P3" },
       },
-    ]);
-    submitSelection(state, "P2", []);
-    submitSelection(state, "P3", []);
+    },
+  ]);
+  submitSelection(state, "P2", []);
+  submitSelection(state, "P3", []);
 
-    playOneTurn(state);
+  playOneTurn(state);
 
-    expect(p2.hp).toBe(p2HpBefore);
-    expect(p3.hp).toBeLessThan(p3HpBefore);
-    expect(state.log.some((msg) => msg.includes("命中 P3"))).toBe(true);
-  });
+  expect(p2.hp).toBe(p2HpBefore);
+  expect(p3.hp).toBeLessThan(p3HpBefore);
+  expect(state.log.some((msg) => msg.includes("命中 P3"))).toBe(true);
+});
+});
+
+describe("target validity contract", () => {
+  test("當唯一目標不合法時，attack 不會造成傷害並會記錄失敗原因", () => {
+  const state = createMatch();
+  const [p1, p2] = state.players;
+
+  p1.position = { x: 1, y: 1 };
+  p2.position = { x: 1, y: 2 };
+  p2.isEliminated = true;
+
+  const hpBefore = p2.hp;
+
+  const attackCard = {
+    id: "test_invalid_target_attack",
+    type: "attack",
+    subtype: "punch",
+    group: "advanced",
+    targeting: "single_enemy",
+    rangeMin: 1,
+    rangeMax: 1,
+    damage: 1,
+    mpCost: 0,
+  };
+
+  submitSelection(state, "P1", [{ card: attackCard }]);
+  submitSelection(state, "P2", []);
+
+  playOneTurn(state);
+
+  expect(p2.hp).toBe(hpBefore);
+  expect(
+    state.log.some(
+      (msg) => msg.includes("沒有合法目標") || msg.includes("目標已失效")
+    )
+  ).toBe(true);
+});
 });
