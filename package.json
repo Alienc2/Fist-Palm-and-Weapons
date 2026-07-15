@@ -14,7 +14,8 @@
     "debug:turn": "node scripts/run-single-turn.js",
     "debug:turn:move": "node scripts/run-single-turn.js move-vs-defense",
     "debug:turn:attack": "node scripts/run-single-turn.js attack-vs-attack",
-    "debug:turn:buy": "node scripts/run-single-turn.js buy-vs-idle"
+    "debug:turn:buy": "node scripts/run-single-turn.js buy-vs-idle",
+    "verify:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\verify-local.ps1"
   },
   "repository": {
     "type": "git",
