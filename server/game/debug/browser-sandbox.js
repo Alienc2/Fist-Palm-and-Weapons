@@ -1,5 +1,4 @@
-import { getScenarioByName, getScenarioList } from "./scenarios.js";
-import { getAdapterStatus, runScenarioWithRealEngine } from "./browser-engine-adapter.js";
+import { fetchHealth, fetchScenarios } from "./browser-api-adapter.js";
 
 const refs = {
   scenarioSelect: document.querySelector("#scenarioSelect"),
@@ -225,19 +224,36 @@ function bindEvents() {
   refs.themeToggle.addEventListener("click", handleThemeToggle);
 }
 
+import { fetchHealth, fetchScenarios } from "./browser-api-adapter.js";
+
 async function init() {
-  renderScenarioOptions();
-  refs.scenarioSelect.value = "move-vs-defense";
-  renderScenarioDescription();
   renderEmptyState();
   bindEvents();
 
-  const adapterStatus = await getAdapterStatus();
-  refs.adapterModeText.textContent = `Adapter mode: ${adapterStatus.mode}`;
+  try {
+    const health = await fetchHealth();
+    const data = await fetchScenarios();
 
-  if (!adapterStatus.ok) {
-    refs.errorOutput.textContent = adapterStatus.message;
-    setStatus("error", "Adapter unavailable");
+    refs.scenarioSelect.innerHTML = "";
+
+    for (const scenarioName of data.scenarios) {
+      const option = document.createElement("option");
+      option.value = scenarioName;
+      option.textContent = scenarioName;
+      refs.scenarioSelect.appendChild(option);
+    }
+
+    if (data.scenarios.length > 0) {
+      refs.scenarioSelect.value = data.scenarios[0];
+      renderScenarioDescription();
+    }
+
+    refs.adapterModeText.textContent = `Adapter mode: localhost:${health.port}`;
+    setStatus("success", "API ready");
+  } catch (error) {
+    refs.adapterModeText.textContent = "Adapter mode: api-error";
+    refs.errorOutput.textContent = error instanceof Error ? error.message : String(error);
+    setStatus("error", "API unavailable");
   }
 }
 
