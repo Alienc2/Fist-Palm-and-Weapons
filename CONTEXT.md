@@ -379,3 +379,68 @@ Current workflow:
 ### Important note
 Do not assume card ids from historical CSV/JSON versions.
 Always regenerate JSON from the latest card data before debugging runner behavior.
+
+## Debug runner scenarios
+Current local scenarios:
+- move-vs-defense
+- attack-vs-attack
+- buy-vs-idle
+
+Run:
+- node .\scripts\run-single-turn.js <scenario>
+- npm run debug:turn:move
+- npm run debug:turn:attack
+- npm run debug:turn:buy
+
+Always rebuild data first:
+```powershell
+node .\scripts\build-data.js
+```
+
+## SLICE-38 parameterized debug runner
+
+### Local workflow
+Before running any local debug scenario, rebuild generated card data:
+
+```powershell
+node .\scripts\build-data.js
+```
+
+Then run one of:
+
+```powershell
+node .\scripts\run-single-turn.js move-vs-defense
+node .\scripts\run-single-turn.js attack-vs-attack
+node .\scripts\run-single-turn.js buy-vs-idle
+```
+
+### Verified scenarios
+
+#### move-vs-defense
+- P1: `basic_move_1` with `extra: { dx: 1, dy: 0 }`
+- P2: `basic_guard_2`
+- Verified result:
+  - P1 moves from `(1,1)` to `(2,1)`
+  - P2 defense remains active
+  - Log contains move and defense messages
+
+#### attack-vs-attack
+- P1: `basic_punch_1`
+- P2: `basic_palm_1`
+- Verified result:
+  - Both attacks resolve through rules flow
+  - Current default positions cause both attacks to fail due to distance mismatch
+  - Log records range failure for both sides
+
+#### buy-vs-idle
+- P1: `basic_buy` with `extra: { shopCardId: "shop_mp_1" }`
+- P2: no selection
+- Verified result:
+  - P1 spends 2 MP
+  - Purchased card is added to discard
+  - Log records shop entry and purchase success
+
+### Notes
+- `scripts/run-single-turn.js` is the current single-machine rules verification entrypoint.
+- Scenario ids and card ids must stay aligned with the latest generated card data.
+- Re-run `scripts/build-data.js` after card data changes before trusting debug runner output.

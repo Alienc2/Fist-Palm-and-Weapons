@@ -8,69 +8,141 @@ const { createMatch, submitSelection, playOneTurn } = gameEngine;
 function getCard(cardId) {
   const card = cards.find((item) => item.id === cardId);
   if (!card) {
-    const availableIds = cards.slice(0, 20).map((item) => item.id).join(", ");
+    const availableIds = cards.slice(0, 30).map((item) => item.id).join(", ");
     throw new Error(`找不到 card: ${cardId}；可用 card id 範例：${availableIds}`);
   }
   return card;
 }
 
-const {
-  serializeMatchState,
-} = require(path.resolve(__dirname, "../server/game/debug/serializeMatchState"));
+function summarizePlayer(player) {
+  return {
+    id: player.id,
+    hp: player.hp,
+    mp: player.mp,
+    position: player.position,
+    handCount: Array.isArray(player.hand) ? player.hand.length : 0,
+    deckCount: Array.isArray(player.deck) ? player.deck.length : 0,
+    discardCount: Array.isArray(player.discard) ? player.discard.length : 0,
+    lastRevealedSubtype: player.lastRevealedSubtype || null,
+  };
+}
+
+function summarizeShop(state) {
+  if (!Array.isArray(state.shop)) {
+    return [];
+  }
+
+  return state.shop.map((item) => ({
+    id: item.id,
+    stock: item.stock,
+    cost: item.cost,
+  }));
+}
+
+function summarizeState(state) {
+  return {
+    round: state.round ?? null,
+    startingPlayerIndex: state.startingPlayerIndex ?? null,
+    stackCount: Array.isArray(state.stack) ? state.stack.length : 0,
+    players: Array.isArray(state.players) ? state.players.map(summarizePlayer) : [],
+    shop: summarizeShop(state),
+    log: Array.isArray(state.log) ? state.log : [],
+  };
+}
+
+function summarizeSelection(selection) {
+  return selection.map((item) => ({
+    cardId: item.card.id,
+    type: item.card.type,
+    subtype: item.card.subtype,
+    extra: item.extra,
+  }));
+}
 
 function printSection(title, payload) {
   console.log(`\n=== ${title} ===`);
   console.log(JSON.stringify(payload, null, 2));
 }
 
-function main() {
-  const playerConfigs = [
-    { id: "P1", characterId: "hero_1" },
-    { id: "P2", characterId: "hero_2" },
-  ];
+function createScenarios() {
+  return {
+    "move-vs-defense": {
+      description: "P1 移動，P2 防禦",
+      p1Selection: [
+        {
+          card: getCard("basic_move_1"),
+          extra: { dx: 1, dy: 0 },
+        },
+      ],
+      p2Selection: [
+        {
+          card: getCard("basic_guard_2"),
+          extra: {},
+        },
+      ],
+    },
 
-  const state = createMatch({
-    playerConfigs,
-    startingPlayerIndex: 0,
+    "attack-vs-attack": {
+      description: "P1 與 P2 各出 1 張 attack",
+      p1Selection: [
+        {
+          card: getCard("basic_punch_1"),
+          extra: {},
+        },
+      ],
+      p2Selection: [
+        {
+          card: getCard("basic_palm_1"),
+          extra: {},
+        },
+      ],
+    },
+
+    "buy-vs-idle": {
+      description: "P1 使用 buy，P2 不出牌",
+      p1Selection: [
+        {
+          card: getCard("basic_buy"),
+          extra: { shopCardId: "shop_mp_1" },
+        },
+      ],
+      p2Selection: [],
+    },
+  };
+}
+
+function getScenarioName() {
+  return process.argv[2] || "move-vs-defense";
+}
+
+function main() {
+  const scenarioName = getScenarioName();
+  const scenarios = createScenarios();
+  const scenario = scenarios[scenarioName];
+
+  if (!scenario) {
+    throw new Error(
+      `未知 scenario: ${scenarioName}；可用 scenarios: ${Object.keys(scenarios).join(", ")}`
+    );
+  }
+
+  const state = createMatch();
+
+  printSection("Scenario", {
+    name: scenarioName,
+    description: scenario.description,
   });
 
-  const p1Move = getCard("basic_move_1");
-  const p2Defense = getCard("basic_guard_2");
+  printSection("初始 State", summarizeState(state));
+  printSection("P1 Selection", summarizeSelection(scenario.p1Selection));
+  printSection("P2 Selection", summarizeSelection(scenario.p2Selection));
 
-  printSection("初始 State", serializeMatchState(state));
-
-  const p1Selection = [
-    {
-      card: p1Move,
-      extra: { dx: 1, dy: 0 },
-    },
-  ];
-
-  const p2Selection = [
-    {
-      card: p2Defense,
-      extra: {},
-    },
-  ];
-
-  printSection("P1 Selection", p1Selection.map((item) => ({
-    cardId: item.card.id,
-    type: item.card.type,
-    extra: item.extra,
-  })));
-
-  printSection("P2 Selection", p2Selection.map((item) => ({
-    cardId: item.card.id,
-    type: item.card.type,
-    extra: item.extra,
-  })));
-
-  submitSelection(state, "P1", p1Selection);
-  submitSelection(state, "P2", p2Selection);
+  submitSelection(state, "P1", scenario.p1Selection);
+  submitSelection(state, "P2", scenario.p2Selection);
 
   playOneTurn(state);
 
-  printSection("回合後 State", serializeMatchState(state));
+  printSection("回合後 State", summarizeState(state));
 }
 
 main();

@@ -11,7 +11,10 @@
     "build:data": "node scripts/build-data.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:rules": "jest --runInBand tests/rules",
-    "debug:turn": "node scripts/run-single-turn.js"
+    "debug:turn": "node scripts/run-single-turn.js",
+    "debug:turn:move": "node scripts/run-single-turn.js move-vs-defense",
+    "debug:turn:attack": "node scripts/run-single-turn.js attack-vs-attack",
+    "debug:turn:buy": "node scripts/run-single-turn.js buy-vs-idle"
   },
   "repository": {
     "type": "git",
