@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-HK" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FPW Browser Debug Sandbox</title>
+  <link rel="stylesheet" href="./browser-sandbox.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">FPW</div>
+      <div>
+        <h1>Browser Debug Sandbox</h1>
+        <p>Single-turn scenario visualizer for rules debugging.</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button id="themeToggle" class="secondary-button" type="button" aria-label="Toggle theme">
+        Toggle theme
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="app-shell">
+    <aside class="control-panel">
+      <section class="panel">
+        <h2>Scenario</h2>
+        <label class="field-label" for="scenarioSelect">Choose a scenario</label>
+        <select id="scenarioSelect" class="field-control"></select>
+        <p id="scenarioDescription" class="muted-text"></p>
+
+        <div class="button-row">
+          <button id="runButton" class="primary-button" type="button">Run scenario</button>
+          <button id="resetButton" class="secondary-button" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Status</h2>
+        <p id="statusText" class="status-pill status-idle">Idle</p>
+        <p id="adapterModeText" class="muted-text">
+            Adapter mode: unresolved
+        </p>
+        <p class="muted-text">
+            This page should prefer the real engine adapter. If the adapter cannot load, show the failure clearly.
+        </p>
+        </section>
+
+      <section class="panel">
+        <h2>Notes</h2>
+        <ul class="notes-list">
+          <li>Keep the browser contract aligned with CLI scenarios.</li>
+          <li>Do not add gameplay editing UI in this slice.</li>
+          <li>Use Chrome DevTools and VS Code browser debugging for inspection.</li>
+        </ul>
+      </section>
+    </aside>
+
+    <section class="result-panel">
+      <div class="result-grid">
+        <section class="panel">
+          <h2>Initial State</h2>
+          <pre id="initialStateOutput" class="code-block">No data yet.</pre>
+        </section>
+
+        <section class="panel">
+          <h2>P1 Selection</h2>
+          <pre id="p1SelectionOutput" class="code-block">No data yet.</pre>
+        </section>
+
+        <section class="panel">
+          <h2>P2 Selection</h2>
+          <pre id="p2SelectionOutput" class="code-block">No data yet.</pre>
+        </section>
+
+        <section class="panel">
+          <h2>Final State</h2>
+          <pre id="finalStateOutput" class="code-block">No data yet.</pre>
+        </section>
+      </div>
+
+      <section class="panel">
+        <h2>Log</h2>
+        <div id="logOutput" class="log-list">
+          <p class="muted-text">No log yet.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Error</h2>
+        <pre id="errorOutput" class="code-block error-block">No error.</pre>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./browser-sandbox.js"></script>
+</body>
+</html>
