@@ -1,10 +1,50 @@
-# CODEX_HANDOFF.md V6
+# CODEX_HANDOFF.md V7
 
-## 專案名稱
-Fist Palm and Weapons
+## 1. 程式基本資料
+- 名稱：Fist Palm and Weapons
+- 版本：V7
+- 更新日期時間：2026-07-16 18:30 HKT
+- 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
+- 程式類型：回合制卡牌 / 角色對戰遊戲
+- 文件目的：作為交接、進度、驗證、階段規劃的固定入口，方便後續頻繁更新仍保持同一格式
 
-## 目前狀態
-專案目前已完成：
+## 2. 目錄
+1. 程式基本資料
+2. 目錄
+3. 目前專案進度 / 狀態
+4. 最新驗證 / 測試結果
+5. 當前階段
+6. 計劃中的後續 1–10 個階段
+7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
+8. 更新規則
+
+## 3. 目前專案進度 / 狀態
+
+### 3.1 進度總覽
+| 功能 | 主要修改檔案 | 驗證方式 | 是否已完成 |
+|---|---|---|---|
+| 規格文件與核心玩法定義 | `docs/GAME_SPEC.md` | 人工審閱 | 已完成 |
+| CSV → JSON build 流程 | `scripts/build-data.js` | `npm run build:data` | 已完成 |
+| 資料載入與驗證 | `shared/cardLoader.js` | `tests/rules/cardLoader.test.js` | 已完成 |
+| 初始狀態建立 | `server/game/state/createInitialState.js` | `npm run test:rules` | 已完成 |
+| 核心 rules engine | `server/game/rules/*.js` | `tests/rules/gameEngine.test.js` | 已完成 |
+| 單一回合 CLI debug runner | `scripts/run-single-turn.js` | `npm run debug:turn:*` | 已完成 |
+| browser debug sandbox | `server/game/debug/*` | browser 手動驗證 / debug API | 已完成 |
+| browser sandbox 改走 debug API 路線 | `server/game/debug/browser-api-adapter.js`、`server/game/debug/browser-debug-server.js`、`server/game/debug/browser-sandbox.js` | browser + server 端驗證 | 已完成 |
+| `/api/run-scenario` server-side real engine | `server/game/debug/browser-debug-server.js` | API 回應驗證 | 已完成 |
+| generated data 回復版本控制 | `generated/*.json` | repo 檢查 | 已完成 |
+
+### 3.2 已完成但必須鎖定的部份
+以下內容後續更新時不能隨意改，改動前要先同使用者確認：
+- `docs/GAME_SPEC.md` 的核心規則。
+- Rules API Contract。
+- `generated/*.json` 作為資料來源的單一事實來源。
+- `server/game/debug/browser-debug-server.js` 的 `/api/run-scenario` contract。
+- `browser-sandbox.js` 只透過 API adapter 呼叫 scenario，不直接 import engine。
+- move log expectation 必須由 `initial position + extra.dx + extra.dy` 推導。
+- `browser-engine-adapter.js` 只可作 legacy / reference，不可重回主流程。
+
+### 3.3 現階段已完成的內容
 - `docs/GAME_SPEC.md`
 - `data/*.csv` 資料骨架
 - `scripts/build-data.js` 的 CSV → JSON build 流程
@@ -16,68 +56,156 @@ Fist Palm and Weapons
 - browser debug sandbox（server API 跑 real engine）
 - `generated/*.json` 已納入版本控制
 
-目前最新驗證結果（2026-07-16）：
-- `npm run build:data` 通過 [1]
-- `npm run test:rules` 通過 [1]
-- Test Suites: 5 passed, 5 total [1]
-- Tests: 57 passed, 57 total [1]
-- browser sandbox 已成功運行 3 個 scenario，並已從 stub / direct adapter 過渡到 debug API 路線 [1][2]
+### 3.4 現階段重點風險
+- browser 端唔可以再直接 import CommonJS engine。
+- debug sandbox 必須長期維持 API contract 穩定。
+- generated data 一有改動就要 rebuild 再驗證。
+- 任何規則 contract 改動都要先更新 `CONTEXT.md` 再改 code。
 
-## 當前階段
-Phase B：資料正式接入 engine  
-Phase C：規則 contract 收口與 debug runner  
-Phase D（早期）：本地 browser debug sandbox（單回合、server-api-real-engine）
+## 4. 最新驗證 / 測試結果
+- `npm run build:data` 通過。
+- `npm run test:rules` 通過。
+- Test Suites: 5 passed, 5 total。
+- Tests: 57 passed, 57 total。
+- browser sandbox 已成功運行 3 個 scenario。
+- browser sandbox 已切換為 debug API 跑 real engine，再由 UI render 結果。
+- CLI debug runner scenarios 已手動驗證。
 
-狀態：Phase B checkpoint 1 已通過驗證，single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」，不再依賴 browser direct import CommonJS engine。[1][2]
+## 5. 當前階段
+### Phase B
+資料正式接入 engine。
 
-## 今次完成內容
+### Phase C
+規則 contract 收口與 debug runner。
 
-### 1. Phase A 已完成的 rules correctness
-已完成並有測試保護：
-- 曼哈頓距離
-- facing front / side / back 修正
-- 攻擊命中時的防禦殘留
-- 距離不符時不觸發防禦殘留
-- move 合法 / 非法步數
-- buy 基本 log
-- advanced edge KO
-- counter deterministic success rate
-- advantage 真正依 defender / revealed subtype 生效
-- resolveTurn 多張牌交錯揭牌順序
+### Phase D（早期）
+本地 browser debug sandbox（單回合、server-api-real-engine）。
 
-### 2. Phase B 已完成的資料接入
-已建立：
-- `shared/cardLoader.js`
-- `tests/rules/cardLoader.test.js`
+### 當前階段狀態
+- Phase B checkpoint 1 已通過驗證。
+- single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
+- SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」。
+- 不再依賴 browser direct import CommonJS engine。
 
-已接入：
-- `generated/cards.json`
-- `generated/characters.json`
-- `generated/keywords.json`
-- `generated/ai_profiles.json`
-- `generated/combos.json`
+## 6. 計劃中的後續 1–10 個階段
 
-已完成：
-- card / character 最小 validator
-- 由 generated data 建立 starter deck
-- `createInitialState()` 由角色資料初始化 HP / MP / 手牌數
-- 將 hardcoded prototype deck 逐步過渡為 data-driven initialization
-- generated data 已重新納入版本控制，避免交接環境缺檔 [1][2]
+### 1. 補 `/api/run-scenario` 測試
+- valid scenario → `200`
+- unknown scenario → `404`
+- invalid body → `400`
+- engine runtime error → `500`
 
-### 3. Phase C / SLICE-36 合約收口
-已將 rules layer consolidate 成單一 internal payload contract：
+### 2. browser sandbox 文件收口
+- `CONTEXT.md` 標記為 `server-api-real-engine`
+- `browser-engine-adapter.js` 明文標示為 legacy / deprecated
+- shared scenario JSON 明文標示為 single source of truth
 
-- Authoritative selection item：
-  ```js
-  {
-    card: { ...cardData },
-    extra: { ...optionalInputs }
-  }
-  ```
-- Authoritative resolver signature：
-  ```js
-  resolver(state, player, card, extra)
-  ```
+### 3. Phase B 收口
+- starter deck 組裝規則
+- validator 覆蓋
+- data initialization edge-case tests
+- `keywords` / `combos` / `ai_profiles` loader 接口整理
+
+### 4. Phase C 擴充
+- `shopResolver`
+- 真正 buy / MP / stock 流程
+- `stackResolver`
+- `comboResolver`
+
+### 5. targeting / retargeting 正式化
+- target picker
+- retarget 重新選擇
+- attack 選擇流程一致化
+
+### 6. elimination 正式化
+- KO / removal flow
+- death / discard / cleanup
+- log 與 state 統一
+
+### 7. characters passive 接入
+- passive trigger
+- subtype interaction
+- 角色技能與 resolver 對齊
+
+### 8. Phase D 多人同步
+- Socket.IO room / lobby / match
+- online 2P
+- online 3P / 4P
+
+### 9. Phase E 正式 UI
+- board view
+- hand view
+- selected cards view
+- log view
+- shop modal
+- target picker
+- facing picker
+- resolve animation
+
+### 10. Phase F AI 與部署
+- `ai_profiles` 接入
+- AI decision making
+- local run scripts
+- integration / e2e tests
+- deployment flow
+
+## 7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
+
+### 7.1 檔案樹與主要功能
+#### 文件
+- `docs/GAME_SPEC.md`：正式玩法規格。
+- `CODEX_HANDOFF.md`：交接狀態、階段規劃、驗證結果。
+- `CONTEXT.md`：專案當前事實、檔案樹、API、固定程式碼。
+
+#### 資料層
+- `data/cards.csv`：卡牌來源資料。
+- `data/characters.csv`：角色來源資料。
+- `data/keywords.csv`：關鍵字資料。
+- `data/ai_profiles.csv`：AI 資料。
+- `data/combos.csv`：combo 資料。
+- `generated/cards.json`：生成後卡牌資料。
+- `generated/characters.json`：生成後角色資料。
+- `generated/keywords.json`：生成後關鍵字資料。
+- `generated/ai_profiles.json`：生成後 AI 資料。
+- `generated/combos.json`：生成後 combo 資料。
+
+#### 載入層
+- `shared/cardLoader.js`：CSV / JSON 資料載入與最小驗證。
+
+#### 引擎層
+- `server/game/gameEngine.js`：遊戲引擎入口。
+- `server/game/state/createInitialState.js`：初始狀態建立。
+- `server/game/rules/distance.js`：距離規則。
+- `server/game/rules/facing.js`：面向修正。
+- `server/game/rules/advantage.js`：advantage / disadvantage。
+- `server/game/rules/cardResolver.js`：卡牌 resolver。
+- `server/game/rules/turnEngine.js`：回合結算流程。
+
+#### Debug / Sandbox 層
+- `server/game/debug/browser-sandbox.html`：browser debug sandbox UI。
+- `server/game/debug/browser-sandbox.js`：sandbox UI 行為與 result render。
+- `server/game/debug/browser-api-adapter.js`：browser → debug API 的 HTTP adapter。
+- `server/game/debug/browser-debug-server.js`：debug API server / real engine runner。
+- `server/game/debug/scenarios.js`：scenario 資料 re-export / 共用入口。
+
+#### 測試層
+- `tests/rules/gameEngine.test.js`：核心 rules 單元測試。
+- `tests/rules/cardLoader.test.js`：資料載入測試。
+
+### 7.2 共用 API
+#### Rules API Contract
+Selection item：
+```js
+{
+  card: { ...cardData },
+  extra: { ...optionalInputs }
+}
+```
+
+Resolver signature：
+```js
+resolver(state, player, card, extra)
+```
 
 Current resolver usage：
 - `resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null)`
@@ -85,181 +213,66 @@ Current resolver usage：
 - `resolveMove(state, player, card, extra = {})`
 - `resolveBuy(state, player, card, extra = {})`
 
-Authoritative extra payloads：
-- Attack：
-  ```js
-  {
-    preferredTargetId?: string,
-    retargetInstruction?: { toTargetId: string }
-  }
-  ```
-- Move：
-  ```js
-  { dx: number, dy: number }
-  ```
-- Buy：
-  ```js
-  { shopCardId: string }
-  ```
-- Defense：
-  ```js
-  {}
-  ```
+Attack extra：
+```js
+{
+  preferredTargetId?: string,
+  retargetInstruction?: { toTargetId: string }
+}
+```
 
-Deprecated payload shapes（不要再用）：
-- `moveDecision`
-- `retargetToId`
-- `selectedShopCardId`
-- `to.x / to.y` for move
-- `card.extra`
-- resolver-specific ad hoc payload shapes [1][2]
+Move extra：
+```js
+{ dx: number, dy: number }
+```
 
-### 4. SLICE-37 / 38 單回合 CLI debug runner
-- `scripts/run-single-turn.js` 建立 single-turn debug entrypoint
-- 支援 scenarios：
-  - `move-vs-defense`
-  - `attack-vs-attack`
-  - `buy-vs-idle`
-- CLI workflow：
-  1. `node .\scripts\build-data.js`
-  2. `node .\scripts\run-single-turn.js <scenario>`
-  3. 或使用 npm script：`npm run debug:turn:*`
-- browser sandbox 與 CLI runner 目前都以同一組 scenario 概念對照 rules 行為 [1][2]
+Buy extra：
+```js
+{ shopCardId: string }
+```
 
-### 5. SLICE-40C Browser sandbox（API-only adapter 收口）
-新建立：
-- `server/game/debug/browser-sandbox.html`
-- `server/game/debug/browser-sandbox.js`
-- `server/game/debug/browser-api-adapter.js`
-- `server/game/debug/scenarios.js`
-- `server/game/debug/browser-debug-server.js`
+Defense extra：
+```js
+{}
+```
 
-設計意圖：
-- 使用 API-only adapter：
-  - `GET /api/health` → `fetchHealth()`
-  - `GET /api/scenarios` → `fetchScenarios()`
-- sandbox 頁面顯示：
-  - initial state snapshot
-  - P1 / P2 selection
-  - final state snapshot
-  - log / error 區塊
-- 路徑收口：
-  - browser 入口：`http://localhost:<port>/server/game/debug/browser-sandbox.html`
-  - static root：`server/game/debug/*`
-  - scenarios source：`server/game/debug/scenarios.js` [1][2]
+#### Debug API Contract
+`GET /api/health`：
+- 用途：檢查 debug server 是否正常與 port 資訊。
 
-### 6. SLICE-40D real-engine adapter 錯誤確認
-- 曾新增 / 保留 `server/game/debug/browser-engine-adapter.js`，嘗試在 browser 端 dynamic import `../gameEngine.js`。
-- 已實測 browser direct import CommonJS engine 會出現 `ReferenceError: require is not defined`。
-- `browser-sandbox.js` 一度以 stub fallback 防止 UI 卡死，並於 error 區顯示 adapter 錯誤。
-- 此 slice 的主要價值係確認 direct browser import 現有 CommonJS engine 並不可行，後續正式路線應改由 Node debug server 代跑 engine。[1][2]
+`GET /api/scenarios`：
+- 用途：回傳可用 scenario 名單。
 
-### 7. SLICE-40E Browser sandbox via debug API（authoritative）
-已完成的正式收口方向：
-- `server/game/debug/browser-api-adapter.js` 新增 `runScenario(scenarioName)`。
-- browser 改以 `POST /api/run-scenario`、`Content-Type: application/json`、body `{ "scenarioName": "..." }` 呼叫 debug server。
-- `server/game/debug/browser-sandbox.js` 移除 direct engine adapter import，改為只經 API adapter 呼叫 `runScenario()`。
-- `handleRun()` 先跑 API；成功時 render real engine result，並顯示 `Adapter mode: server-api-real-engine`。
-- API 出錯時，才 fallback 到 `runScenarioStub(scenario)`，並顯示 `Adapter mode: stub (api-error)`。
-- `init()` 移除 `getAdapterStatus()` 額外檢查，只保留 health / scenarios API 初始化，避免 page load 時再次觸發 direct engine import。
-- `server/game/debug/browser-debug-server.js` 已補 `POST /api/run-scenario` endpoint，令 browser API call 可以在 server side 用 real game engine 跑 scenario，再回傳 sandbox 需要的 result shape。[1]
+`POST /api/run-scenario`：
+- 用途：由 server side 用 real engine 跑 scenario，回傳 sandbox 需要嘅 result shape。
 
-### 8. 共用 scenario source 與 server-side runner
-已完成：
-- 新增共用 scenario JSON 資料檔，將 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` payload 拆出，方便 CommonJS server 直接讀取同一份資料。
-- 瀏覽器端 `scenarios.js` 改為 re-export 共用 scenario data。
-- debug server 直接 `require` 真實 game engine、共用 scenario data、`generated/cards.json`，不再用 `vm` 轉換 ES module scenario source。
-- 已實作 `hydrateSelection(state, scenarioSelection)`：先由現有 match state 的 player `hand` / `deck` / `discard` / `shop` 搵 card；若找不到，會 fallback 到 `generated/cards.json`。
-- 已實作真實 engine scenario runner：建立 match、保留 `initialState`、提交 P1 / P2 selection、執行 `playOneTurn(state)`，再回傳指定 JSON shape。[1]
-
-### 9. `/api/run-scenario` contract
-成功 response shape：
+Request body：
 ```json
+{ "scenarioName": "move-vs-defense" }
+```
+
+Response shape：
+```js
 {
-  "ok": true,
-  "adapterMode": "server-api-real-engine",
-  "scenario": { "name": "move-vs-defense", "description": "..." },
-  "initialState": { "...": "..." },
-  "p1Selection": [ ... ],
-  "p2Selection": [ ... ],
-  "finalState": { "...": "..." },
-  "log": [ "..." ],
-  "error": null
+  ok: true,
+  adapterMode: "server-api-real-engine",
+  scenario,
+  initialState,
+  p1Selection,
+  p2Selection,
+  finalState,
+  log,
+  error: null
 }
 ```
 
-錯誤行為：
-- invalid JSON / payload format → `400`
-- unknown scenario → `404`
-- engine runtime error → `500`
+#### Scenario source contract
+- browser / server / CLI 必須共用同一份 scenario 概念。
+- `server/game/debug/scenarios.js` 只可作 re-export / 包裝。
+- scenario 名稱要與 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` 對齊。
 
-另已補 `readJsonBody(req)` helper，帶 body size 限制，驗證 request body 必須係 `{ "scenarioName": "move-vs-defense" }` 呢類格式。[1]
-
-### 10. Git checkpoints
-已記錄的最新相關 git checkpoint：
-- `737b1b1`：補回 `generated/*.json`，修復 generated data 版本控制 [1]
-- `3fcfb74`：`Add real-engine scenario API route` [1]
-- `4baded7`：`Route browser sandbox scenarios through debug API` [1]
-
-### 11. 已修正問題
-- debug server 原本用錯 `ROOT_DIR` / `debug` 路徑，現已統一指向 repo root + `server/game/debug`。[2]
-- browser sandbox 曾誤導成優先 real engine adapter；現已正式收口為 debug API 主流程。[1][2]
-- browser direct import CommonJS engine 導致 `require is not defined`，現已以 server-side engine route 取代。[1]
-
-## 目前測試覆蓋
-- `npm run build:data` → 通過 [1]
-- `npm run test:rules` → 5 suites, 57 tests 全部通過 [1]
-- CLI debug runner scenarios 已手動驗證 [1][2]
-- browser sandbox 已成功運行 3 個 scenario [1]
-- browser sandbox 已切換為 debug API 跑 real engine，再由 UI render 結果 [1]
-
-## 建議下一步（最安全順序）
-
-### 1. 先補 `POST /api/run-scenario` 測試
-- 補最少 integration / smoke test：
-  - valid scenario → `200`
-  - unknown scenario → `404`
-  - invalid body → `400`
-- 測試要在 VS Code PowerShell 可重現，避免只靠手動 browser 點擊驗證。[1]
-
-### 2. 將 browser sandbox 文件正式對齊新架構
-- `CONTEXT.md` 標記 Browser Debug Sandbox architecture 已改成 `server-api-real-engine`。
-- 明文標示 `browser-engine-adapter.js` 屬 legacy / deprecated experiment，不再作主流程。
-- 明文標示 shared scenario JSON 為 single source of truth。[1]
-
-### 3. 回到 Phase B / Phase C 主線
-- starter deck 組裝規則
-- validator 覆蓋
-- data initialization edge-case tests
-- `keywords` / `combos` / `ai_profiles` loader 接口
-- shopResolver / stackResolver / comboResolver
-- targeting / elimination / passive 收口 [1][2]
-
-### 4. 之後再進 Phase D 正式 UI
-- Socket.IO room / match lifecycle
-- board / hand / log UI（正式遊戲界面，而唔係 debug sandbox）
-- online 2P / 3P / 4P
-- AI [1][2]facing picker
-- resolve animation
-
-#### Phase F：AI 與部署
-- `ai_profiles` 接入
-- AI decision making
-- local run scripts
-- integration / e2e tests
-- deployment flow
-
-## 工作規則
-- 規則或資料模型有重大改動前，先對照 `docs/GAME_SPEC.md`
-- 重要修改先補測試，再補功能
-- 每完成重要 slice，更新 `CODEX_HANDOFF.md` 與 `CONTEXT.md`
-- 若規格要改，先改 spec，再改 test，再改 code [1]
-
-## Rules API Contract (authoritative)
-
-### Selection item
-All player selections must use:
-
+### 7.3 需要固定使用的程式碼
+#### Selection item 固定格式
 ```js
 {
   card: { ...cardData },
@@ -267,159 +280,44 @@ All player selections must use:
 }
 ```
 
-### Resolver signatures
-All card resolvers use:
-
+#### Move 固定格式
 ```js
-resolver(state, player, card, extra)
+{ dx: number, dy: number }
 ```
 
-Current signatures:
-- resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null)
-- resolveDefense(state, player, card, extra = {})
-- resolveMove(state, player, card, extra = {})
-- resolveBuy(state, player, card, extra = {}) [1][2]
+#### Buy 固定格式
+```js
+{ shopCardId: string }
+```
 
-### extra payloads
-#### Attack
+#### Attack 固定格式
 ```js
 {
   preferredTargetId?: string,
-  retargetInstruction?: {
-    toTargetId: string
-  }
+  retargetInstruction?: { toTargetId: string }
 }
 ```
 
-#### Move
-```js
-{
-  dx: number,
-  dy: number
-}
-```
-
-#### Buy
-```js
-{
-  shopCardId: string
-}
-```
-
-#### Defense
+#### Defense 固定格式
 ```js
 {}
 ```
 
-### Deprecated payload shapes
-Do not use:
-- retargetToId
-- moveDecision
-- moveDecision.dx / moveDecision.dy
-- selectedShopCardId
-- to.x / to.y for move
-- card.extra
-- resolver-specific ad hoc payload shapes [1][2]
+#### 必用 helper / 行為
+- `hydrateSelection(state, scenarioSelection)`：server side 由現有 state 或 generated cards 補回 card 物件。
+- `readJsonBody(req)`：debug server 讀 request body 時必須驗證 JSON 與 size limit。
+- `renderResult(result)`：browser sandbox 顯示 initial / p1 / p2 / final / log / error。
+- `setStatus(type, text)`：browser sandbox 狀態統一顯示。
 
-### Stack boundary
-Currently only:
-- attack
-- counter
+#### 不可自行改動的固定習慣
+- move log expectation 一律由起始座標與 `dx / dy` 推導。
+- browser 端不直接 import CommonJS engine。
+- real engine 只可經 debug server API 呼叫。
+- generated data 變更後，先 rebuild 再驗證。
 
-go through stackResolver.
-
-Currently these resolve immediately:
-- defense
-- move
-- buy [1][2]
-
-### Test expectation note
-For move-related logs, expected coordinates must be derived from:
-- initial position
-- extra.dx
-- extra.dy
-
-Do not hardcode legacy coordinates copied from pre-consolidation payloads.[1]
-
-## FIX-36 contract consolidation (2026-07-14)
-
-Rules layer has been consolidated to a single internal payload contract.
-
-### Authoritative selection item
-```js
-{
-  card: { ...cardData },
-  extra: { ...optionalInputs }
-}
-```
-
-### Authoritative resolver signature
-```js
-resolver(state, player, card, extra)
-```
-
-Current resolver usage:
-- resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null)
-- resolveDefense(state, player, card, extra = {})
-- resolveMove(state, player, card, extra = {})
-- resolveBuy(state, player, card, extra = {})
-
-### Authoritative extra payloads
-#### Attack
-```js
-{
-  preferredTargetId?: string,
-  retargetInstruction?: {
-    toTargetId: string
-  }
-}
-```
-
-#### Move
-```js
-{
-  dx: number,
-  dy: number
-}
-```
-
-#### Buy
-```js
-{
-  shopCardId: string
-}
-```
-
-#### Defense
-```js
-{}
-```
-
-### Deprecated payload shapes
-Do not use:
-- moveDecision
-- retargetToId
-- selectedShopCardId
-- to.x / to.y for move
-- card.extra
-- resolver-specific ad hoc payload shapes
-
-### Stack boundary
-Currently these go through stackResolver:
-- attack
-- counter
-
-Currently these resolve immediately:
-- defense
-- move
-- buy
-
-### Validation
-Verified by:
-- `npx jest --runInBand tests/rules/gameEngine.test.js -t "move 規則"`
-- `npx jest --runInBand tests/rules/gameEngine.test.js -t "resolveTurn 交錯揭牌順序"`
-- `npm run test:rules`
-
-Result:
-- 5 / 5 suites passed
-- 57 / 57 tests passed [1]
+## 8. 更新規則
+- 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。
+- 任何 LOCKED 項目要改動前，先同使用者確認。
+- 若規格改動，先改 `docs/GAME_SPEC.md`，再改 test，再改 code。
+- 重大 slice 完成後，更新 `CODEX_HANDOFF.md` 同 `CONTEXT.md`。
+- 保持相同 heading 編號與順序，避免未來自動化或人工 review 時格式漂移。
