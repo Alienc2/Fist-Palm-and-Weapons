@@ -1,0 +1,52 @@
+[
+  {
+    "id": "basic",
+    "category": "group",
+    "description": "基本卡牌"
+  },
+  {
+    "id": "shop",
+    "category": "group",
+    "description": "商店卡牌"
+  },
+  {
+    "id": "melee",
+    "category": "range",
+    "description": "近身攻擊"
+  },
+  {
+    "id": "ranged",
+    "category": "range",
+    "description": "遠程攻擊"
+  },
+  {
+    "id": "guard",
+    "category": "effect",
+    "description": "防禦效果"
+  },
+  {
+    "id": "counter",
+    "category": "effect",
+    "description": "反擊效果"
+  },
+  {
+    "id": "dash",
+    "category": "effect",
+    "description": "高速移動"
+  },
+  {
+    "id": "persist_guard",
+    "category": "effect",
+    "description": "防禦殘留到被觸發或回合結束"
+  },
+  {
+    "id": "advanced",
+    "category": "effect",
+    "description": "進階攻擊，可觸發擊出場外判定"
+  },
+  {
+    "id": "combo_trigger",
+    "category": "effect",
+    "description": "可用於連續技條件"
+  }
+]

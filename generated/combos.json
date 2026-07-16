@@ -1,0 +1,52 @@
+[
+  {
+    "id": "combo_same_attack_3",
+    "combo_type": "sequence",
+    "required_cards": "type:attack;count:3",
+    "required_board_pattern": "none",
+    "effect_type": "damage_bonus",
+    "effect_params": "{\\\"last_attack_bonus\\\":1}",
+    "duration": "instant",
+    "description": "連續3張攻擊，第3下攻擊傷害+1。"
+  },
+  {
+    "id": "combo_punch_palm_weapon",
+    "combo_type": "sequence",
+    "required_cards": "subtype:punch>palm>weapon",
+    "required_board_pattern": "none",
+    "effect_type": "defense_down",
+    "effect_params": "{\\\"value\\\":0.15}",
+    "duration": "round",
+    "description": "順序拳、掌、武器，本回合目標防禦成功率-15%。"
+  },
+  {
+    "id": "combo_move_3",
+    "combo_type": "sequence",
+    "required_cards": "type:move;count:3",
+    "required_board_pattern": "none",
+    "effect_type": "dodge_up",
+    "effect_params": "{\\\"value\\\":0.15}",
+    "duration": "round",
+    "description": "連續3張移動，本回合閃避率+15%。"
+  },
+  {
+    "id": "combo_defense_3",
+    "combo_type": "sequence",
+    "required_cards": "type:defense;count:3",
+    "required_board_pattern": "none",
+    "effect_type": "guard_up",
+    "effect_params": "{\\\"value\\\":0.15}",
+    "duration": "round",
+    "description": "連續3張防禦，本回合防禦成功率+15%。"
+  },
+  {
+    "id": "combo_p_p_advp_advpalm",
+    "combo_type": "sequence",
+    "required_cards": "subtype:punch>palm>advanced_punch>advanced_palm",
+    "required_board_pattern": "none",
+    "effect_type": "range_damage_bonus",
+    "effect_params": "{\\\"range_bonus\\\":1,\\\"damage_bonus\\\":1}",
+    "duration": "instant",
+    "description": "拳、掌、進階拳、進階掌，第4下距離+1、傷害+1。"
+  }
+]

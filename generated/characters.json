@@ -1,0 +1,50 @@
+[
+  {
+    "id": "char_attack",
+    "name_zh": "破軍",
+    "role": "attack",
+    "initial_hp": "9",
+    "initial_mp": "3",
+    "initial_hand_size": "4",
+    "token_color": "red",
+    "passive_id": "front_damage_bonus",
+    "passive_params": "{\\\"value\\\":1}",
+    "description": "正面攻擊傷害+1。"
+  },
+  {
+    "id": "char_defense",
+    "name_zh": "玄武",
+    "role": "defense",
+    "initial_hp": "12",
+    "initial_mp": "2",
+    "initial_hand_size": "4",
+    "token_color": "blue",
+    "passive_id": "front_defense_bonus",
+    "passive_params": "{\\\"value\\\":1}",
+    "description": "正面防禦加成+1。"
+  },
+  {
+    "id": "char_move",
+    "name_zh": "飛翎",
+    "role": "move",
+    "initial_hp": "8",
+    "initial_mp": "4",
+    "initial_hand_size": "5",
+    "token_color": "green",
+    "passive_id": "free_facing_change",
+    "passive_params": "{\\\"per_round\\\":1}",
+    "description": "每回合免費轉向1次。"
+  },
+  {
+    "id": "char_balanced",
+    "name_zh": "無鋒",
+    "role": "balanced",
+    "initial_hp": "10",
+    "initial_mp": "3",
+    "initial_hand_size": "4",
+    "token_color": "yellow",
+    "passive_id": "first_shop_discount",
+    "passive_params": "{\\\"mp_discount\\\":1}",
+    "description": "本局首次購買咭牌費用-1MP。"
+  }
+]

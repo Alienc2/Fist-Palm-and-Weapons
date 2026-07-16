@@ -108,8 +108,8 @@ Fist Palm and Weapons
 #### Testing
 最新驗證結果：
 - `npm run test:rules`
-- Test Suites: 2 passed, 2 total
-- Tests: 22 passed, 22 total
+- Test Suites: 5 passed, 5 total
+- Tests: 57 passed, 57 total
 
 ### 當前限制
 1. starter deck 組裝規則仍然簡化

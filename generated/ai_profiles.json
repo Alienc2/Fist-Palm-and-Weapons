@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ai_normal",
+    "name_zh": "標準AI",
+    "difficulty": "normal",
+    "attack_weight": "1.0",
+    "defense_weight": "1.0",
+    "move_weight": "1.0",
+    "buy_weight": "0.8",
+    "recover_weight": "0.8",
+    "combo_weight": "0.5",
+    "description": "標準平衡型 AI。"
+  }
+]

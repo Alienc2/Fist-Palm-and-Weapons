@@ -2,7 +2,7 @@
 node_modules/
 
 # Build 輸出（CSV → JSON）
-generated/
+
 
 # Logs
 npm-debug.log*
