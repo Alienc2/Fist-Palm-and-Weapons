@@ -1,12 +1,14 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
 
 const gameEngine = require("../gameEngine");
+const scenarios = require("./scenario-data.json");
+const generatedCards = require("../../../generated/cards.json");
 
 const ROOT_DIR = path.resolve(__dirname, "../../..");
 const PORT_START = Number(process.env.PORT || 3001);
+const MAX_JSON_BODY_BYTES = 1024 * 16;
 
 const MIME_TYPES = {
   ".html": "text/html; charset=UTF-8",
@@ -33,43 +35,11 @@ function sendJson(res, statusCode, data) {
 }
 
 function getScenarios() {
-  const scenariosPath = path.join(
-    ROOT_DIR,
-    "server",
-    "game",
-    "debug",
-    "scenarios.js"
-  );
-  const source = fs.readFileSync(scenariosPath, "utf8");
-  const names = [];
-  const regex = /"([^"]+)":\s*{/g;
-  let match;
-  while ((match = regex.exec(source))) {
-    names.push(match[1]);
-  }
-  return names;
-}
-
-function loadScenarioMap() {
-  const scenariosPath = path.join(
-    ROOT_DIR,
-    "server",
-    "game",
-    "debug",
-    "scenarios.js"
-  );
-  const source = fs.readFileSync(scenariosPath, "utf8");
-  const scriptSource = source
-    .replace("export const scenarios =", "const scenarios =")
-    .replace(/export function getScenarioList\(\) \{[\s\S]*?\n\}/, "")
-    .replace(/export function getScenarioByName\(name\) \{[\s\S]*?\n\}/, "")
-    .concat("\nscenarios;");
-
-  return vm.runInNewContext(scriptSource, {}, { filename: scenariosPath });
+  return Object.keys(scenarios);
 }
 
 function getScenarioByName(scenarioName) {
-  return loadScenarioMap()[scenarioName] || null;
+  return scenarios[scenarioName] || null;
 }
 
 function summarizePlayer(player) {
@@ -154,10 +124,20 @@ function buildCardLookupFromState(state) {
     }
   }
 
+  for (const card of generatedCards) {
+    if (card?.id && !lookup.has(card.id)) {
+      lookup.set(card.id, card);
+    }
+  }
+
   return lookup;
 }
 
 function hydrateSelection(state, scenarioSelection) {
+  if (!Array.isArray(scenarioSelection)) {
+    throw new Error("Scenario selection must be an array.");
+  }
+
   const lookup = buildCardLookupFromState(state);
 
   return scenarioSelection.map((item) => {
@@ -191,6 +171,8 @@ function runScenarioWithRealEngine(scenarioName) {
   gameEngine.playOneTurn(state);
 
   return {
+    ok: true,
+    adapterMode: "server-api-real-engine",
     scenario: {
       name: scenario.name,
       description: scenario.description,
@@ -201,21 +183,57 @@ function runScenarioWithRealEngine(scenarioName) {
     finalState: summarizeState(state),
     log: Array.isArray(state.log) ? [...state.log] : [],
     error: null,
-    adapterMode: "server-api-real-engine",
   };
 }
 
-function readJsonBody(req, callback) {
-  let body = "";
-  req.on("data", (chunk) => {
-    body += chunk;
-  });
-  req.on("end", () => {
-    try {
-      callback(JSON.parse(body || "{}"));
-    } catch (error) {
-      callback({});
-    }
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    let byteLength = 0;
+    let isTooLarge = false;
+
+    req.on("data", (chunk) => {
+      byteLength += chunk.length;
+
+      if (byteLength > MAX_JSON_BODY_BYTES) {
+        isTooLarge = true;
+        return;
+      }
+
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      if (isTooLarge) {
+        reject(Object.assign(new Error("Request body too large."), { statusCode: 413 }));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(body || "{}");
+
+        if (
+          !parsed ||
+          typeof parsed !== "object" ||
+          Array.isArray(parsed) ||
+          typeof parsed.scenarioName !== "string" ||
+          parsed.scenarioName.trim() === ""
+        ) {
+          reject(
+            Object.assign(
+              new Error('Request body must be JSON like { "scenarioName": "move-vs-defense" }.'),
+              { statusCode: 400 }
+            )
+          );
+          return;
+        }
+
+        resolve({ scenarioName: parsed.scenarioName.trim() });
+      } catch (error) {
+        reject(Object.assign(new Error("Request body must be valid JSON."), { statusCode: 400 }));
+      }
+    });
+    req.on("error", reject);
   });
 }
 
@@ -272,7 +290,7 @@ function serveFile(res, filePath) {
 }
 
 function createServer(port) {
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;
 
@@ -296,17 +314,25 @@ function createServer(port) {
     }
 
     if (req.method === "POST" && pathname === "/api/run-scenario") {
-      readJsonBody(req, (body) => {
-        try {
-          const result = runScenarioWithRealEngine(body.scenarioName);
-          sendJson(res, 200, result);
-        } catch (error) {
-          sendJson(res, 500, {
+      try {
+        const body = await readJsonBody(req);
+
+        if (!getScenarioByName(body.scenarioName)) {
+          sendJson(res, 404, {
             ok: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: `Unknown scenario: ${body.scenarioName}`,
           });
+          return;
         }
-      });
+
+        const result = runScenarioWithRealEngine(body.scenarioName);
+        sendJson(res, 200, result);
+      } catch (error) {
+        sendJson(res, error.statusCode || 500, {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
       return;
     }
 
