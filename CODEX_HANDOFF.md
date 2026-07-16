@@ -1,4 +1,4 @@
-# CODEX_HANDOFF.md V4
+# CODEX_HANDOFF.md V5
 
 ## 專案名稱
 Fist Palm and Weapons
@@ -13,10 +13,12 @@ Fist Palm and Weapons
 - data-driven `createInitialState()`
 - rules / loader 單元測試
 - 單一回合 debug runner（CLI）
-- browser debug sandbox（API-only adapter）
+- browser debug sandbox（stub run + real-engine adapter 錯誤確認）
+- `generated/*.json` 已補回版本控制
 
-目前最新驗證結果：
-- `npm run test:rules`
+目前最新驗證結果（2026-07-16）：
+- `npm run build:data` 通過
+- `npm run test:rules` 通過
 - Test Suites: 5 passed, 5 total
 - Tests: 57 passed, 57 total
 
@@ -25,7 +27,7 @@ Phase B：資料正式接入 engine
 Phase C：規則 contract 收口與 debug runner  
 Phase D（早期）：本地 browser debug sandbox（單回合、API-only）
 
-狀態：Phase B checkpoint 1 已通過驗證，single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
+狀態：Phase B checkpoint 1 已通過驗證，single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。SLICE-40D 已確認 browser direct import real engine 路線仍有 adapter 風險，下一步應改走 debug server API 代跑 engine。
 
 ## 今次完成內容
 
@@ -145,7 +147,17 @@ Deprecated payload shapes（不要再用）：
 - scenarios source：
   - `server/game/debug/scenarios.js`
 
-### 6. 已修正問題
+### 6. SLICE-40D real-engine adapter 錯誤確認
+- 新增 / 保留 `server/game/debug/browser-engine-adapter.js`，嘗試在 browser 端 dynamic import `../gameEngine.js`。
+- `browser-sandbox.js` 會優先試 `runScenarioWithRealEngine()`，如 adapter 載入或執行失敗，會 fallback 到 stub result。
+- UI 會顯示 `Adapter failed, using stub result`，`errorOutput` 會保留 adapter error message。
+- 目前不建議繼續讓 browser 直接 import CommonJS engine；較穩陣方案係由 Node debug server 提供 `/api/run-scenario`，browser 只接 API JSON。
+
+### 7. generated data 版本控制修復
+- 最新 checkpoint `737b1b1 補回*.json` 已補回 `generated/cards.json`、`generated/characters.json`、`generated/keywords.json`、`generated/ai_profiles.json`、`generated/combos.json`。
+- `.gitignore` 已不再忽略整個 generated 輸出，避免 Codex / GitHub 交接時缺少 build artifact。
+
+### 8. 已修正問題
 - debug server 原本用錯 `ROOT_DIR` / `debug` 路徑，現已統一指向 repo root + `server/game/debug`。
 - browser sandbox Status 文案由「prefer real engine adapter」改為明確說明「API-only adapter」，避免誤導 slice 意圖。
 
@@ -155,6 +167,20 @@ Deprecated payload shapes（不要再用）：
 - browser sandbox API health / scenarios 已可正確顯示
 
 ## 建議下一步（最安全順序）
+
+### SLICE-40E：browser sandbox 改由 debug server 代跑 engine
+1. 在 `server/game/debug/browser-debug-server.js` 新增 `POST /api/run-scenario`。
+2. server 端 CommonJS require 現有 engine，避免 browser 直接 import CommonJS module。
+3. 把 hydrate selection / summarize state 邏輯搬到 server 或共用 helper。
+4. `browser-api-adapter.js` 新增 `runScenario(scenarioName)`。
+5. `browser-sandbox.js` 改成 API run first；stub 只保留作 API error fallback 或明確 debug fallback。
+6. 驗證：`npm run build:data`、`npm run test:rules`、`npm run debug:turn:move`、`npm run debug:turn:attack`、`npm run debug:turn:buy`，再手動開 browser sandbox。
+
+### Phase B 收口
+- starter deck 組裝規則
+- validator 覆蓋
+- data initialization edge-case tests
+- `keywords` / `combos` / `ai_profiles` loader 接口
 
 ### Phase C 後續
 - shopResolver / stackResolver / comboResolver 擴規則層

@@ -2,8 +2,8 @@
 
 ---
 status: active
-updated: 2026-07-16 V4
-phase: "Phase B verified checkpoint 1"
+updated: 2026-07-16 V5
+phase: "SLICE-40D documented checkpoint"
 ---
 
 ## 專案名稱
@@ -35,7 +35,9 @@ Fist Palm and Weapons
 目前屬於：
 - rules engine prototype 已驗證
 - data-driven initialization 已驗證第一輪
-- 商店、combo、角色被動、多人、UI、AI 未開始
+- browser debug sandbox 已完成 stub run 與 real-engine adapter 錯誤確認
+- `generated/*.json` 已重新納入版本控制，方便 Codex / GitHub 環境直接讀寫最新資料輸出
+- 商店、combo、角色被動、多人、正式 UI、AI 未開始
 
 ### 當前技術棧
 - Node.js
@@ -79,6 +81,14 @@ Fist Palm and Weapons
 - `tests/rules/gameEngine.test.js`
 - `tests/rules/cardLoader.test.js`
 
+### 最後更新（2026-07-16 V5）
+- Codex 環境已可重新讀寫 repo 內檔案，今次只更新 handoff / context 文件，未改 engine 行為。
+- 最新 git checkpoint：`737b1b1 補回*.json`，重點係補回 `generated/cards.json`、`generated/characters.json`、`generated/keywords.json`、`generated/ai_profiles.json`、`generated/combos.json`，並調整 `.gitignore`，避免 generated data 在下一輪交接時缺失。
+- SLICE-40C 已有 browser sandbox stub run：頁面可以用 scenario payload 顯示 initial / selections / final / log。
+- SLICE-40D 已嘗試 browser real-engine adapter：`browser-engine-adapter.js` 會嘗試 dynamic import `gameEngine.js`，失敗時 browser UI fallback 到 stub，並顯示 `Adapter failed, using stub result`。
+- 目前判斷：browser 直接載入現有 CommonJS engine 仍未收口，下一步不應再硬接 browser import，應改由 debug server 提供 Node-side engine API。
+- 最新本地驗證：`npm run build:data` 通過；`npm run test:rules` 通過，5 suites / 57 tests。
+
 ### 已完成能力
 
 #### Build / Data
@@ -120,11 +130,13 @@ Fist Palm and Weapons
 6. 未開始 Socket.IO / UI / AI
 
 ### 當前最佳下一步
-最安全下一步係先完成 Phase B 收口，而唔係立即擴規則：
-1. 補 starter deck 組裝規則
-2. 補 validator 覆蓋
-3. 補 data initialization edge-case tests
-4. 預留 `keywords` / `combos` / `ai_profiles` loader 接口
+最安全下一步係先做 SLICE-40E，把 browser sandbox 從「browser 直接 import engine」改成「debug server 代跑 engine」：
+1. 在 `server/game/debug/browser-debug-server.js` 增加 `POST /api/run-scenario`。
+2. server 端用 CommonJS require 讀 `gameEngine.js` / scenario，建立 match、hydrate selection、submit、playOneTurn。
+3. `browser-api-adapter.js` 增加 `runScenario()`，browser 只 call API，不再 dynamic import engine。
+4. `browser-sandbox.js` 移除或停用 `browser-engine-adapter.js` direct import 路線。
+5. 補最少 API / smoke 測試，再跑 `npm run build:data`、`npm run test:rules`、`npm run debug:turn:*`。
+6. 之後才回到 Phase B 收口：starter deck、validator、data initialization edge-case tests、keywords / combos / ai_profiles loader。
 
 ## Future
 
