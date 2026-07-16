@@ -2,7 +2,7 @@
 
 ---
 status: active
-updated: 2026-07-12 V3
+updated: 2026-07-16 V4
 phase: "Phase B verified checkpoint 1"
 ---
 
@@ -136,6 +136,72 @@ Fist Palm and Weapons
 - data 異常 case 有測試保護
 
 ### 之後里程碑
+
+## Browser Debug Sandbox（SLICE-40C）
+
+### 目的
+提供一個本地 browser sandbox，用於視覺化單回合 scenario 行為，協助 rules debugging。  
+此 sandbox 屬於 debug 工具，不是正式遊戲 UI。
+
+### 檔案位置
+- `server/game/debug/browser-sandbox.html`
+- `server/game/debug/browser-sandbox.js`
+- `server/game/debug/browser-api-adapter.js`
+- `server/game/debug/scenarios.js`
+- `server/game/debug/browser-debug-server.js`
+
+### 入口與路徑
+- 啟動 server：
+  ```powershell
+  npm run debug:browser
+  ```
+- 頁面入口：
+  ```text
+  http://localhost:<port>/server/game/debug/browser-sandbox.html
+  ```
+- API：
+  - `GET /api/health` → browser 顯示 debug server 狀態與 port
+  - `GET /api/scenarios` → browser 讀取 scenario 名單並填充選擇器
+
+### Adapter 設計
+- 今個 slice 使用「API-only adapter」：
+  - `browser-api-adapter.js` 暫時只包 `fetchHealth()` / `fetchScenarios()`
+  - 不直接從 browser dynamic import `gameEngine.js`
+- `browser-engine-adapter.js` 目前標記為暫停使用：
+  - 不應由 `browser-sandbox.js` import
+  - 不應由 `browser-sandbox.html` 直接載入
+  - 之後若要恢復 real engine adapter，需另開 slice 並更新 spec / test / code
+
+### UI 行為（當前 slice）
+- Status：
+  - 初始顯示 `Adapter mode: api-only (uninitialized)`
+  - 成功讀取 API 後顯示 `Adapter mode: api-only @ localhost:<port>`
+- Scenario：
+  - 下拉選單列出所有 scenario 名字
+  - description 顯示 `scenarios.js` 內的文字
+- Result：
+  - initial / P1 / P2 / final state 以 JSON 格式顯示
+  - log / error 區塊顯示文字，方便對照 CLI debug runner output
+
+### Rules contract 對齊
+browser sandbox 所用的 scenario payload 必須遵守 CONTEXT 內的 Rules API Contract：
+
+- selection item：
+  ```js
+  { cardId, type, subtype, extra }
+  ```
+- extra payload：
+  - Move：`{ dx, dy }`
+  - Buy：`{ shopCardId }`
+  - Attack：`{ preferredTargetId?, retargetInstruction? }`
+  - Defense：`{}`
+
+Deprecated payload（不要在 browser sandbox 使用）：
+- `moveDecision`
+- `retargetToId`
+- `selectedShopCardId`
+- `to.x / to.y`
+- `card.extra`
 
 #### Phase C：規則擴充
 - `shopResolver`

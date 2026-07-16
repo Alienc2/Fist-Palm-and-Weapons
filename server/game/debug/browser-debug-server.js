@@ -2,7 +2,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const PORT_START = Number(process.env.PORT || 3001);
 
 const MIME_TYPES = {
@@ -30,7 +30,13 @@ function sendJson(res, statusCode, data) {
 }
 
 function getScenarios() {
-  const scenariosPath = path.join(ROOT_DIR, "debug", "scenarios.js");
+  const scenariosPath = path.join(
+    ROOT_DIR,
+    "server",
+    "game",
+    "debug",
+    "scenarios.js"
+  );
   const source = fs.readFileSync(scenariosPath, "utf8");
   const names = [];
   const regex = /"([^"]+)":\s*{/g;
@@ -43,15 +49,29 @@ function getScenarios() {
 
 function resolveStaticPath(urlPath) {
   const normalized = decodeURIComponent(urlPath.split("?")[0]);
-  if (normalized === "/") {
-    return path.join(ROOT_DIR, "debug", "browser-sandbox.html");
+
+  if (
+    normalized === "/" ||
+    normalized === "/server/game/debug" ||
+    normalized === "/server/game/debug/"
+  ) {
+    return path.join(
+      ROOT_DIR,
+      "server",
+      "game",
+      "debug",
+      "browser-sandbox.html"
+    );
   }
-  if (normalized.startsWith("/debug/")) {
+
+  if (normalized.startsWith("/server/game/debug/")) {
     return path.join(ROOT_DIR, normalized.slice(1));
   }
+
   if (normalized.startsWith("/scripts/")) {
     return path.join(ROOT_DIR, normalized.slice(1));
   }
+
   return path.join(ROOT_DIR, normalized.slice(1));
 }
 
@@ -129,7 +149,9 @@ function createServer(port) {
 
   server.listen(port, "127.0.0.1", () => {
     console.log(`[debug-server] listening on http://localhost:${port}`);
-    console.log(`[debug-server] open http://localhost:${port}/server/game/debug/browser-sandbox.html`);
+    console.log(
+      `[debug-server] open http://localhost:${port}/server/game/debug/browser-sandbox.html`
+    );
   });
 }
 
