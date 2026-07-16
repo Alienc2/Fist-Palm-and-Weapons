@@ -2,7 +2,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const ROOT_DIR = path.resolve(__dirname, "../..");
+const ROOT_DIR = path.resolve(__dirname, "../../..");
 const PORT_START = Number(process.env.PORT || 3001);
 
 const MIME_TYPES = {
@@ -134,6 +134,7 @@ function createServer(port) {
     }
 
     const filePath = resolveStaticPath(pathname);
+    console.log("[debug-server] static filePath =", filePath);
     serveFile(res, filePath);
   });
 
