@@ -1,5 +1,9 @@
 import { fetchHealth, fetchScenarios } from "./browser-api-adapter.js";
 import { getScenarioByName } from "./scenarios.js";
+import {
+  getAdapterStatus,
+  runScenarioWithRealEngine,
+} from "./browser-engine-adapter.js";
 
 const refs = {
   scenarioSelect: document.querySelector("#scenarioSelect"),
@@ -189,6 +193,7 @@ function renderResult(result) {
   setStatus("success", `Completed (${result.adapterMode})`);
 }
 
+
 async function handleRun() {
   const scenario = getScenarioByName(refs.scenarioSelect.value);
   if (!scenario) {
@@ -200,13 +205,20 @@ async function handleRun() {
   setStatus("running", "Running");
 
   try {
-    const result = runScenarioStub(scenario);
+    // 優先試真 engine adapter
+    const result = await runScenarioWithRealEngine(scenario.name);
     renderResult(result);
-    refs.adapterModeText.textContent = "Adapter mode: stub";
+    refs.adapterModeText.textContent = "Adapter mode: real-engine";
   } catch (error) {
-    setStatus("error", "Run failed");
+    // 真 adapter 出錯時，log 一次 error，再 fallback 用 stub 填畫面
+    console.error("[sandbox] real-engine adapter failed:", error);
+    const fallback = runScenarioStub(scenario);
+    renderResult(fallback);
+    refs.adapterModeText.textContent = "Adapter mode: stub (adapter-error)";
     refs.errorOutput.textContent =
       error instanceof Error ? error.message : String(error);
+    // UI 上顯示係 fallback 狀態，但仍視為完成
+    setStatus("error", "Adapter failed, using stub result");
   }
 }
 
@@ -246,6 +258,22 @@ async function init() {
 
     refs.adapterModeText.textContent = `Adapter mode: api-only @ localhost:${health.port}`;
     setStatus("success", "API ready");
+
+    // 額外檢查 real engine adapter 狀態
+    try {
+      const status = await getAdapterStatus();
+      if (status.ok && status.mode === "real-engine") {
+        refs.adapterModeText.textContent = "Adapter mode: real-engine";
+      } else {
+        refs.adapterModeText.textContent = `Adapter mode: adapter-error (${status.message})`;
+      }
+    } catch (adapterError) {
+      console.warn(
+        "[sandbox] getAdapterStatus failed:",
+        adapterError
+      );
+      // 保留 api-only 顯示，唔阻止 page 正常用 stub fallback
+    }
   } catch (error) {
     refs.adapterModeText.textContent = "Adapter mode: api-error";
     refs.errorOutput.textContent =
