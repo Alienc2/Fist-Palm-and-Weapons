@@ -8,7 +8,7 @@
     "initial_hand_size": "4",
     "token_color": "red",
     "passive_id": "front_damage_bonus",
-    "passive_params": "{\\\"value\\\":1}",
+    "passive_params": "{\"value\":1}",
     "description": "正面攻擊傷害+1。"
   },
   {
@@ -20,7 +20,7 @@
     "initial_hand_size": "4",
     "token_color": "blue",
     "passive_id": "front_defense_bonus",
-    "passive_params": "{\\\"value\\\":1}",
+    "passive_params": "{\"value\":1}",
     "description": "正面防禦加成+1。"
   },
   {
@@ -32,7 +32,7 @@
     "initial_hand_size": "5",
     "token_color": "green",
     "passive_id": "free_facing_change",
-    "passive_params": "{\\\"per_round\\\":1}",
+    "passive_params": "{\"per_round\":1}",
     "description": "每回合免費轉向1次。"
   },
   {
@@ -44,7 +44,7 @@
     "initial_hand_size": "4",
     "token_color": "yellow",
     "passive_id": "first_shop_discount",
-    "passive_params": "{\\\"mp_discount\\\":1}",
+    "passive_params": "{\"mp_discount\":1}",
     "description": "本局首次購買咭牌費用-1MP。"
   }
 ]

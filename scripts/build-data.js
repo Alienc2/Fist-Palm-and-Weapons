@@ -1,5 +1,4 @@
 // scripts/build-data.js
-// CommonJS 版 CSV → JSON build script
 
 const fs = require("fs");
 const path = require("path");
@@ -26,9 +25,7 @@ function ensureOutputDir() {
 
 async function convertCsvToJson(csvPath, jsonPath) {
   if (!fs.existsSync(csvPath)) {
-    console.warn(`[build-data] 找唔到 CSV 檔案：${csvPath}（會輸出空陣列）`);
-    fs.writeFileSync(jsonPath, "[]", "utf-8");
-    return;
+    throw new Error(`[build-data] 找唔到 CSV 檔案：${csvPath}`);
   }
 
   console.log(`[build-data] 讀取：${csvPath}`);
@@ -39,6 +36,14 @@ async function convertCsvToJson(csvPath, jsonPath) {
   fs.writeFileSync(jsonPath, jsonString, "utf-8");
 }
 
+function validateGeneratedData() {
+  const cardLoaderPath = path.join(ROOT_DIR, "shared", "cardLoader.js");
+  delete require.cache[require.resolve(cardLoaderPath)];
+  const { validateAllData } = require(cardLoaderPath);
+  validateAllData();
+  console.log("[build-data] generated data validation 通過");
+}
+
 async function main() {
   console.log("[build-data] 開始 CSV → JSON build");
 
@@ -47,12 +52,10 @@ async function main() {
   for (const file of FILES) {
     const csvPath = path.join(DATA_DIR, file.csv);
     const jsonPath = path.join(OUTPUT_DIR, file.json);
-    try {
-      await convertCsvToJson(csvPath, jsonPath);
-    } catch (err) {
-      console.error(`[build-data] 轉換失敗：${file.csv}`, err);
-    }
+    await convertCsvToJson(csvPath, jsonPath);
   }
+
+  validateGeneratedData();
 
   console.log("[build-data] 完成全部轉換");
 }

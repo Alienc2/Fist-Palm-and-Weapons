@@ -30,9 +30,34 @@
     "description": "反擊效果"
   },
   {
+    "id": "universal",
+    "category": "effect",
+    "description": "通用效果，任何角色都可使用"
+  },
+  {
     "id": "dash",
     "category": "effect",
     "description": "高速移動"
+  },
+  {
+    "id": "move",
+    "category": "effect",
+    "description": "移動效果"
+  },
+  {
+    "id": "buy",
+    "category": "effect",
+    "description": "購買效果"
+  },
+  {
+    "id": "recover",
+    "category": "effect",
+    "description": "回復效果"
+  },
+  {
+    "id": "draw",
+    "category": "effect",
+    "description": "抽牌效果"
   },
   {
     "id": "persist_guard",

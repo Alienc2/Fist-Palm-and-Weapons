@@ -283,6 +283,32 @@ browser sandbox 現時 authoritative adapter mode 係 `server-api-real-engine`�
 `browser-engine-adapter.js` 現時只應標示為 legacy / deprecated experiment / debugging reference。  
 除非另開新 slice、先改 spec、再補 test、最後改 code，否則不可重回主流程。
 
+## SLICE-41 authoritative data contract
+
+### generated data
+以下 generated data 現已列為 authoritative input：
+- `generated/cards.json`
+- `generated/characters.json`
+- `generated/keywords.json`
+- `generated/combos.json`
+- `generated/ai_profiles.json`
+
+### loader
+`shared/cardLoader.js` 必須負責：
+- validation
+- normalization
+- id lookup
+- generated data snapshot
+
+### state initialization
+`server/game/state/createInitialState.js` 必須：
+- 只從 authoritative generated data 建立角色、起始手牌、牌庫、商店
+- 為每張卡建立 `instanceId` 與 `definitionId`
+- 建立 `stack`、`eliminatedPlayers`、`shop.stockByCardId` 等正式欄位
+
+### build validation
+`scripts/build-data.js` build 完後必須即時呼叫 generated data validation；validation 失敗時 build 要直接 fail。
+
 ## 10. 更新規則
 - 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。
 - 任何 LOCKED 項目要改動前，先同使用者確認。

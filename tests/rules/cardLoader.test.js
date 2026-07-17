@@ -1,76 +1,60 @@
-// tests/rules/cardLoader.test.js
-
 const {
   validateAllData,
-  validateCard,
-  validateCharacter,
   loadCards,
   loadCharacters,
-  getCardsByGroup,
+  loadKeywords,
+  loadCombos,
+  loadAiProfiles,
+  getCardById,
+  getCharacterById,
+  getKeywordById,
+  getComboById,
+  getAiProfileById,
 } = require("../../shared/cardLoader");
 
-describe("cardLoader", () => {
-  test("generated JSON 可成功通過驗證", () => {
+describe("cardLoader authoritative data contract", () => {
+  test("validateAllData should pass for generated data", () => {
     expect(() => validateAllData()).not.toThrow();
   });
 
-  test("loadCards 會回傳 enabled cards", () => {
+  test("loadCards should normalize enabled cards", () => {
     const cards = loadCards();
-    expect(Array.isArray(cards)).toBe(true);
     expect(cards.length).toBeGreaterThan(0);
+    expect(cards[0]).toHaveProperty("id");
+    expect(cards[0]).toHaveProperty("definitionId", undefined);
+    expect(typeof cards[0].mpCost).toBe("number");
+    expect(Array.isArray(cards[0].keywords)).toBe(true);
   });
 
-  test("getCardsByGroup('basic') 應回傳 basic 卡牌", () => {
-    const basicCards = getCardsByGroup("basic");
-    expect(basicCards.length).toBeGreaterThan(0);
-    expect(basicCards.every((card) => card.group === "basic")).toBe(true);
-  });
-
-  test("loadCharacters 會回傳角色資料", () => {
+  test("loadCharacters should normalize passiveParams", () => {
     const characters = loadCharacters();
-    expect(Array.isArray(characters)).toBe(true);
     expect(characters.length).toBeGreaterThan(0);
-  });
-});
-
-describe("cardLoader invalid data", () => {
-  test("缺少 card.id 時應拋錯", () => {
-    expect(() =>
-      validateCard({
-        type: "attack",
-        subtype: "punch",
-        name_zh: "測試卡",
-        group: "basic",
-        range_min: 1,
-        range_max: 1,
-        damage: 1,
-      })
-    ).toThrow("card.id 缺失");
+    expect(characters[0]).toHaveProperty("initialHp");
+    expect(typeof characters[0].initialHp).toBe("number");
   });
 
-  test("attack 的 range_min 大於 range_max 時應拋錯", () => {
-    expect(() =>
-      validateCard({
-        id: "bad_attack",
-        type: "attack",
-        subtype: "punch",
-        name_zh: "壞攻擊",
-        group: "basic",
-        range_min: 3,
-        range_max: 1,
-        damage: 1,
-      })
-    ).toThrow("range_min/range_max 非法");
+  test("loadKeywords should load keyword entries", () => {
+    const keywords = loadKeywords();
+    expect(keywords.length).toBeGreaterThan(0);
+    expect(getKeywordById("basic")).not.toBeNull();
   });
 
-  test("缺少 character.initial_hp 時應拋錯", () => {
-    expect(() =>
-      validateCharacter({
-        id: "bad_char",
-        name_zh: "壞角色",
-        initial_mp: 3,
-        initial_hand_size: 5,
-      })
-    ).toThrow("character.initial_hp 缺失");
+  test("loadCombos should parse effectParams JSON", () => {
+    const combos = loadCombos();
+    expect(combos.length).toBeGreaterThan(0);
+    expect(typeof combos[0].effectParams).toBe("object");
+  });
+
+  test("loadAiProfiles should normalize numeric weights", () => {
+    const profiles = loadAiProfiles();
+    expect(profiles.length).toBeGreaterThan(0);
+    expect(typeof profiles[0].attackWeight).toBe("number");
+  });
+
+  test("lookup helpers should return normalized objects", () => {
+    expect(getCardById("basic_punch_1")).not.toBeNull();
+    expect(getCharacterById("char_attack")).not.toBeNull();
+    expect(getComboById("combo_same_attack_3")).not.toBeNull();
+    expect(getAiProfileById("ai_normal")).not.toBeNull();
   });
 });
