@@ -271,12 +271,16 @@ function serveFile(res, filePath) {
   fs.createReadStream(filePath).pipe(res);
 }
 
-function createServer(port) {
-  const server = http.createServer((req, res) => {
+function createRequestHandler(options = {}) {
+  const {
+    port = PORT_START,
+    getScenariosFn = getScenarios,
+    runScenarioFn = null,
+  } = options;
+
+  return async function handleRequest(req, res) {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     const pathname = url.pathname;
-
-    console.log(`${req.method} ${pathname}`);
 
     if (req.method === "GET" && pathname === "/api/health") {
       sendJson(res, 200, {
@@ -290,20 +294,65 @@ function createServer(port) {
     if (req.method === "GET" && pathname === "/api/scenarios") {
       sendJson(res, 200, {
         ok: true,
-        scenarios: getScenarios(),
+        scenarios: getScenariosFn(),
       });
       return;
     }
 
     if (req.method === "POST" && pathname === "/api/run-scenario") {
-      readJsonBody(req, (body) => {
+      if (typeof runScenarioFn !== "function") {
+        sendJson(res, 501, {
+          ok: false,
+          error: "runScenario handler not configured",
+        });
+        return;
+      }
+
+      let rawBody = "";
+      req.on("data", (chunk) => {
+        rawBody += chunk;
+      });
+
+      req.on("end", async () => {
+        let payload;
         try {
-          const result = runScenarioWithRealEngine(body.scenarioName);
+          payload = rawBody ? JSON.parse(rawBody) : {};
+        } catch (error) {
+          sendJson(res, 400, {
+            ok: false,
+            error: "invalid JSON body",
+          });
+          return;
+        }
+
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          typeof payload.scenarioName !== "string" ||
+          !payload.scenarioName.trim()
+        ) {
+          sendJson(res, 400, {
+            ok: false,
+            error: "scenarioName must be a non-empty string",
+          });
+          return;
+        }
+
+        try {
+          const result = await runScenarioFn(payload.scenarioName.trim());
           sendJson(res, 200, result);
         } catch (error) {
+          if (error && error.code === "SCENARIO_NOT_FOUND") {
+            sendJson(res, 404, {
+              ok: false,
+              error: error.message || "unknown scenario",
+            });
+            return;
+          }
+
           sendJson(res, 500, {
             ok: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: error && error.message ? error.message : "internal server error",
           });
         }
       });
@@ -321,26 +370,58 @@ function createServer(port) {
     }
 
     const filePath = resolveStaticPath(pathname);
-    console.log("[debug-server] static filePath =", filePath);
     serveFile(res, filePath);
+  };
+}
+
+function createServer(port, options = {}) {
+  const handler = createRequestHandler({ ...options, port });
+  const server = http.createServer((req, res) => {
+    console.log(`${req.method} ${new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname}`);
+    Promise.resolve(handler(req, res)).catch((error) => {
+      console.error("[debug-server] request error:", error);
+      sendJson(res, 500, {
+        ok: false,
+        error: "internal server error",
+      });
+    });
   });
 
   server.on("error", (error) => {
     if (error.code === "EADDRINUSE") {
       console.log(`[debug-server] port ${port} in use, trying ${port + 1}`);
-      createServer(port + 1);
+      createServer(port + 1, options);
       return;
     }
     console.error("[debug-server] server error:", error);
     process.exit(1);
   });
 
+  return server;
+}
+
+function startServer(port = PORT_START, options = {}) {
+  const server = createServer(port, options);
   server.listen(port, "127.0.0.1", () => {
     console.log(`[debug-server] listening on http://localhost:${port}`);
     console.log(
       `[debug-server] open http://localhost:${port}/server/game/debug/browser-sandbox.html`
     );
   });
+  return server;
 }
 
-createServer(PORT_START);
+if (require.main === module) {
+  startServer(PORT_START);
+}
+
+module.exports = {
+  ROOT_DIR,
+  PORT_START,
+  createRequestHandler,
+  createServer,
+  startServer,
+  getScenarios,
+  resolveStaticPath,
+  sendJson,
+};
