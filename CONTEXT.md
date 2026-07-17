@@ -2,9 +2,9 @@
 
 ---
 project_name: Fist Palm and Weapons
-version: V7
+version: V8
 authoritative_status: active
-updated_at_hkt: 2026-07-16 18:08
+updated_at_hkt: 2026-07-17 09:50
 target_stack: Node.js / CommonJS / npm / Jest / csvtojson / Chrome / VS Code / Windows 11
 ---
 
@@ -54,6 +54,13 @@ target_stack: Node.js / CommonJS / npm / Jest / csvtojson / Chrome / VS Code / W
 - Test Suites: 5 passed, 5 total
 - Tests: 57 passed, 57 total
 - browser sandbox 已成功運行 3 個 scenario
+- `tests/debug/browser-debug-server.test.js` 通過
+- `POST /api/run-scenario` smoke / integration test 已驗證：
+  - valid scenario → `200`
+  - unknown scenario → `404`
+  - invalid body → `400`
+- Test Suites: 1 passed, 1 total
+- Tests: 3 passed, 3 total
 
 ### LOCKED 項目（改動前先確認）
 以下項目後續更新時不能隨意改，需先跟你確認：
@@ -63,7 +70,12 @@ target_stack: Node.js / CommonJS / npm / Jest / csvtojson / Chrome / VS Code / W
 - `server/game/debug/browser-debug-server.js` 的 `/api/run-scenario` contract
 - `browser-sandbox.js` 只透過 API adapter 呼叫 scenario，不直接 import engine
 - move log expectation 以 `initial position + extra.dx + extra.dy` 推導
-- `browser-engine-adapter.js` 只可作 legacy / reference，不可重回主流程
+- `browser-engine-adapter.js` 只可作 legacy / deprecated experiment / reference，不可重回主流程
+
+### Scenario source of truth
+shared scenario JSON 係 browser / server / CLI 的 single source of truth。  
+`server/game/debug/scenarios.js` 只負責 re-export 或包裝，不應再次手寫另一份 payload。  
+任何 scenario payload 改動，必須先改 shared JSON source，再同步驗證 CLI runner、debug API、browser sandbox。
 
 ## 5. 當前優先完成的程式碼
 ### P0
@@ -247,9 +259,34 @@ Response shape：
 - real engine 只可經 debug server API 呼叫
 - generated data 變更後，先 rebuild 再驗證
 
+### 主流程
+authoritative flow（current production debug path）：
+
+```text
+browser-sandbox.js
+  -> browser-api-adapter.js
+  -> POST /api/run-scenario
+  -> browser-debug-server.js
+  -> server-side real game engine
+  -> JSON result
+  -> browser render
+```
+
+browser sandbox 現時 authoritative adapter mode 係 `server-api-real-engine`。  
+
+### Legacy / deprecated 路線
+以下路線現時不應再作主流程：
+- browser direct import `gameEngine.js`
+- `browser-engine-adapter.js` 作為 primary adapter
+- 在 browser 端直接執行 CommonJS engine
+
+`browser-engine-adapter.js` 現時只應標示為 legacy / deprecated experiment / debugging reference。  
+除非另開新 slice、先改 spec、再補 test、最後改 code，否則不可重回主流程。
+
 ## 10. 更新規則
 - 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。
 - 任何 LOCKED 項目要改動前，先同使用者確認。
 - 若規格改動，先改 `docs/GAME_SPEC.md`，再改 test，再改 code。
 - 重大 slice 完成後，更新 `CODEX_HANDOFF.md` 同本文件。
 - 保持相同 heading 編號與順序，避免未來自動化或人工 review 時格式漂移。
+

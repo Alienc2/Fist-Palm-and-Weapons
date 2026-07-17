@@ -2,8 +2,8 @@
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V7
-- 更新日期時間：2026-07-16 18:30 HKT
+- 版本：V8
+- 更新日期時間：2026-07-17 09:58 HKT
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 程式類型：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為交接、進度、驗證、階段規劃的固定入口，方便後續頻繁更新仍保持同一格式
@@ -42,7 +42,8 @@
 - `server/game/debug/browser-debug-server.js` 的 `/api/run-scenario` contract。
 - `browser-sandbox.js` 只透過 API adapter 呼叫 scenario，不直接 import engine。
 - move log expectation 必須由 `initial position + extra.dx + extra.dy` 推導。
-- `browser-engine-adapter.js` 只可作 legacy / reference，不可重回主流程。
+- `browser-engine-adapter.js` 只可作 legacy / deprecated experiment / reference，不可重回主流程。
+- shared scenario JSON 必須作為 browser / server / CLI 的 single source of truth。
 
 ### 3.3 現階段已完成的內容
 - `docs/GAME_SPEC.md`
@@ -70,6 +71,13 @@
 - browser sandbox 已成功運行 3 個 scenario。
 - browser sandbox 已切換為 debug API 跑 real engine，再由 UI render 結果。
 - CLI debug runner scenarios 已手動驗證。
+- `tests/debug/browser-debug-server.test.js` 通過。
+- `POST /api/run-scenario` smoke / integration test 已驗證：
+  - valid scenario → `200`
+  - unknown scenario → `404`
+  - invalid body → `400`
+- Test Suites: 1 passed, 1 total。
+- Tests: 3 passed, 3 total。
 
 ## 5. 當前階段
 ### Phase B
@@ -85,6 +93,8 @@
 - Phase B checkpoint 1 已通過驗證。
 - single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
 - SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」。
+- SLICE-40F 已補 `POST /api/run-scenario` smoke / integration test，並已通過。
+- SLICE-40G 正在進行 browser sandbox 文件收口。
 - 不再依賴 browser direct import CommonJS engine。
 
 ## 6. 計劃中的後續 1–10 個階段
