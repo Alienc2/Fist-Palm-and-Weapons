@@ -1,5 +1,5 @@
-import { fetchHealth, fetchScenarios, runScenario } from "./browser-api-adapter.js";
-import { getScenarioByName } from "./scenarios.js";
+const { fetchHealth, fetchScenarios, runScenario } = require("./browser-api-adapter.js");
+const { getScenarioByName } = require("./scenarios.js");
 
 const refs = {
   scenarioSelect: document.querySelector("#scenarioSelect"),
@@ -37,7 +37,7 @@ function renderEmptyState() {
   refs.p2SelectionOutput.textContent = "No data yet.";
   refs.finalStateOutput.textContent = "No data yet.";
   refs.errorOutput.textContent = "No error.";
-  refs.logOutput.innerHTML = "<div class="log-empty">No log yet.</div>";
+  refs.logOutput.innerHTML = '<div class="log-empty">No log yet.</div>';
   setStatus("idle", "Idle");
 }
 
@@ -50,7 +50,7 @@ function classifyLogLine(line) {
 function renderLogs(logs) {
   refs.logOutput.innerHTML = "";
   if (!logs || logs.length === 0) {
-    refs.logOutput.innerHTML = "<div class="log-empty">No log yet.</div>";
+    refs.logOutput.innerHTML = '<div class="log-empty">No log yet.</div>';
     return;
   }
   logs.forEach((line) => {
@@ -135,7 +135,7 @@ async function init() {
 
 init();
 
-export {
+module.exports = {
   init,
   renderResult,
   renderEmptyState,
