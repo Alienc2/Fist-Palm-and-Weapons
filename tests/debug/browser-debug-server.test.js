@@ -1,7 +1,5 @@
 const http = require("node:http");
-const {
-  createServer,
-} = require("../../server/game/debug/browser-debug-server");
+const { createServer } = require("../../server/game/debug/browser-debug-server");
 
 function makeRequest(server, method, path, body, headers = {}) {
   const address = server.address();
@@ -130,5 +128,27 @@ describe("POST /api/run-scenario", () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.ok).toBe(false);
     expect(response.body.error).toMatch(/scenarioName/i);
+  });
+
+  test("returns 500 when scenario runner throws", async () => {
+    server = createServer(0, {
+      runScenarioFn: async () => {
+        throw new Error("test-error in POST /api/run-scenario");
+      },
+    });
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+    const response = await makeRequest(
+      server,
+      "POST",
+      "/api/run-scenario",
+      JSON.stringify({ scenarioName: "move-vs-defense" })
+    );
+
+    expect(response.statusCode).toBe(500);
+    expect(response.body.ok).toBe(false);
+    expect(response.body.error).toMatch(/test-error/i);
+    expect(response.body.error).toMatch(/run-scenario/i);
+    expect(response.body.error).not.toBe("");
   });
 });
