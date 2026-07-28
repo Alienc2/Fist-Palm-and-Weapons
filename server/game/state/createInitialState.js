@@ -1,11 +1,6 @@
 // server/game/state/createInitialState.js
 
-const {
-  getCardsByGroup,
-  getCharacterById,
-  loadCharacters,
-  validateAllData,
-} = require("../../../shared/cardLoader");
+const cardLoader = require("../../../shared/cardLoader");
 
 function cloneCard(card, ownerId, zone, sequence) {
   return {
@@ -30,7 +25,7 @@ function getStarterSetKeysForCharacter(character) {
 }
 
 function createStarterDeck(character, ownerId) {
-  const basicCards = getCardsByGroup("basic");
+  const basicCards = cardLoader.getCardsByGroup("basic");
   const allowedSetKeys = new Set(
     getStarterSetKeysForCharacter(character).map((value) => String(value).toUpperCase())
   );
@@ -65,13 +60,19 @@ function createStarterDeck(character, ownerId) {
         )
       );
     }
-  }
+    }
 
-  return starterDeck;
-}
+    if (starterDeck.length === 0) {
+      throw new Error(
+        `[createInitialState] starter deck is empty for character ${character?.id || "unknown"}`
+      );
+    }
+
+    return starterDeck;
+    }
 
 function createShopState() {
-  const shopCards = getCardsByGroup("shop");
+  const shopCards = cardLoader.getCardsByGroup("shop");
 
   return {
     cards: shopCards.map((card) => ({
@@ -106,8 +107,8 @@ function drawInitialHand(deck, handSize, ownerId) {
 }
 
 function createPlayer(id, position, characterId) {
-  const fallbackCharacter = loadCharacters()[0];
-  const character = getCharacterById(characterId) || fallbackCharacter;
+  const fallbackCharacter = cardLoader.loadCharacters()[0];
+  const character = cardLoader.getCharacterById(characterId) || fallbackCharacter;
 
   if (!character) {
     throw new Error("[createInitialState] 找不到可用角色資料");
@@ -155,7 +156,7 @@ function createPlayer(id, position, characterId) {
 }
 
 function createInitialState(options = {}) {
-  validateAllData();
+  cardLoader.validateAllData();
 
   const {
     matchId = "test-match",
@@ -192,4 +193,5 @@ function createInitialState(options = {}) {
 
 module.exports = {
   createInitialState,
+  createStarterDeck,
 };
