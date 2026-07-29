@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V7
+# CODEX_HANDOFF.md V9
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V8
-- 更新日期時間：2026-07-17 09:58 HKT
+- 版本：V9
+- 更新日期時間：2026-07-29 12:59 HKT
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 程式類型：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為交接、進度、驗證、階段規劃的固定入口，方便後續頻繁更新仍保持同一格式
@@ -27,6 +27,7 @@
 | CSV → JSON build 流程 | `scripts/build-data.js` | `npm run build:data` | 已完成 |
 | 資料載入與驗證 | `shared/cardLoader.js` | `tests/rules/cardLoader.test.js` | 已完成 |
 | 初始狀態建立 | `server/game/state/createInitialState.js` | `npm run test:rules` | 已完成 |
+| starter deck 組裝規則（SLICE-46-3A） | `server/game/state/createInitialState.js`、`tests/rules/createInitialState.starterDeck.test.js` | `npx jest --runInBand tests/rules/createInitialState.starterDeck.test.js`、`npm run test:rules` | 已完成 |
 | 核心 rules engine | `server/game/rules/*.js` | `tests/rules/gameEngine.test.js` | 已完成 |
 | 單一回合 CLI debug runner | `scripts/run-single-turn.js` | `npm run debug:turn:*` | 已完成 |
 | browser debug sandbox | `server/game/debug/*` | browser 手動驗證 / debug API | 已完成 |
@@ -52,7 +53,10 @@
 - 純 rules engine prototype
 - `shared/cardLoader.js`
 - data-driven `createInitialState()`
+- starter deck 已按 `Default_Card_Set` / `ALL` / `No_of_Cards_in_Hand` 組裝
+- starter deck 空結果已加入 fail-fast 保護
 - rules / loader 單元測試
+- `tests/rules/createInitialState.starterDeck.test.js`
 - 單一回合 debug runner（CLI）
 - browser debug sandbox（server API 跑 real engine）
 - `generated/*.json` 已納入版本控制
@@ -65,9 +69,15 @@
 
 ## 4. 最新驗證 / 測試結果
 - `npm run build:data` 通過。
+- `npx jest --runInBand tests/rules/createInitialState.starterDeck.test.js` 通過。
 - `npm run test:rules` 通過。
-- Test Suites: 5 passed, 5 total。
-- Tests: 57 passed, 57 total。
+- Test Suites: 7 passed, 7 total。
+- Tests: 66 passed, 66 total。
+- `tests/rules/createInitialState.starterDeck.test.js`：
+  - builds starter deck from `Default_Card_Set` and `ALL` using copy counts
+  - ignores cards with empty set key or zero copies
+  - throws when starter deck would be empty
+  - `createInitialState` draws initial hand from assembled starter deck
 - browser sandbox 已成功運行 3 個 scenario。
 - browser sandbox 已切換為 debug API 跑 real engine，再由 UI render 結果。
 - CLI debug runner scenarios 已手動驗證。
@@ -94,27 +104,29 @@
 - single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
 - SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」。
 - SLICE-40F 已補 `POST /api/run-scenario` smoke / integration test，並已通過。
-- SLICE-40G 正在進行 browser sandbox 文件收口。
+- SLICE-40G browser sandbox 文件收口已完成並寫入交接文件。
+- SLICE-46-3A starter deck 組裝規則已完成並通過測試。
 - 不再依賴 browser direct import CommonJS engine。
+- 下一步進入 `46-3B validator 覆蓋`。
 
 ## 6. 計劃中的後續 1–10 個階段
 
-### 1. 補 `/api/run-scenario` 測試
-- valid scenario → `200`
-- unknown scenario → `404`
-- invalid body → `400`
-- engine runtime error → `500`
+### 1. Phase B 收口：`46-3B validator 覆蓋`
+- 為 `Default_Card_Set` 補 validator 覆蓋
+- 為 `No_of_Cards_in_Hand` 補 validator 覆蓋
+- 收緊 generated data contract
+- 保持 `npm run test:rules` 全綠
 
-### 2. browser sandbox 文件收口
-- `CONTEXT.md` 標記為 `server-api-real-engine`
-- `browser-engine-adapter.js` 明文標示為 legacy / deprecated
-- shared scenario JSON 明文標示為 single source of truth
+### 2. Phase B 收口：data initialization edge-case tests
+- starter deck 空結果
+- character lookup fallback
+- invalid generated data fail-fast
+- initial hand / deck 邊界條件
 
-### 3. Phase B 收口
-- starter deck 組裝規則
-- validator 覆蓋
-- data initialization edge-case tests
-- `keywords` / `combos` / `ai_profiles` loader 接口整理
+### 3. `keywords` / `combos` / `ai_profiles` loader 接口整理
+- loader interface 對齊
+- normalization 補齊
+- 後續 AI / combo 接入前先收口資料入口
 
 ### 4. Phase C 擴充
 - `shopResolver`

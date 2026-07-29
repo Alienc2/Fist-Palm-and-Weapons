@@ -1,17 +1,10 @@
-# CONTEXT.md
+# CONTEXT.md V9
 
 ---
-project_name: Fist Palm and Weapons
-version: V8
-authoritative_status: active
-updated_at_hkt: 2026-07-17 09:50
-target_stack: Node.js / CommonJS / npm / Jest / csvtojson / Chrome / VS Code / Windows 11
----
-
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V7
-- 更新日期時間：2026-07-16 18:08 HKT
+- 版本：V9
+- 更新日期時間：2026-07-29 12:59 HKT
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 專案型態：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為可頻繁更新的單一事實來源，確保規格、檔案、API、固定程式碼同格式長期一致
@@ -50,9 +43,10 @@ target_stack: Node.js / CommonJS / npm / Jest / csvtojson / Chrome / VS Code / W
 
 ### 已驗證結果
 - `npm run build:data` 通過
+- `npx jest --runInBand tests/rules/createInitialState.starterDeck.test.js` 通過
 - `npm run test:rules` 通過
-- Test Suites: 5 passed, 5 total
-- Tests: 57 passed, 57 total
+- Test Suites: 7 passed, 7 total
+- Tests: 66 passed, 66 total
 - browser sandbox 已成功運行 3 個 scenario
 - `tests/debug/browser-debug-server.test.js` 通過
 - `POST /api/run-scenario` smoke / integration test 已驗證：
@@ -77,15 +71,23 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 `server/game/debug/scenarios.js` 只負責 re-export 或包裝，不應再次手寫另一份 payload。  
 任何 scenario payload 改動，必須先改 shared JSON source，再同步驗證 CLI runner、debug API、browser sandbox。
 
+### SLICE-46-3A starter deck 組裝規則
+- 已完成 starter deck 組裝規則測試與收口。
+- starter deck 依 `Default_Card_Set`、`ALL`、`No_of_Cards_in_Hand` 決定組裝內容。
+- 空字串 starter set 視為不使用；`ALL` 視為通用。
+- starter deck 為空時必須 fail-fast。
+- `tests/rules/createInitialState.starterDeck.test.js` 已納入 rules 測試覆蓋。
+
 ## 5. 當前優先完成的程式碼
 ### P0
-- 為 `POST /api/run-scenario` 補 smoke / integration test
-- 驗證 valid scenario / unknown scenario / invalid body / engine error 的回應碼
-- 確保 browser sandbox 對 API error 與 real engine result 的顯示一致
+- `46-3B validator 覆蓋`
+- 為 `Default_Card_Set` 與 `No_of_Cards_in_Hand` 補 validator 覆蓋
+- 收緊 generated data contract，避免壞資料進入 `createInitialState()`
 
 ### P1
-- Phase B 收口：starter deck、validator、data initialization edge-case tests
+- data initialization edge-case tests
 - `keywords` / `combos` / `ai_profiles` loader 接口整理
+- 後續 shop / combo / AI 接入前先完成 loader 收口
 
 ## 6. 下一個需要完成的程式碼
 - shopResolver / buy / MP / stock 正式流程
@@ -114,11 +116,11 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `generated/combos.json`：生成後 combo 資料
 
 ### 載入層
-- `shared/cardLoader.js`：CSV / JSON 資料載入與最小驗證
+- `shared/cardLoader.js`：CSV / JSON 資料載入、normalization 與最小驗證（下一步擴充 validator 覆蓋）
 
 ### 引擎層
 - `server/game/gameEngine.js`：遊戲引擎入口
-- `server/game/state/createInitialState.js`：初始狀態建立
+- `server/game/state/createInitialState.js`：由 authoritative generated data 建立初始狀態、starter deck、initial hand、shop state
 - `server/game/rules/distance.js`：距離規則
 - `server/game/rules/facing.js`：面向修正
 - `server/game/rules/advantage.js`：advantage / disadvantage
