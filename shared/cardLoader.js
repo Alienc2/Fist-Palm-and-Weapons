@@ -129,43 +129,54 @@ function validateCard(card, keywordIdSet) {
   assert(ALLOWED_GROUPS.includes(card.group), `card.group 非法: ${card.id} -> ${card.group}`);
   assert(ALLOWED_CARD_TYPES.includes(card.type), `card.type 非法: ${card.id} -> ${card.type}`);
 
-  if (card.target_rule) {
-    assert(ALLOWED_TARGET_RULES.includes(card.target_rule), `card.target_rule 非法: ${card.id} -> ${card.target_rule}`);
-  }
+const defaultCardSet = String(card.Default_Card_Set || "").trim();
+const defaultCopies = card.No_of_Cards_in_Hand;
 
-  if (card.type === "attack") {
-    assert(card.range_min !== undefined, `attack range_min 缺失: ${card.id}`);
-    assert(card.range_max !== undefined, `attack range_max 缺失: ${card.id}`);
-    assert(card.damage !== undefined, `attack damage 缺失: ${card.id}`);
-    assert(Number(card.range_min) <= Number(card.range_max), `attack range_min/range_max 非法: ${card.id}`);
-    assert(Number(card.damage) >= 0, `attack damage 不可小於 0: ${card.id}`);
-  }
+if (defaultCardSet) {
+  assert(["1", "2", "3", "4", "ALL"].includes(defaultCardSet.toUpperCase()), `Default_Card_Set 非法: ${card.id} -> ${defaultCardSet}`);
+}
 
-  if (card.type === "move") {
-    assert(card.move_min !== undefined, `move move_min 缺失: ${card.id}`);
-    assert(card.move_max !== undefined, `move move_max 缺失: ${card.id}`);
-    assert(Number(card.move_min) <= Number(card.move_max), `move move_min/move_max 非法: ${card.id}`);
-  }
+if (defaultCopies !== undefined && defaultCopies !== "") {
+  assert(Number(defaultCopies) >= 0, `No_of_Cards_in_Hand 不可小於 0: ${card.id}`);
+}
 
-  if (card.mp_cost !== undefined && card.mp_cost !== "") {
-    assert(Number(card.mp_cost) >= 0, `mp_cost 不可小於 0: ${card.id}`);
-  }
+if (card.target_rule) {
+  assert(ALLOWED_TARGET_RULES.includes(card.target_rule), `card.target_rule 非法: ${card.id} -> ${card.target_rule}`);
+}
 
-  if (card.buy_cost !== undefined && card.buy_cost !== "") {
-    assert(Number(card.buy_cost) >= 0, `buy_cost 不可小於 0: ${card.id}`);
-  }
+if (card.type === "attack") {
+  assert(card.range_min !== undefined, `attack range_min 缺失: ${card.id}`);
+  assert(card.range_max !== undefined, `attack range_max 缺失: ${card.id}`);
+  assert(card.damage !== undefined, `attack damage 缺失: ${card.id}`);
+  assert(Number(card.range_min) <= Number(card.range_max), `attack range_min/range_max 非法: ${card.id}`);
+  assert(Number(card.damage) >= 0, `attack damage 不可小於 0: ${card.id}`);
+}
 
-  if (card.stock !== undefined && card.stock !== "") {
-    assert(Number(card.stock) >= 0, `stock 不可小於 0: ${card.id}`);
-  }
+if (card.type === "move") {
+  assert(card.move_min !== undefined, `move move_min 缺失: ${card.id}`);
+  assert(card.move_max !== undefined, `move move_max 缺失: ${card.id}`);
+  assert(Number(card.move_min) <= Number(card.move_max), `move move_min/move_max 非法: ${card.id}`);
+}
 
-  const parsedKeywords = String(card.keywords || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+if (card.mp_cost !== undefined && card.mp_cost !== "") {
+  assert(Number(card.mp_cost) >= 0, `mp_cost 不可小於 0: ${card.id}`);
+}
 
-  for (const keywordId of parsedKeywords) {
-    assert(keywordIdSet.has(keywordId), `card keyword 不存在: ${card.id} -> ${keywordId}`);
+if (card.buy_cost !== undefined && card.buy_cost !== "") {
+  assert(Number(card.buy_cost) >= 0, `buy_cost 不可小於 0: ${card.id}`);
+}
+
+if (card.stock !== undefined && card.stock !== "") {
+  assert(Number(card.stock) >= 0, `stock 不可小於 0: ${card.id}`);
+}
+
+const parsedKeywords = String(card.keywords || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+for (const keywordId of parsedKeywords) {
+  assert(keywordIdSet.has(keywordId), `card keyword 不存在: ${card.id} -> ${keywordId}`);
   }
 }
 
@@ -213,7 +224,6 @@ function normalizeCard(card) {
     id: card.id,
     definitionId: undefined,
     name: card.name_zh,
-    aliasGroup: card.alias_group || "",
     group: card.group,
     type: card.type,
     subtype: card.subtype,
@@ -231,15 +241,13 @@ function normalizeCard(card) {
     stock: normalizeNumber(card.stock, 0),
     persistUntilTriggered: normalizeBoolean(card.persist_until_triggered),
     keywords: String(card.keywords || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
     targetRule: card.target_rule || "single",
-    description: card.description_template || "",
-    enabled: normalizeBoolean(card.enabled),
     defaultCardSet: String(card.Default_Card_Set || "").trim(),
     defaultCopiesInHand: normalizeNumber(card.No_of_Cards_in_Hand, 0),
-    raw: card,
+    enabled: normalizeBoolean(card.enabled),
   };
 }
 
@@ -336,6 +344,11 @@ function getAiProfileById(profileId) {
 
 module.exports = {
   validateAllData,
+  validateCard,
+  validateCharacter,
+  validateKeyword,
+  validateCombo,
+  validateAiProfile,
   loadCards,
   loadCharacters,
   loadKeywords,

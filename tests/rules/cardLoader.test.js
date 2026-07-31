@@ -58,3 +58,64 @@ describe("cardLoader authoritative data contract", () => {
     expect(getAiProfileById("ai_normal")).not.toBeNull();
   });
 });
+
+const { validateCard } = require("../../shared/cardLoader");
+
+describe("cardLoader validator", () => {
+  test("accepts starter deck contract fields", () => {
+    expect(() =>
+      validateCard({
+        id: "c1",
+        type: "attack",
+        subtype: "x",
+        name_zh: "x",
+        group: "basic",
+        range_min: 1,
+        range_max: 2,
+        damage: 1,
+        Default_Card_Set: "ALL",
+        No_of_Cards_in_Hand: 2,
+        },
+      new Set()
+      )
+    ).not.toThrow();
+  });
+
+  test("rejects illegal Default_Card_set", () => {
+    expect(() =>
+      validateCard({
+        id: "c2",
+        type: "attack",
+        subtype: "x",
+        name_zh: "x",
+        group: "basic",
+        range_min: 1,
+        range_max: 2,
+        damage: 1,
+        Default_Card_Set: "BAD",
+        No_of_Cards_in_Hand: 2,
+        },
+      new Set()
+      )
+    ).toThrow();
+  });
+
+  test("rejects negative default_copies_in_hand", () => {
+    expect(() =>
+      validateCard({
+        id: "c3",
+        type: "attack",
+        subtype: "x",
+        name_zh: "x",
+        group: "basic",
+        range_min: 1,
+        range_max: 2,
+        damage: 1,
+        Default_Card_Set: "ALL",
+        No_of_Cards_in_Hand: -1,
+        },
+      new Set()
+      )
+    ).toThrow();
+  });
+});
