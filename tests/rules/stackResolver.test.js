@@ -12,8 +12,8 @@ describe("stackResolver", () => {
   function createState() {
     return {
       players: [
-        { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-        { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
+        { id: "P1", isEliminated: false, position: { x: 1, y: 1 }, hp: 3 },
+        { id: "P2", isEliminated: false, position: { x: 1, y: 2 }, hp: 2 },
       ],
       log: [],
     };
@@ -100,5 +100,57 @@ describe("stackResolver", () => {
 
     expect(calls[0]).toContain("反制");
     expect(calls[1]).toContain("被反制");
+  });
+
+  test("stack 順序會改變最終結果：counter 先後入 stack 會影響 P2 是否被反制", () => {
+    function makeResolvedState(order) {
+      const state = createState();
+      ensureStack(state);
+
+      const attack = createStackItem(state, state.players[0], {
+        id: "a_final",
+        type: "attack",
+        targeting: "single_enemy",
+        damage: 2,
+        rangeMin: 1,
+        rangeMax: 1,
+      });
+
+      const counter = createStackItem(state, state.players[1], {
+        id: "c_final",
+        type: "counter",
+      });
+
+      if (order === "attack-then-counter") {
+        pushStackItem(state, attack);
+        pushStackItem(state, counter);
+      } else {
+        pushStackItem(state, counter);
+        pushStackItem(state, attack);
+      }
+
+      resolveStack(state, {
+        log,
+        resolveAttack: (currentState, attacker, card) => {
+          const target = currentState.players.find((p) => p.id === "P2");
+          if (target && !target.isEliminated) {
+            target.hp -= card.damage || 0;
+            if (target.hp <= 0) {
+              target.isEliminated = true;
+            }
+          }
+          currentState.log.push(`${attacker.id} resolve ${card.id}`);
+        },
+      });
+
+      return state;
+    }
+
+    const resolvedA = makeResolvedState("attack-then-counter");
+    const resolvedB = makeResolvedState("counter-then-attack");
+
+    expect(resolvedA.players[1].isEliminated).toBe(false);
+    expect(resolvedB.players[1].isEliminated).toBe(true);
+    expect(resolvedA.players[1].hp).not.toBe(resolvedB.players[1].hp);
   });
 });

@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V10
+# CODEX_HANDOFF.md V11
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V10
-- 更新日期時間：2026-07-31 18:11 HKT
+- 版本：V11
+- 更新日期時間：2026-08-03 18:52 HKT
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 程式類型：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為交接、進度、驗證、階段規劃的固定入口，方便後續頻繁更新仍保持同一格式
@@ -30,6 +30,8 @@
 | 初始狀態建立 | `server/game/state/createInitialState.js` | `npm run test:rules` | 已完成 |
 | starter deck 組裝規則（SLICE-46-3A） | `server/game/state/createInitialState.js`、`tests/rules/createInitialState.starterDeck.test.js` | `npx jest --runInBand tests/rules/createInitialState.starterDeck.test.js`、`npm run test:rules` | 已完成 |
 | 核心 rules engine | `server/game/rules/*.js` | `tests/rules/gameEngine.test.js` | 已完成 |
+| shopResolver 正式化（SLICE-C-01） | `server/game/rules/shopResolver.js`、`tests/rules/shopResolver.test.js` | `npm run test:rules` | 已完成 |
+| stackResolver 正式化（SLICE-C-02） | `server/game/rules/stackResolver.js`、`tests/rules/stackResolver.test.js` | `npm run test:rules` | 已完成 |
 | 單一回合 CLI debug runner | `scripts/run-single-turn.js` | `npm run debug:turn:*` | 已完成 |
 | browser debug sandbox | `server/game/debug/*` | browser 手動驗證 / debug API | 已完成 |
 | browser sandbox 改走 debug API 路線 | `server/game/debug/browser-api-adapter.js`、`server/game/debug/browser-debug-server.js`、`server/game/debug/browser-sandbox.js` | browser + server 端驗證 | 已完成 |
@@ -65,6 +67,8 @@
 - starter deck 空結果已加入 fail-fast 保護
 - rules / loader 單元測試
 - `tests/rules/createInitialState.starterDeck.test.js`
+- `tests/rules/shopResolver.test.js`
+- `tests/rules/stackResolver.test.js`
 - 單一回合 debug runner（CLI）
 - browser debug sandbox（server API 跑 real engine）
 - `generated/*.json` 已納入版本控制
@@ -76,9 +80,11 @@
 - 任何規則 contract 改動都要先更新 `CONTEXT.md` 再改 code。
 
 ## 4. 最新驗證 / 測試結果
-## 4. 最新驗證 / 測試結果
 - `npm run build:data` 通過。
-- `npx jest --runInBand tests/rules/cardLoader.test.js` 通過。
+- `npm run test:rules` 通過。
+- `tests/rules` 最新總數：`9` suites passed, `78` tests passed。
+- `tests/rules/shopResolver.test.js` 通過。
+- `tests/rules/stackResolver.test.js` 通過。
 - `tests/rules/cardLoader.test.js`：10 passed, 10 total。
 - `cardLoader authoritative data contract` 全部通過。
 - `cardLoader validator` 全部通過。
@@ -91,7 +97,6 @@
   - valid scenario → `200`
   - unknown scenario → `404`
   - invalid body → `400`
-- 全套 `npm run test:rules` 最新總數仍需以本機再次跑全套確認後寫入。
 
 ## 5. 當前階段
 ### Phase B
@@ -107,6 +112,8 @@
 - Phase B checkpoint 1 已通過驗證。
 - `46-3A starter deck` 已完成。
 - `46-3B validator 覆蓋` 已完成。
+- `shopResolver` 已正式化，並有 `buy 成功 / MP 不足 / stock 耗盡` 測試。
+- `stackResolver` 已正式化，並有 `stack 順序會改變最終結果` 測試。
 - single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
 - SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」。
 - SLICE-40F 已補 `POST /api/run-scenario` smoke / integration test，並已通過。
@@ -180,7 +187,6 @@
 - deployment flow
 
 ## 7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
-
 ### 7.1 檔案樹與主要功能
 #### 文件
 - `docs/GAME_SPEC.md`：正式玩法規格。
@@ -221,6 +227,8 @@
 #### 測試層
 - `tests/rules/gameEngine.test.js`：核心 rules 單元測試。
 - `tests/rules/cardLoader.test.js`：資料載入測試。
+- `tests/rules/shopResolver.test.js`：shop resolver 測試。
+- `tests/rules/stackResolver.test.js`：stack resolver 測試。
 
 ### 7.2 共用 API
 #### Rules API Contract
@@ -267,83 +275,11 @@ Defense extra：
 ```
 
 #### Debug API Contract
-`GET /api/health`：
-- 用途：檢查 debug server 是否正常與 port 資訊。
+`GET /api/health`：檢查 debug server 是否正常與 port 資訊。
 
-`GET /api/scenarios`：
-- 用途：回傳可用 scenario 名單。
+`GET /api/scenarios`：回傳可用 scenario 名單。
 
-`POST /api/run-scenario`：
-- 用途：由 server side 用 real engine 跑 scenario，回傳 sandbox 需要嘅 result shape。
-
-Request body：
-```json
-{ "scenarioName": "move-vs-defense" }
-```
-
-Response shape：
-```js
-{
-  ok: true,
-  adapterMode: "server-api-real-engine",
-  scenario,
-  initialState,
-  p1Selection,
-  p2Selection,
-  finalState,
-  log,
-  error: null
-}
-```
-
-#### Scenario source contract
-- browser / server / CLI 必須共用同一份 scenario 概念。
-- `server/game/debug/scenarios.js` 只可作 re-export / 包裝。
-- scenario 名稱要與 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` 對齊。
-
-### 7.3 需要固定使用的程式碼
-#### Selection item 固定格式
-```js
-{
-  card: { ...cardData },
-  extra: { ...optionalInputs }
-}
-```
-
-#### Move 固定格式
-```js
-{ dx: number, dy: number }
-```
-
-#### Buy 固定格式
-```js
-{ shopCardId: string }
-```
-
-#### Attack 固定格式
-```js
-{
-  preferredTargetId?: string,
-  retargetInstruction?: { toTargetId: string }
-}
-```
-
-#### Defense 固定格式
-```js
-{}
-```
-
-#### 必用 helper / 行為
-- `hydrateSelection(state, scenarioSelection)`：server side 由現有 state 或 generated cards 補回 card 物件。
-- `readJsonBody(req)`：debug server 讀 request body 時必須驗證 JSON 與 size limit。
-- `renderResult(result)`：browser sandbox 顯示 initial / p1 / p2 / final / log / error。
-- `setStatus(type, text)`：browser sandbox 狀態統一顯示。
-
-#### 不可自行改動的固定習慣
-- move log expectation 一律由起始座標與 `dx / dy` 推導。
-- browser 端不直接 import CommonJS engine。
-- real engine 只可經 debug server API 呼叫。
-- generated data 變更後，先 rebuild 再驗證。
+`POST /api/run-scenario`：由 server side 用 real engine 跑 scenario，回傳 sandbox 需要嘅 result shape。
 
 ## 8. 更新規則
 - 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。

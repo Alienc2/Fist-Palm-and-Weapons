@@ -1,10 +1,10 @@
-# CONTEXT.md V9
+# CONTEXT.md V11
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V9
-- 更新日期時間：2026-07-29 12:59 HKT
+- 版本：V11
+- 更新日期時間：2026-08-03 18:52 HKT
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 專案型態：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為可頻繁更新的單一事實來源，確保規格、檔案、API、固定程式碼同格式長期一致
@@ -40,21 +40,25 @@
 - 單一回合 debug runner（CLI）
 - browser debug sandbox（server API 跑 real engine）
 - `generated/*.json` 已納入版本控制
+- `shopResolver` 正式化（SLICE-C-01）
+- `stackResolver` 正式化（SLICE-C-02）
+- `tests/rules/shopResolver.test.js`
+- `tests/rules/stackResolver.test.js`
 
 ### 已驗證結果
 - `npm run build:data` 通過
-- `npx jest --runInBand tests/rules/createInitialState.starterDeck.test.js` 通過
 - `npm run test:rules` 通過
-- Test Suites: 7 passed, 7 total
-- Tests: 66 passed, 66 total
+- `Test Suites: 9 passed, 9 total`
+- `Tests: 78 passed, 78 total`
+- `tests/rules/cardLoader.test.js`：10 passed, 10 total
+- `tests/rules/shopResolver.test.js` 通過
+- `tests/rules/stackResolver.test.js` 通過
 - browser sandbox 已成功運行 3 個 scenario
 - `tests/debug/browser-debug-server.test.js` 通過
 - `POST /api/run-scenario` smoke / integration test 已驗證：
   - valid scenario → `200`
   - unknown scenario → `404`
   - invalid body → `400`
-- Test Suites: 1 passed, 1 total
-- Tests: 3 passed, 3 total
 
 ### LOCKED 項目（改動前先確認）
 以下項目後續更新時不能隨意改，需先跟你確認：
@@ -90,12 +94,13 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - 後續 shop / combo / AI 接入前先完成 loader 收口
 
 ## 6. 下一個需要完成的程式碼
-- shopResolver / buy / MP / stock 正式流程
-- stackResolver 正式化
-- comboResolver
 - targeting 與 retargeting 正式化
 - elimination 正式化
 - characters passive 接入
+- comboResolver
+- Phase D 多人同步
+- Phase E 正式 UI
+- Phase F AI 與部署
 
 ## 7. 主要檔案樹及每個檔案的主要功能
 ### 文件
@@ -116,16 +121,18 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `generated/combos.json`：生成後 combo 資料
 
 ### 載入層
-- `shared/cardLoader.js`：CSV / JSON 資料載入、normalization 與最小驗證（下一步擴充 validator 覆蓋）
+- `shared/cardLoader.js`：CSV / JSON 資料載入與最小驗證
 
 ### 引擎層
 - `server/game/gameEngine.js`：遊戲引擎入口
-- `server/game/state/createInitialState.js`：由 authoritative generated data 建立初始狀態、starter deck、initial hand、shop state
+- `server/game/state/createInitialState.js`：初始狀態建立
 - `server/game/rules/distance.js`：距離規則
 - `server/game/rules/facing.js`：面向修正
 - `server/game/rules/advantage.js`：advantage / disadvantage
 - `server/game/rules/cardResolver.js`：卡牌 resolver
 - `server/game/rules/turnEngine.js`：回合結算流程
+- `server/game/rules/shopResolver.js`：商店購買 / MP / stock 流程
+- `server/game/rules/stackResolver.js`：stack 累積 / 清算流程
 
 ### Debug / Sandbox 層
 - `server/game/debug/browser-sandbox.html`：browser debug sandbox UI
@@ -137,6 +144,12 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 ### 測試層
 - `tests/rules/gameEngine.test.js`：核心 rules 單元測試
 - `tests/rules/cardLoader.test.js`：資料載入測試
+- `tests/rules/createInitialState.test.js`：初始狀態測試
+- `tests/rules/createInitialState.starterDeck.test.js`：starter deck 組裝測試
+- `tests/rules/shopResolver.test.js`：商店買入流程測試
+- `tests/rules/stackResolver.test.js`：stack 解析測試
+- `tests/rules/targetingResolver.test.js`：targeting 測試
+- `tests/rules/eliminationResolver.test.js`：elimination 測試
 
 ## 8. 各檔案需要共用的 API
 ### Rules API Contract（authoritative）
@@ -213,9 +226,9 @@ Response shape：
 ```
 
 ### Scenario source contract
-- browser / server / CLI 必須共用同一份 scenario 概念
-- `server/game/debug/scenarios.js` 只可作 re-export / 包裝
-- scenario 名稱要與 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` 對齊
+- browser / server / CLI 必須共用同一份 scenario 概念。
+- `server/game/debug/scenarios.js` 只可作 re-export / 包裝。
+- scenario 名稱要與 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` 對齊。
 
 ## 9. 需要固定使用的程式碼
 ### Selection item 固定格式
@@ -250,16 +263,16 @@ Response shape：
 ```
 
 ### 必用 helper / 行為
-- `hydrateSelection(state, scenarioSelection)`：server side 由現有 state 或 generated cards 補回 card 物件
-- `readJsonBody(req)`：debug server 讀 request body 時必須驗證 JSON 與 size limit
-- `renderResult(result)`：browser sandbox 顯示 initial / p1 / p2 / final / log / error
-- `setStatus(type, text)`：browser sandbox 狀態統一顯示
+- `hydrateSelection(state, scenarioSelection)`：server side 由現有 state 或 generated cards 補回 card 物件。
+- `readJsonBody(req)`：debug server 讀 request body 時必須驗證 JSON 與 size limit。
+- `renderResult(result)`：browser sandbox 顯示 initial / p1 / p2 / final / log / error。
+- `setStatus(type, text)`：browser sandbox 狀態統一顯示。
 
 ### 不可自行改動的固定習慣
-- move log expectation 一律由起始座標與 `dx / dy` 推導
-- browser 端不直接 import CommonJS engine
-- real engine 只可經 debug server API 呼叫
-- generated data 變更後，先 rebuild 再驗證
+- move log expectation 一律由起始座標與 `dx / dy` 推導。
+- browser 端不直接 import CommonJS engine。
+- real engine 只可經 debug server API 呼叫。
+- generated data 變更後，先 rebuild 再驗證。
 
 ### 主流程
 authoritative flow（current production debug path）：
@@ -285,9 +298,9 @@ browser sandbox 現時 authoritative adapter mode 係 `server-api-real-engine`�
 `browser-engine-adapter.js` 現時只應標示為 legacy / deprecated experiment / debugging reference。  
 除非另開新 slice、先改 spec、再補 test、最後改 code，否則不可重回主流程。
 
-## SLICE-41 authoritative data contract
+### SLICE-41 authoritative data contract
 
-### generated data
+#### generated data
 以下 generated data 現已列為 authoritative input：
 - `generated/cards.json`
 - `generated/characters.json`
@@ -295,20 +308,20 @@ browser sandbox 現時 authoritative adapter mode 係 `server-api-real-engine`�
 - `generated/combos.json`
 - `generated/ai_profiles.json`
 
-### loader
+#### loader
 `shared/cardLoader.js` 必須負責：
 - validation
 - normalization
 - id lookup
 - generated data snapshot
 
-### state initialization
+#### state initialization
 `server/game/state/createInitialState.js` 必須：
 - 只從 authoritative generated data 建立角色、起始手牌、牌庫、商店
 - 為每張卡建立 `instanceId` 與 `definitionId`
 - 建立 `stack`、`eliminatedPlayers`、`shop.stockByCardId` 等正式欄位
 
-### build validation
+#### build validation
 `scripts/build-data.js` build 完後必須即時呼叫 generated data validation；validation 失敗時 build 要直接 fail。
 
 ## 10. 更新規則
@@ -317,4 +330,3 @@ browser sandbox 現時 authoritative adapter mode 係 `server-api-real-engine`�
 - 若規格改動，先改 `docs/GAME_SPEC.md`，再改 test，再改 code。
 - 重大 slice 完成後，更新 `CODEX_HANDOFF.md` 同本文件。
 - 保持相同 heading 編號與順序，避免未來自動化或人工 review 時格式漂移。
-
