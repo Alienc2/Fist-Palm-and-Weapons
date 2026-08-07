@@ -1,9 +1,10 @@
-# CODEX_HANDOFF.md V15
+# CODEX_HANDOFF.md V16
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V15
-- 更新日期時間：2026-08-08 00:06 HKT
+- 版本：V16
+- 更新日期時間：2026-08-08 01:51 HKT
+
 
 
 
@@ -50,6 +51,8 @@
 | Phase E 正式 UI 骨架（SLICE-E-01） | `client/server.js`、`client/index.html`、`client/gameStore.js`、`client/layout.js`、`client/app.js`、`client/styles.css` | `npm run client` + browser 驗證 | 已完成 |
 | Phase E 正式 UI 視圖（SLICE-E-02） | `client/views/*.js`（board / hand / selected / log / shop / target / facing / resolve / result） | `npm run client` + browser 驗證 | 已完成 |
 | Phase F AI 與部署（SLICE-F-01） | `server/game/ai/aiDecision.js`、`server/game/ai/aiMatch.js`、`scripts/run-ai-match.js`、`tests/ai/*.test.js`、`Dockerfile`、`docker-compose.yml`、`docs/DEPLOYMENT.md` | `npm run test:ai`、`npm run ai:match`、`docker build` | 已完成 |
+| AI 對戰接入正式 UI（SLICE-F-02） | `client/server.js`、`client/index.html`、`client/app.js`、`client/gameStore.js`、`client/styles.css` | `npm run client` + AI 整合 smoke test | 已完成 |
+
 
 
 
@@ -109,6 +112,8 @@
 - `Dockerfile` / `docker-compose.yml`：部署映像與容器
 - `docs/DEPLOYMENT.md`：部署流程文件
 - `gameEngine.createMatch(options)` 已支援傳入 players 建立對戰
+- SLICE-F-02：AI 對戰接入正式 UI（`client/server.js` 支援 AI 玩家 + `/api/play` 自動選牌、`index.html` 遊玩人數 / 電腦敵人選擇、`app.js` 動態角色選單 + 玩家切換、`gameStore` 多玩家 + AI 設定、`styles.css` 表單樣式）
+
 
 ### 3.4 現階段重點風險
 
@@ -177,7 +182,10 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `docs/DEPLOYMENT.md`：部署流程文件。
 - `npm run test:ai` 通過（24 tests）。
 - `npm run ai:match` 可執行 AI 對戰。
+- SLICE-F-02：AI 對戰接入正式 UI 已完成（`client/server.js` 支援 AI 玩家 + `/api/play` 自動選牌、`index.html` 遊玩人數 / 電腦敵人選擇、`app.js` 動態角色選單 + 玩家切換、`gameStore` 多玩家 + AI 設定）。
+- 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）。
 - SLICE-E-01：Phase E 正式 UI 骨架已完成（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）。
+
 - SLICE-E-02：Phase E 正式 UI 視圖已完成（board / hand / selected / log / shop / target / facing / resolve / result）。
 - `npm run client` 可啟動正式 UI server，`GET /api/health` 通過。
 - client server API 流程已驗證：`POST /api/match` → `POST /api/select` → `POST /api/play` 全流程通過。

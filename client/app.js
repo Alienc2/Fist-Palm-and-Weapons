@@ -12,57 +12,12 @@ import { renderBoard } from "./views/boardView.js";
 import { renderHand } from "./views/handView.js";
 import { renderSelectedCards } from "./views/selectedCardsView.js";
 import { renderLog } from "./views/logView.js";
-import { openShopModal } from "./views/shopModal.js";
-import { openTargetPicker } from "./views/targetPicker.js";
-import { openFacingPicker } from "./views/facingPicker.js";
 import { playResolveAnimation } from "./views/resolveAnimation.js";
 import { showResultOverlay } from "./views/resultOverlay.js";
-
-// ---- 選牌流程：依卡牌類型決定 extra ----
-
-function handleCardSelection(playerId, card) {
-  if (card.type === "attack") {
-    openTargetPicker(playerId, card, (targetId) => {
-      gameStore.addSelection(playerId, card, { preferredTargetId: targetId });
-    });
-    return;
-  }
-
-  if (card.type === "move") {
-    openFacingPicker(playerId, (facing) => {
-      const dxdy = facingToDxDy(facing);
-      gameStore.addSelection(playerId, card, dxdy);
-    });
-    return;
-  }
-
-  if (card.type === "buy") {
-    openShopModal(playerId, (shopCardId) => {
-      gameStore.addSelection(playerId, card, { shopCardId });
-    });
-    return;
-  }
-
-  // defense / recover / counter：無需額外 extra
-  gameStore.addSelection(playerId, card, {});
-}
-
-function facingToDxDy(facing) {
-  switch (facing) {
-    case "up":
-      return { dx: 0, dy: -1 };
-    case "down":
-      return { dx: 0, dy: 1 };
-    case "left":
-      return { dx: -1, dy: 0 };
-    case "right":
-      return { dx: 1, dy: 0 };
-    default:
-      return { dx: 0, dy: 0 };
-  }
-}
+import { handleCardSelection } from "./selectionFlow.js";
 
 // ---- 渲染 ----
+
 
 function renderAll(state) {
   renderBoard(state);
@@ -72,7 +27,40 @@ function renderAll(state) {
   renderPlayerStatus(state);
   renderMatchMeta(state);
   updateControls(state);
+  updateActivePlayerSelect(state);
 }
+
+// 更新「目前操作玩家」下拉選單（只列人類玩家）
+function updateActivePlayerSelect(state) {
+  const select = qs("#activePlayerSelect");
+  if (!select) return;
+
+  if (!state) {
+    select.disabled = true;
+    select.innerHTML = "";
+    const opt = el("option", { value: "P1", text: "P1" });
+    select.appendChild(opt);
+    return;
+  }
+
+  const humanPlayers = state.players.filter((p) => !p.isAi);
+  if (humanPlayers.length <= 1) {
+    select.disabled = true;
+    select.innerHTML = "";
+    const opt = el("option", { value: humanPlayers[0]?.id || "P1", text: humanPlayers[0]?.id || "P1" });
+    select.appendChild(opt);
+    return;
+  }
+
+  select.disabled = false;
+  select.innerHTML = "";
+  for (const p of humanPlayers) {
+    const opt = el("option", { value: p.id, text: p.id });
+    if (p.id === gameStore.activePlayerId) opt.selected = true;
+    select.appendChild(opt);
+  }
+}
+
 
 function renderPlayerStatus(state) {
   const container = qs("#playerStatus");
@@ -117,28 +105,100 @@ function updateControls(state) {
   startBtn.disabled = hasMatch;
 }
 
+const CHARACTER_OPTIONS = [
+  { value: "char_attack", label: "破軍（攻擊）" },
+  { value: "char_defense", label: "玄武（防禦）" },
+  { value: "char_move", label: "飛翎（移動）" },
+  { value: "char_balanced", label: "無鋒（均衡）" },
+];
+
+// ---- 對戰設定：遊玩人數 / 電腦敵人 / 角色 ----
+
+// 依遊玩人數動態產生角色下拉選單
+function renderCharacterSelects() {
+  const humanCount = Number(qs("#humanCount").value || 1);
+  const container = qs("#characterSelects");
+  clear(container);
+
+  for (let i = 1; i <= humanCount; i++) {
+    const row = el("div", { class: "field-row" }, [
+      el("label", { class: "field-label", for: `p${i}Character`, text: `P${i} 角色` }),
+    ]);
+    const select = el("select", { id: `p${i}Character`, class: "field-control" });
+    for (const opt of CHARACTER_OPTIONS) {
+      const option = el("option", { value: opt.value, text: opt.label });
+      if (i === 2 && opt.value === "char_defense") option.selected = true;
+      select.appendChild(option);
+    }
+    row.appendChild(select);
+    container.appendChild(row);
+  }
+}
+
+// 依遊玩人數 / 電腦敵人建立對戰設定
+function readMatchConfig() {
+  const humanCount = Number(qs("#humanCount").value || 1);
+  const aiCount = Number(qs("#aiCount").value || 0);
+
+  const players = [];
+  // 人類玩家
+  for (let i = 1; i <= humanCount; i++) {
+    const charSelect = qs(`#p${i}Character`);
+    players.push({
+      id: `P${i}`,
+      position: { x: 1, y: 1 },
+      characterId: charSelect ? charSelect.value : "char_attack",
+      isHuman: true,
+    });
+  }
+  // AI 玩家
+  for (let i = 0; i < aiCount; i++) {
+    const id = `P${humanCount + i + 1}`;
+    players.push({
+      id,
+      position: { x: 3, y: 3 },
+      characterId: "char_balanced",
+      isHuman: false,
+      aiProfileId: "ai_normal",
+    });
+  }
+
+  return { players, humanCount, aiCount };
+}
+
+
 // ---- 事件 ----
 
 function bindEvents() {
+  // 遊玩人數改變時重新產生角色下拉選單
+  qs("#humanCount").addEventListener("change", () => {
+    renderCharacterSelects();
+  });
+
+  // 切換目前操作玩家
+  qs("#activePlayerSelect").addEventListener("change", (event) => {
+    gameStore.setActivePlayer(event.target.value);
+  });
+
   qs("#startMatchButton").addEventListener("click", async () => {
-    const p1 = qs("#p1Character").value;
-    const p2 = qs("#p2Character").value;
+    const config = readMatchConfig();
     try {
-      await gameStore.createMatch(p1, p2);
+      await gameStore.createMatch(config);
     } catch (error) {
       alert(`開始對戰失敗：${error.message}`);
     }
   });
 
+
   qs("#newMatchButton").addEventListener("click", async () => {
-    const p1 = qs("#p1Character").value;
-    const p2 = qs("#p2Character").value;
+    const config = readMatchConfig();
     try {
-      await gameStore.createMatch(p1, p2);
+      await gameStore.createMatch(config);
     } catch (error) {
       alert(`新對戰失敗：${error.message}`);
     }
   });
+
 
   qs("#resetButton").addEventListener("click", async () => {
     await gameStore.reset();
@@ -160,11 +220,10 @@ function bindEvents() {
       const alive = after.players.filter((p) => !p.isEliminated);
       if (alive.length <= 1) {
         showResultOverlay(after, () => {
-          const p1 = qs("#p1Character").value;
-          const p2 = qs("#p2Character").value;
-          gameStore.createMatch(p1, p2);
+          gameStore.createMatch(readMatchConfig());
         });
       }
+
     } catch (error) {
       alert(`結算回合失敗：${error.message}`);
     }
@@ -180,9 +239,11 @@ function bindEvents() {
 // ---- 啟動 ----
 
 function init() {
+  renderCharacterSelects();
   bindEvents();
   gameStore.subscribe(renderAll);
   renderAll(null);
 }
+
 
 init();

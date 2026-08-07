@@ -51,15 +51,30 @@ class GameStore {
     return data;
   }
 
-  async createMatch(p1CharacterId, p2CharacterId) {
+  async createMatch(config = {}) {
     this.busy = true;
     try {
-      const data = await this.request("POST", "/api/match", {
-        players: [
-          { id: "P1", position: { x: 1, y: 1 }, characterId: p1CharacterId },
-          { id: "P2", position: { x: 3, y: 3 }, characterId: p2CharacterId },
-        ],
-      });
+      // 支援兩種呼叫方式：
+      //   1. 舊式：createMatch(p1CharacterId, p2CharacterId)
+      //   2. 新式：createMatch({ players: [...], humanCount, aiCount })
+      let players;
+      if (Array.isArray(config)) {
+        players = config;
+      } else if (config && Array.isArray(config.players)) {
+        players = config.players;
+      } else if (typeof config === "string") {
+        players = [
+          { id: "P1", position: { x: 1, y: 1 }, characterId: config },
+          { id: "P2", position: { x: 3, y: 3 }, characterId: arguments[1] || "char_defense" },
+        ];
+      } else {
+        players = [
+          { id: "P1", position: { x: 1, y: 1 }, characterId: "char_attack" },
+          { id: "P2", position: { x: 3, y: 3 }, characterId: "char_defense" },
+        ];
+      }
+
+      const data = await this.request("POST", "/api/match", { players });
       this.state = data.state;
       this.pendingSelections = {};
       this.pendingFacing = {};
@@ -69,6 +84,7 @@ class GameStore {
       this.busy = false;
     }
   }
+
 
   async refreshState() {
     const data = await this.request("GET", "/api/state");
@@ -124,6 +140,12 @@ class GameStore {
   getActivePlayer() {
     return this.getPlayer(this.activePlayerId);
   }
+
+  setActivePlayer(playerId) {
+    this.activePlayerId = playerId;
+    this.notify();
+  }
+
 
   getPendingSelections(playerId) {
     return this.pendingSelections[playerId] || [];

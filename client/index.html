@@ -32,30 +32,38 @@
       <section class="panel">
         <h2>對戰設定</h2>
         <div class="field-row">
-          <label class="field-label" for="p1Character">P1 角色</label>
-          <select id="p1Character" class="field-control">
-            <option value="char_attack">破軍（攻擊）</option>
-            <option value="char_defense">玄武（防禦）</option>
-            <option value="char_move">飛翎（移動）</option>
-            <option value="char_balanced">無鋒（均衡）</option>
+          <label class="field-label" for="humanCount">遊玩人數</label>
+          <select id="humanCount" class="field-control">
+            <option value="1" selected>1 人</option>
+            <option value="2">2 人</option>
+            <option value="3">3 人</option>
+            <option value="4">4 人</option>
           </select>
         </div>
         <div class="field-row">
-          <label class="field-label" for="p2Character">P2 角色</label>
-          <select id="p2Character" class="field-control">
-            <option value="char_attack">破軍（攻擊）</option>
-            <option value="char_defense" selected>玄武（防禦）</option>
-            <option value="char_move">飛翎（移動）</option>
-            <option value="char_balanced">無鋒（均衡）</option>
+          <label class="field-label" for="aiCount">電腦敵人</label>
+          <select id="aiCount" class="field-control">
+            <option value="0" selected>0 個</option>
+            <option value="1">1 個</option>
+            <option value="2">2 個</option>
+            <option value="3">3 個</option>
           </select>
         </div>
+        <div id="characterSelects" class="character-selects"></div>
         <div class="button-row">
           <button id="startMatchButton" class="primary-button" type="button">開始對戰</button>
         </div>
       </section>
 
+
       <section class="panel">
         <h2>回合控制</h2>
+        <div class="field-row">
+          <label class="field-label" for="activePlayerSelect">目前操作玩家</label>
+          <select id="activePlayerSelect" class="field-control" disabled>
+            <option value="P1">P1</option>
+          </select>
+        </div>
         <div id="playerStatus" class="player-status-list">
           <p class="muted-text">開始對戰後顯示玩家狀態。</p>
         </div>
@@ -64,6 +72,7 @@
           <button id="resetButton" class="secondary-button" type="button" disabled>重設</button>
         </div>
       </section>
+
 
       <section class="panel">
         <h2>操作提示</h2>

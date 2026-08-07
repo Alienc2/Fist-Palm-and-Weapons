@@ -10,6 +10,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const gameEngine = require("../server/game/gameEngine");
+const { autoSelectAiPlayers } = require("../server/game/ai/aiMatch");
+
 
 const ROOT_DIR = path.resolve(__dirname);
 const PORT_START = Number(process.env.PORT || 4000);
@@ -65,8 +67,10 @@ function serializePlayer(player) {
     lastRevealedSubtype: player.lastRevealedSubtype || null,
     guardSubtype: player.guardSubtype || null,
     isEliminated: !!player.isEliminated,
+    isAi: !!player.isAi,
   };
 }
+
 
 function serializeCard(card) {
   if (!card) return null;
@@ -119,7 +123,9 @@ function serializeState(state) {
     startingPlayerIndex: state.startingPlayerIndex,
     activePlayerIndex: state.activePlayerIndex,
     turnOrder: state.turnOrder,
+    aiPlayerIds: state.aiPlayerIds || [],
     players: (state.players || []).map(serializePlayer),
+
     shop: serializeShop(state),
     stackCount: Array.isArray(state.stack) ? state.stack.length : 0,
     eliminatedPlayers: state.eliminatedPlayers || [],
@@ -127,15 +133,30 @@ function serializeState(state) {
   };
 }
 
-// 建立一局新對戰（可指定玩家角色）
+// 建立一局新對戰（可指定玩家角色，含 AI 玩家）
 function createMatch(payload = {}) {
   const players = payload.players || [
     { id: "P1", position: { x: 1, y: 1 }, characterId: "char_attack" },
     { id: "P2", position: { x: 3, y: 3 }, characterId: "char_defense" },
   ];
+
+  // 標記 AI 玩家（有 aiProfileId 即為 AI 控制）
+  const aiPlayerIds = players
+    .filter((p) => p.aiProfileId !== undefined && p.aiProfileId !== null)
+    .map((p) => p.id);
+
   const state = gameEngine.createMatch({ players });
+
+  // 在玩家物件上標記 isAi，供 UI 判斷人類 / AI
+  for (const p of state.players) {
+    p.isAi = aiPlayerIds.includes(p.id);
+  }
+
+  state.aiPlayerIds = aiPlayerIds;
   return state;
 }
+
+
 
 function readJsonBody(req, callback) {
   let body = "";
@@ -284,6 +305,11 @@ function createRequestHandler(options = {}) {
         return;
       }
       try {
+        // 先為 AI 玩家自動填選牌，再結算回合
+        const aiPlayerIds = matchState.aiPlayerIds || [];
+        if (aiPlayerIds.length > 0) {
+          autoSelectAiPlayers(matchState, { aiPlayerIds });
+        }
         gameEngine.playOneTurn(matchState);
         sendJson(res, 200, { ok: true, state: serializeState(matchState) });
       } catch (error) {
@@ -294,6 +320,7 @@ function createRequestHandler(options = {}) {
       }
       return;
     }
+
 
     if (req.method === "POST" && pathname === "/api/reset") {
       matchState = null;

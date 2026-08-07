@@ -3,6 +3,8 @@
 
 import { el, clear, qs, cardNode } from "../layout.js";
 import { gameStore } from "../gameStore.js";
+import { handleCardSelection } from "../selectionFlow.js";
+
 
 export function renderHand(state) {
   const container = qs("#handView");
@@ -39,8 +41,9 @@ export function renderHand(state) {
         disabled: alreadySelected,
         onClick: () => {
           if (alreadySelected) return;
-          gameStore.addSelection(player.id, card, {});
+          handleCardSelection(player.id, card);
         },
+
       })
     );
   }

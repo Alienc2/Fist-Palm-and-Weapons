@@ -1,10 +1,11 @@
-# CONTEXT.md V15
+# CONTEXT.md V16
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V15
-- 更新日期時間：2026-08-08 00:05 HKT
+- 版本：V16
+- 更新日期時間：2026-08-08 01:50 HKT
+
 
 
 
@@ -71,6 +72,7 @@
 - `tests/ai/aiMatch.e2e.test.js`：AI 對戰 integration / e2e 測試
 - `Dockerfile` / `docker-compose.yml`：部署映像與容器
 - `docs/DEPLOYMENT.md`：部署流程文件
+- AI 對戰接入正式 UI（SLICE-F-02：`client/server.js` 支援 AI 玩家 + 自動選牌、`index.html` 遊玩人數 / 電腦敵人選擇、`app.js` 動態角色選單 + 玩家切換、`gameStore` 多玩家 + AI 設定）
 
 ### 已驗證結果
 - `npm run build:data` 通過
@@ -78,6 +80,8 @@
 - `npm run test:ai` 通過
 - 全套 `npx jest --runInBand`：`Test Suites: 21 passed, 21 total`
 - `Tests: 183 passed, 183 total`
+- 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）
+
 - `tests/ai/aiDecision.test.js`：通過
 - `tests/ai/aiMatch.e2e.test.js`：通過
 - `node scripts/run-ai-match.js --rounds 5` 通過
@@ -128,6 +132,7 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - Phase D 已收口：多目標 / combo / passive / 多人引擎正式化。
 - Phase E 正式 UI 已完成（SLICE-E-01 骨架 + SLICE-E-02 視圖）。
 - Phase F AI 與部署已完成（SLICE-F-01：`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）。
+- AI 對戰接入正式 UI 已完成（SLICE-F-02：正式 UI 可選遊玩人數 / 電腦敵人，`/api/play` 自動為 AI 玩家選牌）。
 - 全套 `npx jest --runInBand` 已達 `21 suites / 183 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
@@ -139,7 +144,7 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 ## 6. 下一個需要完成的程式碼
 - Phase D 多人同步（online 2P / 3P / 4P）
 - Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
-- AI 對戰接入正式 UI（可選 AI 對手）
+
 
 
 
@@ -199,11 +204,12 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `server/game/debug/browser-debug-server.js`：debug API server / real engine runner
 - `server/game/debug/scenarios.js`：scenario 資料 re-export / 共用入口
 
-### Client 正式 UI 層（Phase E）
-- `client/server.js`：正式 UI server（靜態檔案 + 遊戲 API：`/api/health`、`/api/match`、`/api/select`、`/api/play`、`/api/reset`）
-- `client/index.html`：正式 UI 入口頁面
-- `client/app.js`：正式 UI 主程式（事件綁定 / 選牌流程 / 結算動畫 / 結果 overlay）
-- `client/gameStore.js`：前端狀態 store（create / select / play / reset / subscribe）
+### Client 正式 UI 層（Phase E / F）
+- `client/server.js`：正式 UI server（靜態檔案 + 遊戲 API：`/api/health`、`/api/match`、`/api/select`、`/api/play`、`/api/reset`；`/api/play` 會先為 AI 玩家自動選牌再結算）
+- `client/index.html`：正式 UI 入口頁面（遊玩人數 / 電腦敵人 / 角色選擇 / 玩家切換）
+- `client/app.js`：正式 UI 主程式（事件綁定 / 選牌流程 / 結算動畫 / 結果 overlay / 動態角色選單 / 玩家切換）
+- `client/gameStore.js`：前端狀態 store（create / select / play / reset / subscribe / 多玩家 + AI 設定 / activePlayer 切換）
+
 - `client/layout.js`：DOM helper（el / qs / clear / modal / cardNode）
 - `client/styles.css`：正式 UI 樣式（dark / light 主題）
 - `client/views/boardView.js`：5×5 地圖 + 角色 token + 朝向
