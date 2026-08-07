@@ -9,10 +9,12 @@ const {
   applyRetargetInstruction,
 } = require("./targetingResolver");
 const { buyFromShop } = require("./shopResolver");
+const { getFrontDamageBonus, getFrontDefenseBonus } = require("./passiveResolver");
 
 function log(state, msg) {
   state.log.push(msg);
 }
+
 
 function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null) {
   let declaredTargetSet =
@@ -46,7 +48,15 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
   attacker.lastRevealedSubtype = card.subtype || "unknown";
 
   for (const opponent of validation.legalTargets) {
-    if (!isWithinRange(attacker.position, opponent.position, card.rangeMin, card.rangeMax)) {
+    const comboRangeBonus = attacker.comboRangeBonus || 0;
+    if (
+      !isWithinRange(
+        attacker.position,
+        opponent.position,
+        card.rangeMin,
+        card.rangeMax + comboRangeBonus
+      )
+    ) {
       log(state, `${attacker.id} 使用 ${card.id} 指向 ${opponent.id}，但距離不符`);
       continue;
     }
@@ -55,15 +65,26 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
     const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
     const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
 
-    let damage = card.damage + facingMod.damage + advMod.damage;
+    const comboDamageBonus = attacker.comboDamageBonus || 0;
+    const frontDamageBonus =
+      facingMod.relation === "front" ? getFrontDamageBonus(attacker) : 0;
+    let damage =
+      card.damage +
+      facingMod.damage +
+      advMod.damage +
+      comboDamageBonus +
+      frontDamageBonus;
     if (damage < 0) damage = 0;
 
     let block = 0;
     if (opponent.lastDefenseCard) {
-      block = opponent.lastDefenseCard.blockValue || 0;
+      const frontDefenseBonus =
+        facingMod.relation === "front" ? getFrontDefenseBonus(opponent) : 0;
+      block = (opponent.lastDefenseCard.blockValue || 0) + frontDefenseBonus;
       log(state, `${opponent.id} 的防禦殘留生效，減少 ${block} 傷害`);
       opponent.lastDefenseCard = null;
     }
+
 
     const finalDamage = Math.max(damage - block, 0);
 
@@ -124,6 +145,44 @@ function resolveBuy(state, player, card, extra = {}) {
   buyFromShop(state, player, extra.shopCardId);
 }
 
+function resolveRecover(state, player, card, extra = {}) {
+  player.lastRevealedSubtype = card.subtype || "recover";
+
+  const hpGain = Number(card.hpGain) || 0;
+  const mpGain = Number(card.mpGain) || 0;
+  const drawCount = Number(card.drawCount) || 0;
+
+  if (hpGain > 0) {
+    const before = player.hp;
+    player.hp = Math.min(player.maxHp, player.hp + hpGain);
+    const actual = player.hp - before;
+    log(state, `${player.id} 使用 ${card.id} 回復 ${actual} HP（${player.hp}/${player.maxHp} HP）`);
+  }
+
+  if (mpGain > 0) {
+    const before = player.mp;
+    player.mp = Math.min(player.maxMp, player.mp + mpGain);
+    const actual = player.mp - before;
+    log(state, `${player.id} 使用 ${card.id} 回復 ${actual} MP（${player.mp}/${player.maxMp} MP）`);
+  }
+
+  if (drawCount > 0) {
+    let drawn = 0;
+    for (let i = 0; i < drawCount; i++) {
+      if (player.deck.length === 0) break;
+      const cardDrawn = player.deck.shift();
+      player.hand.push(cardDrawn);
+      drawn += 1;
+    }
+    log(state, `${player.id} 使用 ${card.id} 抽 ${drawn} 張手牌`);
+  }
+
+  if (hpGain <= 0 && mpGain <= 0 && drawCount <= 0) {
+    log(state, `${player.id} 使用 ${card.id}，但沒有可回復的效果`);
+  }
+}
+
+
 function resolveCounter(state, defender, card, incomingDamage, incomingSubtype) {
   const { strongAgainst, weakAgainst } =
     require("./advantage").ADV_TABLE[card.subtype] || {};
@@ -155,5 +214,8 @@ module.exports = {
   resolveDefense,
   resolveMove,
   resolveBuy,
+  resolveRecover,
   resolveCounter,
 };
+
+

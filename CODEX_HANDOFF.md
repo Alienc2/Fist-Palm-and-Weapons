@@ -1,9 +1,11 @@
-# CODEX_HANDOFF.md V11
+# CODEX_HANDOFF.md V14
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V11
-- 更新日期時間：2026-08-03 18:52 HKT
+- 版本：V14
+- 更新日期時間：2026-08-07 18:03 HKT
+
+
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 程式類型：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為交接、進度、驗證、階段規劃的固定入口，方便後續頻繁更新仍保持同一格式
@@ -37,6 +39,17 @@
 | browser sandbox 改走 debug API 路線 | `server/game/debug/browser-api-adapter.js`、`server/game/debug/browser-debug-server.js`、`server/game/debug/browser-sandbox.js` | browser + server 端驗證 | 已完成 |
 | `/api/run-scenario` server-side real engine | `server/game/debug/browser-debug-server.js` | API 回應驗證 | 已完成 |
 | generated data 回復版本控制 | `generated/*.json` | repo 檢查 | 已完成 |
+| recover 卡 resolver 正式化（SLICE-C-03） | `server/game/rules/cardResolver.js`、`tests/rules/recoverResolver.test.js` | `npm run test:rules` | 已完成 |
+| 轉向規則 facingChange（SLICE-C-04） | `server/game/rules/facingChangeResolver.js`、`server/game/rules/turnEngine.js`、`server/game/gameEngine.js`、`tests/rules/facingChangeResolver.test.js` | `npm run test:rules` | 已完成 |
+| 反擊連鎖完整化（SLICE-C-05） | `server/game/rules/counterChainResolver.js`、`server/game/rules/stackResolver.js`、`tests/rules/counterChainResolver.test.js` | `npm run test:rules` | 已完成 |
+| 多目標自動規則正式化（SLICE-D-01） | `server/game/rules/targetPriorityResolver.js`、`server/game/rules/targetingResolver.js`、`tests/rules/targetPriorityResolver.test.js` | `npm run test:rules` | 已完成 |
+| comboResolver 正式化（SLICE-D-02） | `server/game/rules/comboResolver.js`、`tests/rules/comboResolver.test.js` | `npm run test:rules` | 已完成 |
+| characters passive 接入（SLICE-D-03） | `server/game/rules/passiveResolver.js`、`server/game/rules/cardResolver.js`、`server/game/rules/shopResolver.js`、`server/game/rules/facingChangeResolver.js`、`tests/rules/passiveResolver.test.js` | `npm run test:rules` | 已完成 |
+| 多人引擎擴充（SLICE-D-04） | `server/game/rules/turnEngine.js`、`tests/rules/multiplayerEngine.test.js` | `npm run test:rules` | 已完成 |
+| Phase E 正式 UI 骨架（SLICE-E-01） | `client/server.js`、`client/index.html`、`client/gameStore.js`、`client/layout.js`、`client/app.js`、`client/styles.css` | `npm run client` + browser 驗證 | 已完成 |
+| Phase E 正式 UI 視圖（SLICE-E-02） | `client/views/*.js`（board / hand / selected / log / shop / target / facing / resolve / result） | `npm run client` + browser 驗證 | 已完成 |
+
+
 
 ### 3.2 已完成但必須鎖定的部份
 以下內容後續更新時不能隨意改，改動前要先同使用者確認：
@@ -69,9 +82,23 @@
 - `tests/rules/createInitialState.starterDeck.test.js`
 - `tests/rules/shopResolver.test.js`
 - `tests/rules/stackResolver.test.js`
+- `tests/rules/recoverResolver.test.js`
+- `tests/rules/facingChangeResolver.test.js`
+- `tests/rules/counterChainResolver.test.js`
 - 單一回合 debug runner（CLI）
 - browser debug sandbox（server API 跑 real engine）
 - `generated/*.json` 已納入版本控制
+- SLICE-C-03：recover 卡 resolver 正式化（HP / MP / 抽牌 / 封頂）
+- SLICE-C-04：轉向規則 facingChange（免費轉向 1 次、turnEngine 套用、gameEngine.setFacing API）
+- SLICE-C-05：反擊連鎖完整化（距離驗證 / 成功率 / 方向反轉 / ×2 連鎖 / 鏈終止）
+- SLICE-D-01：多目標自動規則正式化（targetPriorityResolver：距離 / 面向 / HP / 隨機，targetingResolver 接入）
+- SLICE-D-02：comboResolver 正式化（sequence / board_pattern / effect，turnEngine 接入）
+- SLICE-D-03：characters passive 接入（passiveResolver：front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount）
+- SLICE-D-04：多人引擎擴充（turnEngine N 玩家交錯揭牌 / 起始玩家輪轉 / 淘汰跳過 / 多目標）
+- SLICE-E-01：Phase E 正式 UI 骨架（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）
+- SLICE-E-02：Phase E 正式 UI 視圖（board / hand / selected / log / shop / target / facing / resolve / result）
+
+
 
 ### 3.4 現階段重點風險
 - browser 端唔可以再直接 import CommonJS engine。
@@ -82,10 +109,17 @@
 ## 4. 最新驗證 / 測試結果
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
-- `tests/rules` 最新總數：`9` suites passed, `78` tests passed。
+- 全套 `npx jest --runInBand` 最新總數：`19` suites passed, `159` tests passed。
+- `tests/rules/recoverResolver.test.js`：9 passed, 9 total。
+- `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total。
+- `tests/rules/counterChainResolver.test.js`：14 passed, 14 total。
 - `tests/rules/shopResolver.test.js` 通過。
 - `tests/rules/stackResolver.test.js` 通過。
 - `tests/rules/cardLoader.test.js`：10 passed, 10 total。
+- `tests/rules/targetPriorityResolver.test.js` 通過。
+- `tests/rules/comboResolver.test.js` 通過。
+- `tests/rules/passiveResolver.test.js`：11 passed, 11 total。
+- `tests/rules/multiplayerEngine.test.js`：6 passed, 6 total。
 - `cardLoader authoritative data contract` 全部通過。
 - `cardLoader validator` 全部通過。
 - `Default_Card_Set` / `No_of_Cards_in_Hand` validator 測試已覆蓋。
@@ -98,6 +132,8 @@
   - unknown scenario → `404`
   - invalid body → `400`
 
+
+
 ## 5. 當前階段
 ### Phase B
 資料正式接入 engine。
@@ -105,20 +141,37 @@
 ### Phase C
 規則 contract 收口與 debug runner。
 
-### Phase D（早期）
-本地 browser debug sandbox（單回合、server-api-real-engine）。
+### Phase D
+多目標 / combo / passive / 多人引擎正式化。
+
+### Phase E
+正式 UI（browser → client server API → real engine）。
 
 ### 當前階段狀態
+- SLICE-E-01：Phase E 正式 UI 骨架已完成（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）。
+- SLICE-E-02：Phase E 正式 UI 視圖已完成（board / hand / selected / log / shop / target / facing / resolve / result）。
+- `npm run client` 可啟動正式 UI server，`GET /api/health` 通過。
+- client server API 流程已驗證：`POST /api/match` → `POST /api/select` → `POST /api/play` 全流程通過。
+- Phase E 正式 UI 已取代 debug sandbox 作為主要遊玩入口。
 - Phase B checkpoint 1 已通過驗證。
 - `46-3A starter deck` 已完成。
 - `46-3B validator 覆蓋` 已完成。
 - `shopResolver` 已正式化，並有 `buy 成功 / MP 不足 / stock 耗盡` 測試。
 - `stackResolver` 已正式化，並有 `stack 順序會改變最終結果` 測試。
+- SLICE-C-03：recover 卡 resolver 正式化，並有 `HP / MP / 抽牌 / 封頂` 測試。
+- SLICE-C-04：轉向規則 facingChange 正式化，並有 `免費轉向 / turnEngine 套用 / 影響 facing 修正` 測試。
+- SLICE-C-05：反擊連鎖完整化，並有 `距離驗證 / 成功率 / ×2 連鎖 / 鏈終止` 測試。
+- SLICE-D-01：多目標自動規則正式化，並有 `距離 / 面向 / HP / 隨機` 測試。
+- SLICE-D-02：comboResolver 正式化，並有 `sequence / board_pattern / effect` 測試。
+- SLICE-D-03：characters passive 接入，並有 `front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount` 測試。
+- SLICE-D-04：多人引擎擴充，並有 `3P / 4P 交錯揭牌 / 起始玩家輪轉 / 淘汰跳過 / 多目標` 測試。
 - single-turn CLI runner 與 browser sandbox 已能對齊基本 scenario。
 - SLICE-40E 已將 browser sandbox 主流程收口為「browser → debug API → Node server → real game engine」。
 - SLICE-40F 已補 `POST /api/run-scenario` smoke / integration test，並已通過。
 - SLICE-40G 正在進行 browser sandbox 文件收口。
 - 不再依賴 browser direct import CommonJS engine。
+
+
 
 ## 6. 計劃中的後續 1–10 個階段
 
@@ -169,7 +222,7 @@
 - online 2P
 - online 3P / 4P
 
-### 9. Phase E 正式 UI
+### 9. Phase E 正式 UI（已完成）
 - board view
 - hand view
 - selected cards view
@@ -178,6 +231,8 @@
 - target picker
 - facing picker
 - resolve animation
+- result overlay
+- client server（靜態 + 遊戲 API）
 
 ### 10. Phase F AI 與部署
 - `ai_profiles` 接入
@@ -215,7 +270,15 @@
 - `server/game/rules/facing.js`：面向修正。
 - `server/game/rules/advantage.js`：advantage / disadvantage。
 - `server/game/rules/cardResolver.js`：卡牌 resolver。
-- `server/game/rules/turnEngine.js`：回合結算流程。
+- `server/game/rules/turnEngine.js`：回合結算流程（N 玩家交錯揭牌）。
+- `server/game/rules/facingChangeResolver.js`：轉向規則（免費轉向 1 次）。
+- `server/game/rules/counterChainResolver.js`：反擊連鎖（距離驗證 / 成功率 / ×2 連鎖）。
+- `server/game/rules/targetPriorityResolver.js`：多目標自動規則（距離 / 面向 / HP / 隨機）。
+- `server/game/rules/targetingResolver.js`：目標宣告 / 驗證 / retarget。
+- `server/game/rules/comboResolver.js`：combo 偵測與效果（sequence / board_pattern / effect）。
+- `server/game/rules/passiveResolver.js`：角色被動技能查詢與效果（front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount）。
+
+
 
 #### Debug / Sandbox 層
 - `server/game/debug/browser-sandbox.html`：browser debug sandbox UI。
@@ -229,6 +292,15 @@
 - `tests/rules/cardLoader.test.js`：資料載入測試。
 - `tests/rules/shopResolver.test.js`：shop resolver 測試。
 - `tests/rules/stackResolver.test.js`：stack resolver 測試。
+- `tests/rules/recoverResolver.test.js`：recover 卡 resolver 測試。
+- `tests/rules/facingChangeResolver.test.js`：轉向規則測試。
+- `tests/rules/counterChainResolver.test.js`：反擊連鎖測試。
+- `tests/rules/targetPriorityResolver.test.js`：多目標自動規則測試。
+- `tests/rules/comboResolver.test.js`：combo resolver 測試。
+- `tests/rules/passiveResolver.test.js`：角色被動技能測試。
+- `tests/rules/multiplayerEngine.test.js`：多人引擎（3P / 4P）測試。
+
+
 
 ### 7.2 共用 API
 #### Rules API Contract

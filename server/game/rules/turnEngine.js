@@ -1,13 +1,24 @@
 // server/game/rules/turnEngine.js
 
-const { resolveAttack, resolveDefense, resolveMove, resolveBuy } = require("./cardResolver");
+const {
+  resolveAttack,
+  resolveDefense,
+  resolveMove,
+  resolveBuy,
+  resolveRecover,
+} = require("./cardResolver");
+
 const { resolveEliminations } = require("./eliminationResolver");
+const { applyFacingChange } = require("./facingChangeResolver");
+const { resolveCombos, clearRoundEffects } = require("./comboResolver");
 const {
   createStackItem,
   pushStackItem,
   resolveStack,
   findTopCounterableAttack,
 } = require("./stackResolver");
+
+
 
 function startRound(state) {
   state.phase = "ROUND_START";
@@ -43,29 +54,48 @@ function endTurn(state) {
   // 清防禦殘留（未觸發亦清）
   for (const p of state.players) {
     p.lastDefenseCard = null;
+    clearRoundEffects(p);
   }
 }
 
 function resolveTurn(state) {
   state.phase = "RESOLVE_TURN";
-  const [p1, p2] = state.players;
 
-  const maxLen = Math.max(p1.selectedCards.length, p2.selectedCards.length);
+  // 依 turnOrder 取得本回合玩家順序（由 startingPlayerIndex 輪轉）
+  const turnOrder = state.turnOrder || state.players.map((p) => p.id);
+  const startIndex = state.startingPlayerIndex || 0;
+  const orderedPlayers = [
+    ...turnOrder.slice(startIndex),
+    ...turnOrder.slice(0, startIndex),
+  ]
+    .map((id) => state.players.find((p) => p.id === id))
+    .filter(Boolean);
+
+  // 回合開始時套用每位玩家的免費轉向（若已設定）
+  for (const p of state.players) {
+    applyFacingChange(state, p);
+  }
+
+  // 偵測並套用每位玩家的 combo 效果
+  for (const p of state.players) {
+    resolveCombos(state, p, null);
+  }
+
+  const maxLen = Math.max(
+    ...state.players.map((p) => p.selectedCards.length)
+  );
+
+  // 交錯揭牌：依玩家順序逐張揭示（跳過已淘汰玩家）
   for (let i = 0; i < maxLen; i++) {
-    // 交錯揭牌
-    const attackerFirst = state.startingPlayerIndex === 0 ? p1 : p2;
-    const attackerSecond = attackerFirst === p1 ? p2 : p1;
-
-    const firstCard = attackerFirst.selectedCards[i];
-    if (firstCard) {
-      resolveCardByType(state, attackerFirst, firstCard);
-    }
-
-    const secondCard = attackerSecond.selectedCards[i];
-    if (secondCard) {
-      resolveCardByType(state, attackerSecond, secondCard);
+    for (const player of orderedPlayers) {
+      if (player.isEliminated) continue;
+      const cardEntry = player.selectedCards[i];
+      if (cardEntry) {
+        resolveCardByType(state, player, cardEntry);
+      }
     }
   }
+
 
   resolveStack(state, {
     log: (currentState, message) => currentState.log.push(message),
@@ -78,6 +108,7 @@ function resolveTurn(state) {
   discardToLimit(state);
   startRound(state);
   }
+
 
 function resolveCardByType(state, player, cardEntry) {
   if (!cardEntry || !cardEntry.card) {
@@ -112,10 +143,13 @@ function resolveCardByType(state, player, cardEntry) {
     resolveMove(state, player, card, extra);
   } else if (card.type === "buy") {
     resolveBuy(state, player, card, extra);
+  } else if (card.type === "recover") {
+    resolveRecover(state, player, card, extra);
   } else {
     state.log.push(`${player.id} 使用 ${card.id || "unknown_card"} 失敗：未知 card.type = ${card.type}`);
   }
 }
+
 
 module.exports = {
   resolveTurn,

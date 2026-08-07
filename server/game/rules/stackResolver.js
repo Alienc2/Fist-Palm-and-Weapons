@@ -3,6 +3,8 @@
 const {
   declareTargetSet,
 } = require("./targetingResolver");
+const { resolveCounterChain } = require("./counterChainResolver");
+
 
 function ensureStack(state) {
   if (!state.stack) {
@@ -60,6 +62,23 @@ function findTopCounterableAttack(state) {
   return null;
 }
 
+// 收集所有指向同一 attack 的 counter 卡（依 stack 由頂至底順序）
+function collectCountersForAttack(state, targetItem) {
+  ensureStack(state);
+  const counters = [];
+  for (let i = state.stack.length - 1; i >= 0; i -= 1) {
+    const item = state.stack[i];
+    if (item.card?.type !== "counter") continue;
+    const itsTarget =
+      (item.targetStackItemId && findStackItemById(state, item.targetStackItemId)) ||
+      findTopCounterableAttack(state);
+    if (itsTarget && itsTarget.id === targetItem.id) {
+      counters.push(item);
+    }
+  }
+  return counters;
+}
+
 function resolveTopStackItem(state, { log, resolveAttack }) {
   ensureStack(state);
   const item = state.stack.pop();
@@ -79,6 +98,19 @@ function resolveTopStackItem(state, { log, resolveAttack }) {
         state,
         `${sourcePlayer.id} 使用 ${item.card.id} 反制 ${targetItem.card.id}`
       );
+
+      // 收集所有指向同一 attack 的 counter，解析反擊連鎖
+      const allCounters = [item, ...collectCountersForAttack(state, targetItem)];
+      const targetSource = state.players.find((p) => p.id === targetItem.sourcePlayerId);
+
+      if (targetSource) {
+        const incomingAttack = {
+          sourcePlayer: targetSource,
+          damage: Number(targetItem.card.damage) || 0,
+          subtype: targetItem.card.subtype || "unknown",
+        };
+        resolveCounterChain(state, incomingAttack, allCounters);
+      }
     } else {
       log(state, `${sourcePlayer.id} 使用 ${item.card.id}，但沒有可反制目標`);
     }
@@ -98,6 +130,7 @@ function resolveTopStackItem(state, { log, resolveAttack }) {
 
   return item;
 }
+
 
 function resolveStack(state, deps) {
   ensureStack(state);

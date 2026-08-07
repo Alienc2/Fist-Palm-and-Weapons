@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-HK" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fist Palm and Weapons — 正式對戰 UI</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">FPW</div>
+      <div>
+        <h1>Fist Palm and Weapons</h1>
+        <p id="matchMeta" class="muted-text">尚未開始對戰</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button id="themeToggle" class="secondary-button" type="button" aria-label="切換主題">
+        切換主題
+      </button>
+      <button id="newMatchButton" class="primary-button" type="button">新對戰</button>
+    </div>
+  </header>
+
+  <main id="main" class="app-shell">
+    <!-- 左側：對戰資訊 + 控制 -->
+    <aside class="control-panel">
+      <section class="panel">
+        <h2>對戰設定</h2>
+        <div class="field-row">
+          <label class="field-label" for="p1Character">P1 角色</label>
+          <select id="p1Character" class="field-control">
+            <option value="char_attack">破軍（攻擊）</option>
+            <option value="char_defense">玄武（防禦）</option>
+            <option value="char_move">飛翎（移動）</option>
+            <option value="char_balanced">無鋒（均衡）</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label class="field-label" for="p2Character">P2 角色</label>
+          <select id="p2Character" class="field-control">
+            <option value="char_attack">破軍（攻擊）</option>
+            <option value="char_defense" selected>玄武（防禦）</option>
+            <option value="char_move">飛翎（移動）</option>
+            <option value="char_balanced">無鋒（均衡）</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button id="startMatchButton" class="primary-button" type="button">開始對戰</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>回合控制</h2>
+        <div id="playerStatus" class="player-status-list">
+          <p class="muted-text">開始對戰後顯示玩家狀態。</p>
+        </div>
+        <div class="button-row">
+          <button id="playTurnButton" class="primary-button" type="button" disabled>結算回合</button>
+          <button id="resetButton" class="secondary-button" type="button" disabled>重設</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>操作提示</h2>
+        <ul class="notes-list">
+          <li>點擊手牌加入本回合選牌。</li>
+          <li>攻擊卡需選擇目標；移動卡需選擇方向。</li>
+          <li>購買卡會開啟商店。</li>
+          <li>所有玩家選完牌後按「結算回合」。</li>
+        </ul>
+      </section>
+    </aside>
+
+    <!-- 中央：棋盤 -->
+    <section class="board-panel">
+      <div id="boardView" class="board-view">
+        <p class="muted-text">開始對戰後顯示 5×5 棋盤。</p>
+      </div>
+    </section>
+
+    <!-- 右側：手牌 / 選牌 / 商店 -->
+    <aside class="side-panel">
+      <section class="panel">
+        <h2>手牌</h2>
+        <div id="handView" class="hand-view">
+          <p class="muted-text">開始對戰後顯示手牌。</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>本回合選牌</h2>
+        <div id="selectedCardsView" class="selected-cards-view">
+          <p class="muted-text">尚未選牌。</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>商店</h2>
+        <div id="shopView" class="shop-view">
+          <p class="muted-text">使用購買卡後開啟商店。</p>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- 底部：對戰紀錄 -->
+  <section class="log-panel">
+    <h2>對戰紀錄</h2>
+    <div id="logView" class="log-list">
+      <p class="muted-text">尚無紀錄。</p>
+    </div>
+  </section>
+
+  <!-- 模態層 -->
+  <div id="modalRoot" class="modal-root" hidden></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

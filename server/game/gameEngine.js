@@ -2,6 +2,7 @@
 
 const { createInitialState } = require("./state/createInitialState");
 const { resolveTurn } = require("./rules/turnEngine");
+const { setFacingChange } = require("./rules/facingChangeResolver");
 
 function createMatch() {
   const state = createInitialState();
@@ -15,6 +16,13 @@ function submitSelection(state, playerId, selections) {
   player.selectedCards = selections; // [{card, extra}]
 }
 
+// 設定本回合最終朝向（免費轉向 1 次）
+function setFacing(state, playerId, facing) {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) throw new Error("player not found");
+  return setFacingChange(player, facing);
+}
+
 function playOneTurn(state) {
   resolveTurn(state);
 }
@@ -22,5 +30,8 @@ function playOneTurn(state) {
 module.exports = {
   createMatch,
   submitSelection,
+  setFacing,
   playOneTurn,
 };
+
+

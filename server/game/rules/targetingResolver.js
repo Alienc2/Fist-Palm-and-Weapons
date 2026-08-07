@@ -1,11 +1,13 @@
 // server/game/rules/targetingResolver.js
 
+const { getAutoTargets } = require("./targetPriorityResolver");
+
 function getEnemies(state, player) {
   return state.players.filter((p) => p.id !== player.id && !p.isEliminated);
 }
 
 function getDefaultEnemyTarget(state, player) {
-  const enemies = getEnemies(state, player);
+  const enemies = getAutoTargets(state, player, state.players);
   return enemies.length > 0 ? [enemies[0]] : [];
 }
 
@@ -20,8 +22,10 @@ function getSelfChosenEnemyTargets(state, player, extra = {}) {
     }
   }
 
-  return [enemies[0]];
+  const autoTargets = getAutoTargets(state, player, state.players);
+  return autoTargets.length > 0 ? [autoTargets[0]] : [];
 }
+
 
 function getTargets(state, player, card, extra = {}) {
   const targeting = card.targeting || "single_enemy";

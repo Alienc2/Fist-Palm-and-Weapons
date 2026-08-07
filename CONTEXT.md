@@ -1,10 +1,12 @@
-# CONTEXT.md V11
+# CONTEXT.md V14
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V11
-- 更新日期時間：2026-08-03 18:52 HKT
+- 版本：V14
+- 更新日期時間：2026-08-07 18:05 HKT
+
+
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
 - 專案型態：回合制卡牌 / 角色對戰遊戲
 - 文件目的：作為可頻繁更新的單一事實來源，確保規格、檔案、API、固定程式碼同格式長期一致
@@ -42,17 +44,42 @@
 - `generated/*.json` 已納入版本控制
 - `shopResolver` 正式化（SLICE-C-01）
 - `stackResolver` 正式化（SLICE-C-02）
+- `recover` 卡 resolver 正式化（SLICE-C-03）
+- `facingChange` 轉向規則正式化（SLICE-C-04）
+- `counterChain` 反擊連鎖完整化（SLICE-C-05）
+- `targetPriority` 多目標自動規則正式化（SLICE-D-01）
+- `comboResolver` 正式化（SLICE-D-02）
+- `passiveResolver` characters passive 接入（SLICE-D-03）
+- 多人引擎擴充（SLICE-D-04）
+- Phase E 正式 UI 骨架（SLICE-E-01：client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）
+- Phase E 正式 UI 視圖（SLICE-E-02：board / hand / selected / log / shop / target / facing / resolve / result）
 - `tests/rules/shopResolver.test.js`
 - `tests/rules/stackResolver.test.js`
+- `tests/rules/recoverResolver.test.js`
+- `tests/rules/facingChangeResolver.test.js`
+- `tests/rules/counterChainResolver.test.js`
+- `tests/rules/targetPriorityResolver.test.js`
+- `tests/rules/comboResolver.test.js`
+- `tests/rules/passiveResolver.test.js`
+- `tests/rules/multiplayerEngine.test.js`
 
 ### 已驗證結果
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
-- `Test Suites: 9 passed, 9 total`
-- `Tests: 78 passed, 78 total`
+- 全套 `npx jest --runInBand`：`Test Suites: 19 passed, 19 total`
+- `Tests: 159 passed, 159 total`
+- `tests/rules/recoverResolver.test.js`：9 passed, 9 total
+- `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total
+- `tests/rules/counterChainResolver.test.js`：14 passed, 14 total
 - `tests/rules/cardLoader.test.js`：10 passed, 10 total
+- `tests/rules/passiveResolver.test.js`：11 passed, 11 total
+- `tests/rules/multiplayerEngine.test.js`：6 passed, 6 total
 - `tests/rules/shopResolver.test.js` 通過
 - `tests/rules/stackResolver.test.js` 通過
+- `tests/rules/targetPriorityResolver.test.js` 通過
+- `tests/rules/comboResolver.test.js` 通過
+
+
 - browser sandbox 已成功運行 3 個 scenario
 - `tests/debug/browser-debug-server.test.js` 通過
 - `POST /api/run-scenario` smoke / integration test 已驗證：
@@ -84,23 +111,20 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 
 ## 5. 當前優先完成的程式碼
 ### P0
-- `46-3B validator 覆蓋`
-- 為 `Default_Card_Set` 與 `No_of_Cards_in_Hand` 補 validator 覆蓋
-- 收緊 generated data contract，避免壞資料進入 `createInitialState()`
+- Phase D 已收口：多目標 / combo / passive / 多人引擎正式化。
+- Phase E 正式 UI 已完成（SLICE-E-01 骨架 + SLICE-E-02 視圖）。
+- 全套 `npx jest --runInBand` 已達 `19 suites / 159 tests` 全綠。
+- `npm run client` 正式 UI server 已可啟動，`/api/health` 通過。
 
 ### P1
-- data initialization edge-case tests
-- `keywords` / `combos` / `ai_profiles` loader 接口整理
-- 後續 shop / combo / AI 接入前先完成 loader 收口
+- Phase D 多人同步（Socket.IO room / lobby / match）
+- Phase F AI 與部署（`ai_profiles` 接入 / AI decision / e2e / deployment）
 
 ## 6. 下一個需要完成的程式碼
-- targeting 與 retargeting 正式化
-- elimination 正式化
-- characters passive 接入
-- comboResolver
-- Phase D 多人同步
-- Phase E 正式 UI
+- Phase D 多人同步（online 2P / 3P / 4P）
 - Phase F AI 與部署
+- Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
+
 
 ## 7. 主要檔案樹及每個檔案的主要功能
 ### 文件
@@ -130,9 +154,17 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `server/game/rules/facing.js`：面向修正
 - `server/game/rules/advantage.js`：advantage / disadvantage
 - `server/game/rules/cardResolver.js`：卡牌 resolver
-- `server/game/rules/turnEngine.js`：回合結算流程
+- `server/game/rules/turnEngine.js`：回合結算流程（N 玩家交錯揭牌）
 - `server/game/rules/shopResolver.js`：商店購買 / MP / stock 流程
 - `server/game/rules/stackResolver.js`：stack 累積 / 清算流程
+- `server/game/rules/facingChangeResolver.js`：轉向規則（免費轉向 1 次）
+- `server/game/rules/counterChainResolver.js`：反擊連鎖（距離驗證 / 成功率 / ×2 連鎖）
+- `server/game/rules/targetPriorityResolver.js`：多目標自動規則（距離 / 面向 / HP / 隨機）
+- `server/game/rules/targetingResolver.js`：目標宣告 / 驗證 / retarget
+- `server/game/rules/comboResolver.js`：combo 偵測與效果（sequence / board_pattern / effect）
+- `server/game/rules/passiveResolver.js`：角色被動技能查詢與效果（front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount）
+
+
 
 ### Debug / Sandbox 層
 - `server/game/debug/browser-sandbox.html`：browser debug sandbox UI
@@ -141,6 +173,23 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `server/game/debug/browser-debug-server.js`：debug API server / real engine runner
 - `server/game/debug/scenarios.js`：scenario 資料 re-export / 共用入口
 
+### Client 正式 UI 層（Phase E）
+- `client/server.js`：正式 UI server（靜態檔案 + 遊戲 API：`/api/health`、`/api/match`、`/api/select`、`/api/play`、`/api/reset`）
+- `client/index.html`：正式 UI 入口頁面
+- `client/app.js`：正式 UI 主程式（事件綁定 / 選牌流程 / 結算動畫 / 結果 overlay）
+- `client/gameStore.js`：前端狀態 store（create / select / play / reset / subscribe）
+- `client/layout.js`：DOM helper（el / qs / clear / modal / cardNode）
+- `client/styles.css`：正式 UI 樣式（dark / light 主題）
+- `client/views/boardView.js`：5×5 地圖 + 角色 token + 朝向
+- `client/views/handView.js`：手牌顯示與選牌
+- `client/views/selectedCardsView.js`：本回合選牌 / 移除 / 朝向設定
+- `client/views/logView.js`：對戰紀錄
+- `client/views/shopModal.js`：商店 modal
+- `client/views/targetPicker.js`：攻擊目標選擇 modal
+- `client/views/facingPicker.js`：朝向選擇 modal
+- `client/views/resolveAnimation.js`：回合結算過場動畫
+- `client/views/resultOverlay.js`：對戰結果 overlay
+
 ### 測試層
 - `tests/rules/gameEngine.test.js`：核心 rules 單元測試
 - `tests/rules/cardLoader.test.js`：資料載入測試
@@ -148,8 +197,17 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `tests/rules/createInitialState.starterDeck.test.js`：starter deck 組裝測試
 - `tests/rules/shopResolver.test.js`：商店買入流程測試
 - `tests/rules/stackResolver.test.js`：stack 解析測試
+- `tests/rules/recoverResolver.test.js`：recover 卡 resolver 測試
+- `tests/rules/facingChangeResolver.test.js`：轉向規則測試
+- `tests/rules/counterChainResolver.test.js`：反擊連鎖測試
 - `tests/rules/targetingResolver.test.js`：targeting 測試
 - `tests/rules/eliminationResolver.test.js`：elimination 測試
+- `tests/rules/targetPriorityResolver.test.js`：多目標自動規則測試
+- `tests/rules/comboResolver.test.js`：combo resolver 測試
+- `tests/rules/passiveResolver.test.js`：角色被動技能測試
+- `tests/rules/multiplayerEngine.test.js`：多人引擎（3P / 4P）測試
+
+
 
 ## 8. 各檔案需要共用的 API
 ### Rules API Contract（authoritative）

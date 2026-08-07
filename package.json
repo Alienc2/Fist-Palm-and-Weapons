@@ -17,6 +17,7 @@
     "debug:turn:move": "node scripts/run-single-turn.js move-vs-defense",
     "debug:turn:attack": "node scripts/run-single-turn.js attack-vs-attack",
     "debug:turn:buy": "node scripts/run-single-turn.js buy-vs-idle",
+    "client": "node client/server.js",
     "verify:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\verify-local.ps1"
   },
   "repository": {
