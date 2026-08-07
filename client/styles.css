@@ -553,6 +553,11 @@ button:disabled {
   justify-content: center;
   gap: 20px;
 }
+/* 覆蓋 display:flex，確保 hidden 屬性能真正隱藏 overlay */
+.resolve-animation[hidden] {
+  display: none;
+}
+
 .resolve-title {
   font-size: 28px;
   font-weight: 800;

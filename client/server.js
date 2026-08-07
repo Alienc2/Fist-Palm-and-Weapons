@@ -11,6 +11,8 @@ const path = require("node:path");
 
 const gameEngine = require("../server/game/gameEngine");
 const { autoSelectAiPlayers } = require("../server/game/ai/aiMatch");
+const { createSocketServer } = require("../server/network/socketServer");
+
 
 
 const ROOT_DIR = path.resolve(__dirname);
@@ -353,6 +355,11 @@ function createServer(port, options = {}) {
     });
   });
 
+  // 附加 Socket.IO 多人對戰 server（Phase E）
+  const socketServer = createSocketServer(server, {
+    matchmakingTimeoutMs: options.matchmakingTimeoutMs,
+  });
+
   server.on("error", (error) => {
     if (error.code === "EADDRINUSE") {
       console.log(`[client-server] port ${port} in use, trying ${port + 1}`);
@@ -363,6 +370,7 @@ function createServer(port, options = {}) {
     process.exit(1);
   });
 
+  server.socketServer = socketServer;
   return server;
 }
 
@@ -371,9 +379,11 @@ function startServer(port = PORT_START, options = {}) {
   server.listen(port, "127.0.0.1", () => {
     console.log(`[client-server] listening on http://localhost:${port}`);
     console.log(`[client-server] open http://localhost:${port}/`);
+    console.log(`[client-server] Socket.IO multiplayer server attached`);
   });
   return server;
 }
+
 
 if (require.main === module) {
   startServer(PORT_START);

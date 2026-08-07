@@ -52,6 +52,8 @@
 | Phase E 正式 UI 視圖（SLICE-E-02） | `client/views/*.js`（board / hand / selected / log / shop / target / facing / resolve / result） | `npm run client` + browser 驗證 | 已完成 |
 | Phase F AI 與部署（SLICE-F-01） | `server/game/ai/aiDecision.js`、`server/game/ai/aiMatch.js`、`scripts/run-ai-match.js`、`tests/ai/*.test.js`、`Dockerfile`、`docker-compose.yml`、`docs/DEPLOYMENT.md` | `npm run test:ai`、`npm run ai:match`、`docker build` | 已完成 |
 | AI 對戰接入正式 UI（SLICE-F-02） | `client/server.js`、`client/index.html`、`client/app.js`、`client/gameStore.js`、`client/styles.css` | `npm run client` + AI 整合 smoke test | 已完成 |
+| Phase D 多人同步網路層（SLICE-D-05） | `server/network/roomManager.js`、`server/network/matchManager.js`、`server/rooms/matchmaking.js`、`server/network/socketServer.js`、`client/server.js` | `npx jest --runInBand tests/network` | 已完成 |
+
 
 
 
@@ -126,10 +128,16 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`21` suites passed, `183` tests passed。
+- 全套 `npx jest --runInBand` 最新總數：`25` suites passed, `227` tests passed。
 - `tests/ai/aiDecision.test.js` 通過。
 - `tests/ai/aiMatch.e2e.test.js` 通過。
 - `node scripts/run-ai-match.js --rounds 5` 通過。
+- `tests/network/roomManager.test.js` 通過。
+- `tests/network/matchManager.test.js` 通過。
+- `tests/network/matchmaking.test.js` 通過。
+- `tests/network/socketServer.e2e.test.js` 通過（完整流程：建立房間 → 加入 → 準備 → 開始 → 選牌 → 回合解析）。
+- 正式 UI server 已附加 Socket.IO multiplayer server，`GET /api/health` 通過。
+
 - `tests/rules/recoverResolver.test.js`：9 passed, 9 total。
 - `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total。
 - `tests/rules/counterChainResolver.test.js`：14 passed, 14 total。
@@ -184,7 +192,15 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `npm run ai:match` 可執行 AI 對戰。
 - SLICE-F-02：AI 對戰接入正式 UI 已完成（`client/server.js` 支援 AI 玩家 + `/api/play` 自動選牌、`index.html` 遊玩人數 / 電腦敵人選擇、`app.js` 動態角色選單 + 玩家切換、`gameStore` 多玩家 + AI 設定）。
 - 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）。
+- SLICE-D-05：Phase D 多人同步網路層已完成（Socket.IO room / lobby / match / matchmaking）。
+- `server/network/roomManager.js`：房間系統（create / join / leave / setCharacter / setReady / isAllReady / getPublicRoom）。
+- `server/network/matchManager.js`：同步選牌與回合解析（createMatchFromRoom / createMatchController）。
+- `server/rooms/matchmaking.js`：配對系統（enqueue / dequeue / tryMatch / timeout / getRequiredPlayers）。
+- `server/network/socketServer.js`：Socket.IO server 整合（房間 / 對戰 / 配對 / 斷線重連）。
+- `client/server.js` 已附加 Socket.IO multiplayer server。
+- `tests/network/roomManager.test.js` / `tests/network/matchManager.test.js` / `tests/network/matchmaking.test.js` / `tests/network/socketServer.e2e.test.js` 全部通過（44 tests）。
 - SLICE-E-01：Phase E 正式 UI 骨架已完成（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）。
+
 
 - SLICE-E-02：Phase E 正式 UI 視圖已完成（board / hand / selected / log / shop / target / facing / resolve / result）。
 - `npm run client` 可啟動正式 UI server，`GET /api/health` 通過。
@@ -321,10 +337,17 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）。
 - `scripts/run-ai-match.js`：AI 對戰 CLI runner。
 
+#### 網路層（Phase D 多人同步）
+- `server/network/roomManager.js`：房間系統（create / join / leave / setCharacter / setReady / isAllReady / getPublicRoom）。
+- `server/network/matchManager.js`：同步選牌與回合解析（createMatchFromRoom / createMatchController）。
+- `server/rooms/matchmaking.js`：配對系統（enqueue / dequeue / tryMatch / timeout / getRequiredPlayers）。
+- `server/network/socketServer.js`：Socket.IO server 整合（房間 / 對戰 / 配對 / 斷線重連）。
+
 #### 部署層（Phase F）
 - `Dockerfile`：正式 UI server 映像。
 - `docker-compose.yml`：一鍵啟動容器。
 - `docs/DEPLOYMENT.md`：部署流程文件。
+
 
 #### Debug / Sandbox 層
 
@@ -420,7 +443,36 @@ Defense extra：
 - `--rounds N`：最大回合數。
 - `--players P1:char_attack:ai_normal,P2:char_defense:ai_normal`：指定玩家 / 角色 / AI profile。
 
+#### Network API Contract（Phase D 多人同步）
+`roomManager.js`：
+- `createRoom(hostSocketId, { name, maxPlayers, mode })`：建立房間，回傳 `{ room }`。
+- `joinRoom(roomId, socketId, name)`：加入房間，回傳 `{ ok, room }`。
+- `leaveRoom(socketId)`：離開房間。
+- `setCharacter(socketId, characterId)`：設定角色。
+- `setReady(socketId, ready)`：設定準備狀態。
+- `isAllReady(room)`：檢查是否全部準備。
+- `getPublicRoom(room)`：取得公開房間資訊（不含內部 socket 對應）。
+
+`matchManager.js`：
+- `createMatchFromRoom(roomPlayers, options)`：由房間玩家建立 gameEngine state，回傳 `{ state }`。
+- `createMatchController(state, options)`：建立對戰控制器，回傳 `{ state, submitSelection, resolveTurn, setFacing, onDisconnect, onReconnect, serialize, ... }`。
+  - `submitSelection(playerId, selections)`：玩家提交選牌，回傳 `{ ok, allSubmitted }`。
+  - `resolveTurn()`：所有玩家選完後結算回合，回傳 `{ ok, winner, matchEnded }`。
+
+`matchmaking.js`：
+- `enqueue(socketId, { name, mode })`：加入配對佇列。
+- `dequeue(socketId)`：離開配對佇列。
+- `tryMatch()`：嘗試配對，回傳 `{ matched, roomId }`。
+- `getRequiredPlayers(mode)`：取得該模式所需人數。
+
+`socketServer.js`（Socket.IO events）：
+- `room:create` / `room:join` / `room:leave` / `room:setCharacter` / `room:setReady` / `room:start`
+- `match:select` / `match:setFacing` / `match:state`（廣播）/ `match:start`（廣播）
+- `matchmaking:enqueue` / `matchmaking:dequeue` / `match:found`（廣播）
+- `room:update`（廣播）/ `match:end`（廣播）
+
 ## 8. 更新規則
+
 
 - 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。
 - 任何 LOCKED 項目要改動前，先同使用者確認。

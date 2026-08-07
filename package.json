@@ -25,7 +25,6 @@
     "client": "node client/server.js",
     "verify:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\verify-local.ps1"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alienc2/Fist-Palm-and-Weapons.git"
@@ -40,6 +39,10 @@
   "homepage": "https://github.com/Alienc2/Fist-Palm-and-Weapons#readme",
   "devDependencies": {
     "csvtojson": "^2.0.14",
-    "jest": "^30.4.2"
+    "jest": "^30.4.2",
+    "socket.io-client": "^4.8.3"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.3"
   }
 }
