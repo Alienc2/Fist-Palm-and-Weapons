@@ -1,10 +1,11 @@
-# CONTEXT.md V14
+# CONTEXT.md V15
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V14
-- 更新日期時間：2026-08-07 18:05 HKT
+- 版本：V15
+- 更新日期時間：2026-08-08 00:05 HKT
+
 
 
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
@@ -62,12 +63,24 @@
 - `tests/rules/comboResolver.test.js`
 - `tests/rules/passiveResolver.test.js`
 - `tests/rules/multiplayerEngine.test.js`
+- Phase F AI 與部署（SLICE-F-01：`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）
+- `server/game/ai/aiDecision.js`：AI decision making（依 profile 權重選牌 / 目標 / 移動 / 購買）
+- `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）
+- `scripts/run-ai-match.js`：AI 對戰 CLI runner
+- `tests/ai/aiDecision.test.js`：AI decision 單元測試
+- `tests/ai/aiMatch.e2e.test.js`：AI 對戰 integration / e2e 測試
+- `Dockerfile` / `docker-compose.yml`：部署映像與容器
+- `docs/DEPLOYMENT.md`：部署流程文件
 
 ### 已驗證結果
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 19 passed, 19 total`
-- `Tests: 159 passed, 159 total`
+- `npm run test:ai` 通過
+- 全套 `npx jest --runInBand`：`Test Suites: 21 passed, 21 total`
+- `Tests: 183 passed, 183 total`
+- `tests/ai/aiDecision.test.js`：通過
+- `tests/ai/aiMatch.e2e.test.js`：通過
+- `node scripts/run-ai-match.js --rounds 5` 通過
 - `tests/rules/recoverResolver.test.js`：9 passed, 9 total
 - `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total
 - `tests/rules/counterChainResolver.test.js`：14 passed, 14 total
@@ -78,6 +91,7 @@
 - `tests/rules/stackResolver.test.js` 通過
 - `tests/rules/targetPriorityResolver.test.js` 通過
 - `tests/rules/comboResolver.test.js` 通過
+
 
 
 - browser sandbox 已成功運行 3 個 scenario
@@ -113,17 +127,20 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 ### P0
 - Phase D 已收口：多目標 / combo / passive / 多人引擎正式化。
 - Phase E 正式 UI 已完成（SLICE-E-01 骨架 + SLICE-E-02 視圖）。
-- 全套 `npx jest --runInBand` 已達 `19 suites / 159 tests` 全綠。
+- Phase F AI 與部署已完成（SLICE-F-01：`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）。
+- 全套 `npx jest --runInBand` 已達 `21 suites / 183 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過。
+- `npm run ai:match` AI 對戰 CLI 已可執行。
 
 ### P1
 - Phase D 多人同步（Socket.IO room / lobby / match）
-- Phase F AI 與部署（`ai_profiles` 接入 / AI decision / e2e / deployment）
+- Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
 
 ## 6. 下一個需要完成的程式碼
 - Phase D 多人同步（online 2P / 3P / 4P）
-- Phase F AI 與部署
 - Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
+- AI 對戰接入正式 UI（可選 AI 對手）
+
 
 
 ## 7. 主要檔案樹及每個檔案的主要功能
@@ -164,9 +181,18 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `server/game/rules/comboResolver.js`：combo 偵測與效果（sequence / board_pattern / effect）
 - `server/game/rules/passiveResolver.js`：角色被動技能查詢與效果（front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount）
 
+### AI 層（Phase F）
+- `server/game/ai/aiDecision.js`：AI decision making（依 profile 權重選牌 / 目標 / 移動 / 購買）
+- `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）
+- `scripts/run-ai-match.js`：AI 對戰 CLI runner
 
+### 部署層（Phase F）
+- `Dockerfile`：正式 UI server 映像
+- `docker-compose.yml`：一鍵啟動容器
+- `docs/DEPLOYMENT.md`：部署流程文件
 
 ### Debug / Sandbox 層
+
 - `server/game/debug/browser-sandbox.html`：browser debug sandbox UI
 - `server/game/debug/browser-sandbox.js`：sandbox UI 行為與 result render
 - `server/game/debug/browser-api-adapter.js`：browser → debug API 的 HTTP adapter
@@ -288,7 +314,25 @@ Response shape：
 - `server/game/debug/scenarios.js` 只可作 re-export / 包裝。
 - scenario 名稱要與 `move-vs-defense`、`attack-vs-attack`、`buy-vs-idle` 對齊。
 
+### AI API Contract（Phase F）
+#### `aiDecision.js`
+- `decideSelection(state, player, profile, options)`：依 profile 權重選牌，回傳 `[{ card, extra }]`。
+- `decideTarget(state, player, profile, options)`：依 profile 權重選目標，回傳 `targetId`。
+- `decideMove(state, player, profile, options)`：依 profile 權重選移動，回傳 `{ dx, dy }`。
+- `decideBuy(state, player, profile, options)`：依 profile 權重選購買，回傳 `{ shopCardId }`。
+- `getProfile(profileId)`：由 `generated/ai_profiles.json` 取得 profile。
+
+#### `aiMatch.js`
+- `isAiPlayer(player, aiPlayerIds)`：判斷玩家是否由 AI 控制。
+- `autoSelectAiPlayers(state, options)`：為 AI 玩家自動填選牌。
+- `runAiMatch(options)`：跑完整 AI 對戰，回傳 `{ state, rounds, roundLog, winner }`。
+
+#### `run-ai-match.js`（CLI）
+- `--rounds N`：最大回合數。
+- `--players P1:char_attack:ai_normal,P2:char_defense:ai_normal`：指定玩家 / 角色 / AI profile。
+
 ## 9. 需要固定使用的程式碼
+
 ### Selection item 固定格式
 ```js
 {

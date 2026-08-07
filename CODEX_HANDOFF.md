@@ -1,9 +1,10 @@
-# CODEX_HANDOFF.md V14
+# CODEX_HANDOFF.md V15
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V14
-- 更新日期時間：2026-08-07 18:03 HKT
+- 版本：V15
+- 更新日期時間：2026-08-08 00:06 HKT
+
 
 
 - 使用技術：Node.js、CommonJS、npm、Jest、csvtojson、Chrome、VS Code、Windows 11
@@ -48,6 +49,8 @@
 | 多人引擎擴充（SLICE-D-04） | `server/game/rules/turnEngine.js`、`tests/rules/multiplayerEngine.test.js` | `npm run test:rules` | 已完成 |
 | Phase E 正式 UI 骨架（SLICE-E-01） | `client/server.js`、`client/index.html`、`client/gameStore.js`、`client/layout.js`、`client/app.js`、`client/styles.css` | `npm run client` + browser 驗證 | 已完成 |
 | Phase E 正式 UI 視圖（SLICE-E-02） | `client/views/*.js`（board / hand / selected / log / shop / target / facing / resolve / result） | `npm run client` + browser 驗證 | 已完成 |
+| Phase F AI 與部署（SLICE-F-01） | `server/game/ai/aiDecision.js`、`server/game/ai/aiMatch.js`、`scripts/run-ai-match.js`、`tests/ai/*.test.js`、`Dockerfile`、`docker-compose.yml`、`docs/DEPLOYMENT.md` | `npm run test:ai`、`npm run ai:match`、`docker build` | 已完成 |
+
 
 
 
@@ -97,10 +100,18 @@
 - SLICE-D-04：多人引擎擴充（turnEngine N 玩家交錯揭牌 / 起始玩家輪轉 / 淘汰跳過 / 多目標）
 - SLICE-E-01：Phase E 正式 UI 骨架（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）
 - SLICE-E-02：Phase E 正式 UI 視圖（board / hand / selected / log / shop / target / facing / resolve / result）
-
-
+- SLICE-F-01：Phase F AI 與部署（`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）
+- `server/game/ai/aiDecision.js`：AI decision making（依 profile 權重選牌 / 目標 / 移動 / 購買）
+- `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）
+- `scripts/run-ai-match.js`：AI 對戰 CLI runner
+- `tests/ai/aiDecision.test.js`：AI decision 單元測試
+- `tests/ai/aiMatch.e2e.test.js`：AI 對戰 integration / e2e 測試
+- `Dockerfile` / `docker-compose.yml`：部署映像與容器
+- `docs/DEPLOYMENT.md`：部署流程文件
+- `gameEngine.createMatch(options)` 已支援傳入 players 建立對戰
 
 ### 3.4 現階段重點風險
+
 - browser 端唔可以再直接 import CommonJS engine。
 - debug sandbox 必須長期維持 API contract 穩定。
 - generated data 一有改動就要 rebuild 再驗證。
@@ -109,7 +120,11 @@
 ## 4. 最新驗證 / 測試結果
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`19` suites passed, `159` tests passed。
+- `npm run test:ai` 通過。
+- 全套 `npx jest --runInBand` 最新總數：`21` suites passed, `183` tests passed。
+- `tests/ai/aiDecision.test.js` 通過。
+- `tests/ai/aiMatch.e2e.test.js` 通過。
+- `node scripts/run-ai-match.js --rounds 5` 通過。
 - `tests/rules/recoverResolver.test.js`：9 passed, 9 total。
 - `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total。
 - `tests/rules/counterChainResolver.test.js`：14 passed, 14 total。
@@ -134,6 +149,7 @@
 
 
 
+
 ## 5. 當前階段
 ### Phase B
 資料正式接入 engine。
@@ -147,12 +163,26 @@
 ### Phase E
 正式 UI（browser → client server API → real engine）。
 
+### Phase F
+AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integration / e2e tests / deployment flow）。
+
 ### 當前階段狀態
+- SLICE-F-01：Phase F AI 與部署已完成（`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）。
+- `server/game/ai/aiDecision.js`：AI decision making（依 profile 權重選牌 / 目標 / 移動 / 購買）。
+- `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）。
+- `scripts/run-ai-match.js`：AI 對戰 CLI runner。
+- `tests/ai/aiDecision.test.js`：AI decision 單元測試。
+- `tests/ai/aiMatch.e2e.test.js`：AI 對戰 integration / e2e 測試。
+- `Dockerfile` / `docker-compose.yml`：部署映像與容器。
+- `docs/DEPLOYMENT.md`：部署流程文件。
+- `npm run test:ai` 通過（24 tests）。
+- `npm run ai:match` 可執行 AI 對戰。
 - SLICE-E-01：Phase E 正式 UI 骨架已完成（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）。
 - SLICE-E-02：Phase E 正式 UI 視圖已完成（board / hand / selected / log / shop / target / facing / resolve / result）。
 - `npm run client` 可啟動正式 UI server，`GET /api/health` 通過。
 - client server API 流程已驗證：`POST /api/match` → `POST /api/select` → `POST /api/play` 全流程通過。
 - Phase E 正式 UI 已取代 debug sandbox 作為主要遊玩入口。
+
 - Phase B checkpoint 1 已通過驗證。
 - `46-3A starter deck` 已完成。
 - `46-3B validator 覆蓋` 已完成。
@@ -278,9 +308,18 @@
 - `server/game/rules/comboResolver.js`：combo 偵測與效果（sequence / board_pattern / effect）。
 - `server/game/rules/passiveResolver.js`：角色被動技能查詢與效果（front_damage_bonus / front_defense_bonus / free_facing_change / first_shop_discount）。
 
+#### AI 層（Phase F）
+- `server/game/ai/aiDecision.js`：AI decision making（依 profile 權重選牌 / 目標 / 移動 / 購買）。
+- `server/game/ai/aiMatch.js`：AI 對戰 runner（autoSelectAiPlayers / runAiMatch）。
+- `scripts/run-ai-match.js`：AI 對戰 CLI runner。
 
+#### 部署層（Phase F）
+- `Dockerfile`：正式 UI server 映像。
+- `docker-compose.yml`：一鍵啟動容器。
+- `docs/DEPLOYMENT.md`：部署流程文件。
 
 #### Debug / Sandbox 層
+
 - `server/game/debug/browser-sandbox.html`：browser debug sandbox UI。
 - `server/game/debug/browser-sandbox.js`：sandbox UI 行為與 result render。
 - `server/game/debug/browser-api-adapter.js`：browser → debug API 的 HTTP adapter。
@@ -299,10 +338,13 @@
 - `tests/rules/comboResolver.test.js`：combo resolver 測試。
 - `tests/rules/passiveResolver.test.js`：角色被動技能測試。
 - `tests/rules/multiplayerEngine.test.js`：多人引擎（3P / 4P）測試。
+- `tests/ai/aiDecision.test.js`：AI decision 單元測試。
+- `tests/ai/aiMatch.e2e.test.js`：AI 對戰 integration / e2e 測試。
 
 
 
 ### 7.2 共用 API
+
 #### Rules API Contract
 Selection item：
 ```js
@@ -353,7 +395,25 @@ Defense extra：
 
 `POST /api/run-scenario`：由 server side 用 real engine 跑 scenario，回傳 sandbox 需要嘅 result shape。
 
+#### AI API Contract（Phase F）
+`aiDecision.js`：
+- `decideSelection(state, player, profile, options)`：依 profile 權重選牌，回傳 `[{ card, extra }]`。
+- `decideTarget(state, player, profile, options)`：依 profile 權重選目標，回傳 `targetId`。
+- `decideMove(state, player, profile, options)`：依 profile 權重選移動，回傳 `{ dx, dy }`。
+- `decideBuy(state, player, profile, options)`：依 profile 權重選購買，回傳 `{ shopCardId }`。
+- `getProfile(profileId)`：由 `generated/ai_profiles.json` 取得 profile。
+
+`aiMatch.js`：
+- `isAiPlayer(player, aiPlayerIds)`：判斷玩家是否由 AI 控制。
+- `autoSelectAiPlayers(state, options)`：為 AI 玩家自動填選牌。
+- `runAiMatch(options)`：跑完整 AI 對戰，回傳 `{ state, rounds, roundLog, winner }`。
+
+`run-ai-match.js`（CLI）：
+- `--rounds N`：最大回合數。
+- `--players P1:char_attack:ai_normal,P2:char_defense:ai_normal`：指定玩家 / 角色 / AI profile。
+
 ## 8. 更新規則
+
 - 每次更新只改變：版本、更新日期時間、完成項目、優先事項、下一步、測試結果、檔案樹說明。
 - 任何 LOCKED 項目要改動前，先同使用者確認。
 - 若規格改動，先改 `docs/GAME_SPEC.md`，再改 test，再改 code。

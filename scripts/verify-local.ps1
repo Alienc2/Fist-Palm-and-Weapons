@@ -54,13 +54,22 @@ try {
     node .\scripts\run-single-turn.js buy-vs-idle
   }
 
+  Invoke-Step "AI match" {
+    node .\scripts\run-ai-match.js --rounds 5
+  }
+
   Invoke-Step "Rules tests" {
     npm run test:rules
   }
 
+  Invoke-Step "AI tests" {
+    npm run test:ai
+  }
+
   Write-Host ""
   Write-Host "Local verification passed." -ForegroundColor Green
-  Write-Host "Completed: build-data + 3 debug scenarios + test:rules" -ForegroundColor Green
+  Write-Host "Completed: build-data + 3 debug scenarios + AI match + test:rules + test:ai" -ForegroundColor Green
+
 }
 catch {
   Write-Host ""

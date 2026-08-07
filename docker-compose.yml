@@ -1,0 +1,18 @@
+# docker-compose.yml
+# Phase F：deployment flow
+# 一鍵啟動正式 UI server。
+# 用法：
+#   docker compose up --build
+#   docker compose down
+
+services:
+  fpw-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fpw-client
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    restart: unless-stopped

@@ -4,10 +4,11 @@ const { createInitialState } = require("./state/createInitialState");
 const { resolveTurn } = require("./rules/turnEngine");
 const { setFacingChange } = require("./rules/facingChangeResolver");
 
-function createMatch() {
-  const state = createInitialState();
+function createMatch(options = {}) {
+  const state = createInitialState(options);
   return state;
 }
+
 
 // 提交本回合選牌（簡化版）
 function submitSelection(state, playerId, selections) {

@@ -11,15 +11,21 @@
     "build:data": "node scripts/build-data.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:rules": "jest --runInBand tests/rules",
+    "test:ai": "jest --runInBand tests/ai",
+    "test:all": "jest --runInBand",
     "debug:browser": "node server/game/debug/browser-debug-server.js",
     "debug:browser:port": "node server/game/debug/browser-debug-server.js",
     "debug:turn": "node scripts/run-single-turn.js",
     "debug:turn:move": "node scripts/run-single-turn.js move-vs-defense",
     "debug:turn:attack": "node scripts/run-single-turn.js attack-vs-attack",
     "debug:turn:buy": "node scripts/run-single-turn.js buy-vs-idle",
+    "ai:match": "node scripts/run-ai-match.js",
+    "ai:match:10": "node scripts/run-ai-match.js --rounds 10",
+    "ai:match:3p": "node scripts/run-ai-match.js --players P1:char_attack:ai_normal,P2:char_defense:ai_normal,P3:char_move:ai_normal",
     "client": "node client/server.js",
     "verify:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\verify-local.ps1"
   },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alienc2/Fist-Palm-and-Weapons.git"
