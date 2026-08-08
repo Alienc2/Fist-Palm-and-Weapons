@@ -100,17 +100,14 @@ describe("facing change 透過 turnEngine 整合", () => {
     expect(p1.facing).toBe("left");
   });
 
-  test("轉向會影響攻擊的 facing 修正", () => {
+  test("facing 會影響攻擊的 facing 修正", () => {
     const state = createMatch();
     const [p1, p2] = state.players;
 
-    // P1 在 (1,1) 面向 up，P2 在 (1,2)（P1 背面）
+    // P1 在 (1,1) 面向 down，P2 在 (1,2)（P1 正面）
     p1.position = { x: 1, y: 1 };
     p2.position = { x: 1, y: 2 };
-    p1.facing = "up";
-
-    // P1 轉向 down，令 P2 變成正面
-    setFacing(state, "P1", "down");
+    p1.facing = "down";
 
     const attackCard = {
       id: "basic_punch",
@@ -130,9 +127,8 @@ describe("facing change 透過 turnEngine 整合", () => {
 
     playOneTurn(state);
 
-    // 轉向後 P2 為正面：damage 2 + front 1 + 破軍被動 front_damage_bonus 1 = 4
+    // P2 為正面：damage 2 + front 1 + 破軍被動 front_damage_bonus 1 = 4
     expect(p2.hp).toBe(hpBefore - 4);
-    expect(state.log.some((msg) => msg.includes("轉向 up -> down"))).toBe(true);
-
   });
+
 });

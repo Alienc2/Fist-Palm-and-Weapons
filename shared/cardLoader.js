@@ -219,7 +219,28 @@ function normalizeCombo(combo) {
   };
 }
 
+// 將 target_rule 映射到 targeting（targetingResolver 使用）
+// single → single_enemy、all_enemies → all_enemies、
+// adjacent_enemy → adjacent_enemies、self → self_chosen_enemies
+function mapTargetRuleToTargeting(targetRule) {
+  switch (String(targetRule || "").trim()) {
+    case "all_enemies":
+      return "all_enemies";
+    case "adjacent_enemy":
+      return "adjacent_enemies";
+    case "self":
+      return "self_chosen_enemies";
+    case "none":
+    case "shop":
+      return null;
+    case "single":
+    default:
+      return "single_enemy";
+  }
+}
+
 function normalizeCard(card) {
+  const targetRule = card.target_rule || "single";
   return {
     id: card.id,
     definitionId: undefined,
@@ -244,12 +265,14 @@ function normalizeCard(card) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
-    targetRule: card.target_rule || "single",
+    targetRule,
+    targeting: mapTargetRuleToTargeting(targetRule),
     defaultCardSet: String(card.Default_Card_Set || "").trim(),
     defaultCopiesInHand: normalizeNumber(card.No_of_Cards_in_Hand, 0),
     enabled: normalizeBoolean(card.enabled),
   };
 }
+
 
 function normalizeCharacter(character) {
   return {

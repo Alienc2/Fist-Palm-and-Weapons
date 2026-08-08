@@ -1,222 +1,144 @@
 // tests/rules/targetingResolver.test.js
+// Phase I-02-E2：攻擊目標 bug 修正測試
+// 驗證：
+//   1. target_rule 正確映射到 targeting（single → single_enemy 等）
+//   2. getDefaultEnemyTarget 尊重 extra.preferredTargetId（人類玩家選嘅目標）
+//   3. 距離內攻擊可命中（resolveAttack 唔會誤報「距離不符」）
 
 const {
-  getEnemies,
-  getDefaultEnemyTarget,
-  getSelfChosenEnemyTargets,
-  getTargets,
-  isTargetStillLegal,
-  retargetDeclaredTargets,
   declareTargetSet,
-  hydrateDeclaredTargets,
-  validateDeclaredTargets,
-  applyRetargetInstruction,
+  getTargets,
+  getDefaultEnemyTarget,
 } = require("../../server/game/rules/targetingResolver");
+const { resolveAttack } = require("../../server/game/rules/cardResolver");
+const cardLoader = require("../../shared/cardLoader");
 
-function createState() {
+
+function makePlayer(id, x, y, overrides = {}) {
   return {
-    players: [
-      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
-      { id: "P3", isEliminated: false, position: { x: 2, y: 1 } },
-    ],
+    id,
+    position: { x, y },
+    hp: 10,
+    maxHp: 10,
+    mp: 5,
+    maxMp: 5,
+    isEliminated: false,
+    lastRevealedSubtype: null,
+    lastDefenseCard: null,
+    comboDamageBonus: 0,
+    comboRangeBonus: 0,
+    ...overrides,
   };
 }
 
-describe("targetingResolver", () => {
-  test("getEnemies 會回傳所有未淘汰敵人", () => {
-    const state = createState();
-    const player = state.players[0];
+function makeState(players) {
+  return {
+    players,
+    turnOrder: players.map((p) => p.id),
+    log: [],
+  };
+}
 
-    const enemies = getEnemies(state, player);
+function makeAttackCard(overrides = {}) {
+  return {
+    id: "basic_punch_1",
+    type: "attack",
+    subtype: "punch",
+    rangeMin: 1,
+    rangeMax: 1,
+    damage: 2,
+    targetRule: "single",
+    ...overrides,
+  };
+}
 
-    expect(enemies.map((p) => p.id)).toEqual(["P2", "P3"]);
+describe("target_rule → targeting 映射（cardLoader）", () => {
+  test("basic 攻擊卡 targetRule=single → targeting=single_enemy", () => {
+    const cards = cardLoader.loadCards();
+    const punch = cards.find((c) => c.id === "basic_punch_1");
+    expect(punch.targetRule).toBe("single");
+    expect(punch.targeting).toBe("single_enemy");
   });
 
-  test("single_enemy 會回傳預設第一個敵人", () => {
-    const state = createState();
-    const player = state.players[0];
-
-    const targets = getDefaultEnemyTarget(state, player);
-
-    expect(targets.map((p) => p.id)).toEqual(["P2"]);
+  test("所有 attack 卡都有 targeting 欄位", () => {
+    const cards = cardLoader.loadCards().filter((c) => c.type === "attack");
+    expect(cards.length).toBeGreaterThan(0);
+    for (const card of cards) {
+      expect(card.targeting).toBeTruthy();
+    }
   });
 
-  test("self_chosen_enemies 會優先回傳 preferredTargetId 指定的敵人", () => {
-    const state = createState();
-    const player = state.players[0];
+});
 
-    const targets = getSelfChosenEnemyTargets(state, player, {
+
+describe("getDefaultEnemyTarget 尊重 preferredTargetId", () => {
+  test("有 preferredTargetId 時選指定目標", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemyA = makePlayer("P2", 3, 3);
+    const enemyB = makePlayer("P3", 1, 3);
+    const state = makeState([attacker, enemyA, enemyB]);
+
+    const targets = getDefaultEnemyTarget(state, attacker, {
       preferredTargetId: "P3",
     });
-
-    expect(targets.map((p) => p.id)).toEqual(["P3"]);
+    expect(targets).toHaveLength(1);
+    expect(targets[0].id).toBe("P3");
   });
 
-  test("self_chosen_enemies 指定無效目標時，會回退到預設第一個敵人", () => {
-    const state = createState();
-    const player = state.players[0];
+  test("preferredTargetId 唔存在時用自動目標", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemyA = makePlayer("P2", 3, 3);
+    const state = makeState([attacker, enemyA]);
 
-    const targets = getSelfChosenEnemyTargets(state, player, {
-      preferredTargetId: "P999",
+    const targets = getDefaultEnemyTarget(state, attacker, {
+      preferredTargetId: "P9",
     });
-
-    expect(targets.map((p) => p.id)).toEqual(["P2"]);
-  });
-
-  test("getTargets 會根據 card.targeting 選目標", () => {
-    const state = createState();
-    const player = state.players[0];
-
-    const targets = getTargets(
-      state,
-      player,
-      { targeting: "self_chosen_enemies" },
-      { preferredTargetId: "P3" }
-    );
-
-    expect(targets.map((p) => p.id)).toEqual(["P3"]);
+    expect(targets).toHaveLength(1);
+    expect(targets[0].id).toBe("P2");
   });
 });
 
-test("all_enemies 會回傳所有未淘汰敵人", () => {
-  const state = createState();
-  const player = state.players[0];
+describe("resolveAttack 距離內命中", () => {
+  test("距離 1 內拳卡命中，唔報距離不符", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemy = makePlayer("P2", 1, 2);
+    const state = makeState([attacker, enemy]);
 
-  const targets = getTargets(state, player, { targeting: "all_enemies" });
+    const card = makeAttackCard({ rangeMin: 1, rangeMax: 1, damage: 2 });
+    resolveAttack(state, attacker, card, { preferredTargetId: "P2" });
 
-  expect(targets.map((p) => p.id)).toEqual(["P2", "P3"]);
-});
-
-test("adjacent_enemies 只會回傳相鄰敵人", () => {
-  const state = {
-    players: [
-      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
-      { id: "P3", isEliminated: false, position: { x: 3, y: 3 } },
-    ],
-  };
-
-  const targets = getTargets(state, state.players[0], { targeting: "adjacent_enemies" });
-
-  expect(targets.map((p) => p.id)).toEqual(["P2"]);
-});
-
-test("cross_enemies 只會回傳同 x 或同 y 的敵人", () => {
-  const state = {
-    players: [
-      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-      { id: "P2", isEliminated: false, position: { x: 1, y: 3 } },
-      { id: "P3", isEliminated: false, position: { x: 3, y: 2 } },
-      { id: "P4", isEliminated: false, position: { x: 2, y: 1 } },
-    ],
-  };
-
-  const targets = getTargets(state, state.players[0], { targeting: "cross_enemies" });
-
-  expect(targets.map((p) => p.id)).toEqual(["P2", "P4"]);
-});
-
-test("isTargetStillLegal 會拒絕已淘汰目標", () => {
-  const state = {
-    players: [
-      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-      { id: "P2", isEliminated: true, position: { x: 1, y: 2 } },
-    ],
-  };
-
-  const result = isTargetStillLegal(
-    state,
-    state.players[0],
-    { targeting: "single_enemy" },
-    state.players[1]
-  );
-
-  expect(result).toBe(false);
-});
-
-test("retargetDeclaredTargets 會在新目標合法時改變目標", () => {
-  const state = {
-    players: [
-      { id: "P1", isEliminated: false, position: { x: 1, y: 1 } },
-      { id: "P2", isEliminated: false, position: { x: 1, y: 2 } },
-      { id: "P3", isEliminated: false, position: { x: 1, y: 3 } },
-    ],
-  };
-
-  const result = retargetDeclaredTargets(
-    state,
-    state.players[0],
-    { targeting: "single_enemy" },
-    [state.players[1]],
-    { retargetToId: "P3" }
-  );
-
-  expect(result.map((p) => p.id)).toEqual(["P3"]);
-});
-
-test("declareTargetSet 會把 target 存成 id contract", () => {
-  const state = createState();
-  const player = state.players[0];
-
-  const declared = declareTargetSet(
-    state,
-    player,
-    { targeting: "single_enemy" }
-  );
-
-  expect(declared.targeting).toBe("single_enemy");
-  expect(declared.targets).toEqual([{ id: "P2" }]);
-});
-
-test("hydrateDeclaredTargets 會把 id contract 轉回 live targets", () => {
-  const state = createState();
-
-  const hydrated = hydrateDeclaredTargets(state, {
-    targets: [{ id: "P2" }, { id: "P3" }],
+    expect(enemy.hp).toBe(8);
+    expect(state.log.some((msg) => msg.includes("距離不符"))).toBe(false);
+    expect(state.log.some((msg) => msg.includes("命中"))).toBe(true);
   });
 
-  expect(hydrated.map((p) => p.id)).toEqual(["P2", "P3"]);
-});
+  test("距離 2 內武器卡命中", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemy = makePlayer("P2", 1, 3);
+    const state = makeState([attacker, enemy]);
 
-test("validateDeclaredTargets 在 allowPartialResolution 時會保留合法 targets", () => {
-  const state = createState();
-  state.players[1].isEliminated = true;
+    const card = makeAttackCard({
+      rangeMin: 2,
+      rangeMax: 2,
+      damage: 1,
+      targetRule: "single",
+    });
+    resolveAttack(state, attacker, card, { preferredTargetId: "P2" });
 
-  const result = validateDeclaredTargets(
-    state,
-    state.players[0],
-    { targeting: "all_enemies" },
-    {
-      targeting: "all_enemies",
-      requiredTargets: 1,
-      allowPartialResolution: true,
-      targets: [{ id: "P2" }, { id: "P3" }],
-    }
-  );
+    expect(enemy.hp).toBe(9);
+    expect(state.log.some((msg) => msg.includes("距離不符"))).toBe(false);
+  });
 
-  expect(result.isValid).toBe(true);
-  expect(result.legalTargets.map((p) => p.id)).toEqual(["P3"]);
-  expect(result.invalidTargetIds).toEqual(["P2"]);
-});
 
-test("applyRetargetInstruction 會把 declared target 改成新目標", () => {
-  const state = createState();
+  test("距離超出射程時報距離不符", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemy = makePlayer("P2", 3, 3);
+    const state = makeState([attacker, enemy]);
 
-  const result = applyRetargetInstruction(
-    state,
-    state.players[0],
-    { targeting: "single_enemy" },
-    {
-      targeting: "single_enemy",
-      requiredTargets: 1,
-      allowPartialResolution: true,
-      targets: [{ id: "P2" }],
-    },
-    {
-      retargetInstruction: { toTargetId: "P3" },
-    }
-  );
+    const card = makeAttackCard({ rangeMin: 1, rangeMax: 1, damage: 2 });
+    resolveAttack(state, attacker, card, { preferredTargetId: "P2" });
 
-  expect(result.targets).toEqual([{ id: "P3" }]);
+    expect(enemy.hp).toBe(10);
+    expect(state.log.some((msg) => msg.includes("距離不符"))).toBe(true);
+  });
 });

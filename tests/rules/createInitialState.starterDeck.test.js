@@ -120,12 +120,15 @@ describe("starter deck assembly", () => {
 
     expect(state.players[0].hand).toHaveLength(4);
     expect(state.players[0].deck).toHaveLength(1);
-    expect(state.players[0].hand.map((card) => card.id)).toEqual([
-      "basic_punch_1",
-      "basic_punch_1",
-      "basic_guard_1",
-      "basic_move_1",
-    ]);
-    expect(state.players[0].deck.map((card) => card.id)).toEqual(["basic_buy"]);
+    // 起始手牌必定包含 basic_buy（學習武功）
+    expect(state.players[0].hand.map((card) => card.id)).toContain("basic_buy");
+    // 手牌其餘 3 張來自基本牌
+    const handIds = state.players[0].hand.map((card) => card.id);
+    expect(handIds.filter((id) => id !== "basic_buy")).toHaveLength(3);
+    // 牌庫剩 1 張（basic_buy 已換入起始手牌）
+    expect(state.players[0].deck.map((card) => card.id)).not.toContain("basic_buy");
   });
 });
+
+
+

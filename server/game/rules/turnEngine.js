@@ -67,9 +67,14 @@ function drawPhase(state) {
 // 手牌上限（預設 8）
 const DEFAULT_HAND_LIMIT = 8;
 
+// 永久固定卡：唔會被棄牌流程棄掉（例如 basic_buy 學習武功）
+function isPermanentCard(card) {
+  return card && card.definitionId === "basic_buy";
+}
+
 // 棄牌至手牌上限。
 // 若玩家有 pendingDiscards（UI 選擇要棄的牌），優先棄那些；
-// 否則自動棄最左邊。
+// 否則自動棄最左邊。永久固定卡（basic_buy）唔會被棄。
 function discardToLimit(state) {
   state.phase = "DISCARD_TO_LIMIT";
   for (const p of state.players) {
@@ -84,10 +89,15 @@ function discardToLimit(state) {
 
     // 依 pendingDiscards 的 instanceId 找出要棄的牌
     const pendingIds = new Set(pending.map((c) => c.instanceId || c.id));
+
+    // 先抽出永久固定卡（唔會被棄）
+    const permanentCards = p.hand.filter((card) => isPermanentCard(card));
+    const discardable = p.hand.filter((card) => !isPermanentCard(card));
+
     const toDiscard = [];
     const remaining = [];
 
-    for (const card of p.hand) {
+    for (const card of discardable) {
       if (toDiscard.length < excess && pendingIds.has(card.instanceId || card.id)) {
         toDiscard.push(card);
       } else {
@@ -100,11 +110,13 @@ function discardToLimit(state) {
       toDiscard.push(remaining.shift());
     }
 
-    p.hand = remaining;
+    // 永久固定卡永遠留喺手牌
+    p.hand = [...permanentCards, ...remaining];
     p.discard.push(...toDiscard);
     p.pendingDiscards = [];
   }
 }
+
 
 
 function endTurn(state) {
@@ -129,15 +141,11 @@ function resolveTurn(state) {
     .map((id) => state.players.find((p) => p.id === id))
     .filter(Boolean);
 
-  // 回合開始時套用每位玩家的免費轉向（若已設定）
-  for (const p of state.players) {
-    applyFacingChange(state, p);
-  }
-
   // 偵測並套用每位玩家的 combo 效果
   for (const p of state.players) {
     resolveCombos(state, p, null);
   }
+
 
   const maxLen = Math.max(
     ...state.players.map((p) => p.selectedCards.length)
@@ -160,7 +168,13 @@ function resolveTurn(state) {
     resolveAttack,
   });
 
+  // 免費轉向延後到最後：喺所有卡牌效果解析完之後先套用
+  for (const p of state.players) {
+    applyFacingChange(state, p);
+  }
+
   resolveEliminations(state);
+
   endTurn(state);
   drawPhase(state);
   discardToLimit(state);

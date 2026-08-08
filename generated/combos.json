@@ -48,5 +48,15 @@
     "effect_params": "{\"range_bonus\":1,\"damage_bonus\":1}",
     "duration": "instant",
     "description": "拳、掌、進階拳、進階掌，第4下距離+1、傷害+1。"
+  },
+  {
+    "id": "combo_line_attack",
+    "combo_type": "board_pattern",
+    "required_cards": "",
+    "required_board_pattern": "line",
+    "effect_type": "damage_bonus",
+    "effect_params": "{\"damage_bonus\":1}",
+    "duration": "instant",
+    "description": "與目標成直線（同列或同行）時，傷害+1。"
   }
 ]

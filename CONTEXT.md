@@ -1,10 +1,11 @@
-# CONTEXT.md V18
+# CONTEXT.md V19
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V18
-- 更新日期時間：2026-08-09 00:10 HKT
+- 版本：V19
+- 更新日期時間：2026-08-09 02:50 HKT
+
 
 
 
@@ -100,14 +101,24 @@
 - `.github/workflows/ci.yml`：CI（main push + PR 觸發，build + test:all + verify:local）
 - `.github/workflows/docker.yml`：Docker 建置驗證（build + /api/health）
 - `docs/DEPLOYMENT.md` 已補測試指令總覽與 GitHub Actions CI 說明
+- Phase I-02 優化：手牌上限 UI 選擇、牌庫重洗
+- `server/game/state/createInitialState.js`：起始牌庫 shuffle、起始朝向指向棋盤中心 (2,2)（`getFacingTowardCenter`）、起始手牌必定有 basic_buy（`ensureBasicBuyInHand`）
+- `server/game/rules/turnEngine.js`：牌庫耗盡時自動重洗棄牌堆（`drawCards`）、手牌上限棄牌（`discardToLimit` 依 pendingDiscards 優先）、basic_buy 永久固定（`isPermanentCard`）、免費轉向延後到最後（`applyFacingChange`）
+- `client/views/discardPicker.js`：手牌上限棄牌選擇 modal（已接入 app.js）
+- `tests/rules/createInitialState.shuffle.test.js`：起始牌庫隨機化測試
+- `tests/rules/createInitialState.facing.test.js`：起始位置固定 + 起始朝向指向 (2,2) 測試
+- `tests/rules/createInitialState.basicBuy.test.js`：basic_buy 永久固定 + 起始手牌必定有 basic_buy 測試
+- `tests/rules/turnEngine.deck.test.js`：牌庫重洗 + 手牌上限棄牌測試
+- `tests/rules/turnEngine.facingDelay.test.js`：免費轉向延後到最後測試
 
 
 ### 已驗證結果
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 28 passed, 28 total`
-- `Tests: 248 passed, 248 total`
+- 全套 `npx jest --runInBand`：`Test Suites: 33 passed, 33 total`
+- `Tests: 255 passed, 255 total`
+
 - 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）
 - 網路層測試通過：`tests/network/roomManager.test.js`、`tests/network/matchManager.test.js`、`tests/network/matchmaking.test.js`、`tests/network/socketServer.e2e.test.js`（44 tests）
 - 正式 UI server 已附加 Socket.IO multiplayer server，`GET /api/health` 通過
@@ -168,9 +179,11 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - AI 對戰接入正式 UI 已完成（SLICE-F-02：正式 UI 可選遊玩人數 / 電腦敵人，`/api/play` 自動為 AI 玩家選牌）。
 - Phase D 多人同步網路層已完成（SLICE-D-05：Socket.IO room / lobby / match / matchmaking）。
 - 多人對戰前端 UI 已完成（SLICE-H-01：Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）。
-- 全套 `npx jest --runInBand` 已達 `28 suites / 248 tests` 全綠。
+- Phase I-02 優化已完成：手牌上限 UI 選擇（discardPicker）、牌庫重洗（drawCards 重洗棄牌堆）、起始牌庫 shuffle、起始朝向指向中心、basic_buy 永久固定、免費轉向延後到最後。
+- 全套 `npx jest --runInBand` 已達 `33 suites / 255 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過，Socket.IO multiplayer server 已附加。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
+
 
 ### P1
 - Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）

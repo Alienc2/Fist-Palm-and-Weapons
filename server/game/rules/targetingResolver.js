@@ -6,10 +6,21 @@ function getEnemies(state, player) {
   return state.players.filter((p) => p.id !== player.id && !p.isEliminated);
 }
 
-function getDefaultEnemyTarget(state, player) {
+function getDefaultEnemyTarget(state, player, extra = {}) {
+  // 尊重玩家明確選擇嘅目標（preferredTargetId）
+  if (extra.preferredTargetId) {
+    const preferred = getEnemies(state, player).find(
+      (enemy) => enemy.id === extra.preferredTargetId
+    );
+    if (preferred) {
+      return [preferred];
+    }
+  }
+
   const enemies = getAutoTargets(state, player, state.players);
   return enemies.length > 0 ? [enemies[0]] : [];
 }
+
 
 function getSelfChosenEnemyTargets(state, player, extra = {}) {
   const enemies = getEnemies(state, player);
@@ -31,8 +42,9 @@ function getTargets(state, player, card, extra = {}) {
   const targeting = card.targeting || "single_enemy";
 
   if (targeting === "single_enemy") {
-    return getDefaultEnemyTarget(state, player);
+    return getDefaultEnemyTarget(state, player, extra);
   }
+
 
   if (targeting === "self_chosen_enemies") {
     return getSelfChosenEnemyTargets(state, player, extra);

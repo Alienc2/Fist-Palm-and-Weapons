@@ -86,9 +86,19 @@ function createShopState() {
   };
 }
 
+function shuffle(array, rng = Math.random) {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 function drawInitialHand(deck, handSize, ownerId) {
-  const workingDeck = [...deck];
+  const workingDeck = [...shuffle(deck)];
   const hand = [];
+
 
   for (let i = 0; i < handSize; i++) {
     if (workingDeck.length === 0) break;
@@ -106,6 +116,45 @@ function drawInitialHand(deck, handSize, ownerId) {
   };
 }
 
+// 計算起始朝向：指向棋盤中心 (2,2)
+// 優先 y 軸（up/down），其次 x 軸（left/right）
+function getFacingTowardCenter(position, center = { x: 2, y: 2 }) {
+  const dx = center.x - position.x;
+  const dy = center.y - position.y;
+
+  if (Math.abs(dy) >= Math.abs(dx)) {
+    return dy > 0 ? "down" : dy < 0 ? "up" : "right";
+  }
+  return dx > 0 ? "right" : dx < 0 ? "left" : "up";
+}
+
+// 確保起始手牌包含 basic_buy（學習武功），若無則從牌庫換入
+function ensureBasicBuyInHand(hand, deck, ownerId) {
+  const hasBasicBuy = hand.some((card) => card.definitionId === "basic_buy");
+  if (hasBasicBuy) {
+    return { hand, deck };
+  }
+
+  const buyIndex = deck.findIndex((card) => card.definitionId === "basic_buy");
+  if (buyIndex === -1) {
+    return { hand, deck };
+  }
+
+  const [buyCard] = deck.splice(buyIndex, 1);
+  const swapped = hand.pop();
+  if (swapped) {
+    deck.unshift(swapped);
+  }
+  hand.push({
+    ...buyCard,
+    zone: "hand",
+    instanceId: `${ownerId}:hand:${buyCard.definitionId}:${hand.length}`,
+  });
+
+  return { hand, deck };
+}
+
+
 function createPlayer(id, position, characterId) {
   const fallbackCharacter = cardLoader.loadCharacters()[0];
   const character = cardLoader.getCharacterById(characterId) || fallbackCharacter;
@@ -115,7 +164,9 @@ function createPlayer(id, position, characterId) {
   }
 
   const rawStarterDeck = createStarterDeck(character, id);
-  const { hand, deck } = drawInitialHand(rawStarterDeck, character.initialHandSize, id);
+  const drawn = drawInitialHand(rawStarterDeck, character.initialHandSize, id);
+  const { hand, deck } = ensureBasicBuyInHand(drawn.hand, drawn.deck, id);
+
 
   const passiveEntry = character.passiveId
     ? [
@@ -148,7 +199,8 @@ function createPlayer(id, position, characterId) {
     handLimit: character.handLimit || 8,
     pendingDiscards: [],
     position: { x: position.x, y: position.y },
-    facing: "up",
+    facing: getFacingTowardCenter(position),
+
     selectedCards: [],
     lastDefenseCard: null,
     lastRevealedSubtype: null,

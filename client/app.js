@@ -116,6 +116,15 @@ const CHARACTER_OPTIONS = [
   { value: "char_balanced", label: "無鋒（均衡）" },
 ];
 
+// 固定起始位置（依玩家 index 0-based 分配）
+const FIXED_START_POSITIONS = [
+  { x: 1, y: 1 }, // P1
+  { x: 3, y: 3 }, // P2
+  { x: 3, y: 1 }, // P3
+  { x: 1, y: 3 }, // P4
+];
+
+
 // ---- 對戰設定：遊玩人數 / 電腦敵人 / 角色 ----
 
 // 依遊玩人數動態產生角色下拉選單
@@ -150,7 +159,7 @@ function readMatchConfig() {
     const charSelect = qs(`#p${i}Character`);
     players.push({
       id: `P${i}`,
-      position: { x: 1, y: 1 },
+      position: FIXED_START_POSITIONS[i - 1] || { x: 1, y: 1 },
       characterId: charSelect ? charSelect.value : "char_attack",
       isHuman: true,
     });
@@ -160,7 +169,7 @@ function readMatchConfig() {
     const id = `P${humanCount + i + 1}`;
     players.push({
       id,
-      position: { x: 3, y: 3 },
+      position: FIXED_START_POSITIONS[humanCount + i] || { x: 3, y: 3 },
       characterId: "char_balanced",
       isHuman: false,
       aiProfileId: "ai_normal",
@@ -168,6 +177,7 @@ function readMatchConfig() {
   }
 
   return { players, humanCount, aiCount };
+
 }
 
 

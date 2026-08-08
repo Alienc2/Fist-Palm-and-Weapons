@@ -51,11 +51,16 @@ function findStackItemById(state, stackItemId) {
   return state.stack.find((item) => item.id === stackItemId) || null;
 }
 
-function findTopCounterableAttack(state) {
+// 搵 stack 頂部可反擊嘅 attack（排除自己嘅 attack，counter 只可反擊其他玩家）
+function findTopCounterableAttack(state, sourcePlayerId) {
   ensureStack(state);
   for (let i = state.stack.length - 1; i >= 0; i -= 1) {
     const item = state.stack[i];
-    if (item.card?.type === "attack" && !item.isCountered) {
+    if (
+      item.card?.type === "attack" &&
+      !item.isCountered &&
+      item.sourcePlayerId !== sourcePlayerId
+    ) {
       return item;
     }
   }
@@ -71,13 +76,14 @@ function collectCountersForAttack(state, targetItem) {
     if (item.card?.type !== "counter") continue;
     const itsTarget =
       (item.targetStackItemId && findStackItemById(state, item.targetStackItemId)) ||
-      findTopCounterableAttack(state);
+      findTopCounterableAttack(state, item.sourcePlayerId);
     if (itsTarget && itsTarget.id === targetItem.id) {
       counters.push(item);
     }
   }
   return counters;
 }
+
 
 function resolveTopStackItem(state, { log, resolveAttack }) {
   ensureStack(state);
@@ -90,7 +96,8 @@ function resolveTopStackItem(state, { log, resolveAttack }) {
   if (item.card?.type === "counter") {
     const targetItem =
       (item.targetStackItemId && findStackItemById(state, item.targetStackItemId)) ||
-      findTopCounterableAttack(state);
+      findTopCounterableAttack(state, item.sourcePlayerId);
+
 
     if (targetItem) {
       targetItem.isCountered = true;
@@ -146,6 +153,9 @@ module.exports = {
   peekStack,
   findStackItemById,
   findTopCounterableAttack,
+  collectCountersForAttack,
   resolveTopStackItem,
   resolveStack,
 };
+
+

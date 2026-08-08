@@ -10,6 +10,8 @@ const {
 } = require("./targetingResolver");
 const { buyFromShop } = require("./shopResolver");
 const { getFrontDamageBonus, getFrontDefenseBonus } = require("./passiveResolver");
+const { resolveCombos } = require("./comboResolver");
+
 
 function log(state, msg) {
   state.log.push(msg);
@@ -61,11 +63,15 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
       continue;
     }
 
+    // 揭牌時針對實際 target 偵測 board_pattern combo（方案 A）
+    resolveCombos(state, attacker, opponent);
+
     const facingMod = getFacingModifiers(attacker, opponent);
     const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
     const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
 
     const comboDamageBonus = attacker.comboDamageBonus || 0;
+
     const frontDamageBonus =
       facingMod.relation === "front" ? getFrontDamageBonus(attacker) : 0;
     let damage =
@@ -127,11 +133,28 @@ function resolveMove(state, player, card, extra = {}) {
     return;
   }
 
-  player.position.x += dx;
-  player.position.y += dy;
+  const targetX = player.position.x + dx;
+  const targetY = player.position.y + dy;
+
+  // 禁止移動到有玩家佔據嘅格（避免疊格，令距離 0 嘅攻擊失效）
+  const occupied = state.players.some(
+    (p) =>
+      p.id !== player.id &&
+      !p.isEliminated &&
+      p.position.x === targetX &&
+      p.position.y === targetY
+  );
+  if (occupied) {
+    log(state, `${player.id} 移動 ${card.id} 失敗：目標格 (${targetX},${targetY}) 已被佔據`);
+    return;
+  }
+
+  player.position.x = targetX;
+  player.position.y = targetY;
   player.lastRevealedSubtype = card.subtype || "step";
   log(state, `${player.id} 移動到 (${player.position.x},${player.position.y})`);
 }
+
 
 function resolveBuy(state, player, card, extra = {}) {
   player.lastRevealedSubtype = card.subtype || "shop";

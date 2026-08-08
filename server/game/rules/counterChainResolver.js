@@ -53,12 +53,15 @@ function resolveCounter(state, defender, card, incomingDamage, incomingSubtype, 
 
   // 距離驗證：反擊卡必須在來源距離內
   if (attacker && !isCounterRangeValid(card, defender, attacker)) {
+    const rangeMin = Number(card.rangeMin) || 1;
+    const rangeMax = Number(card.rangeMax) || 2;
     log(
       state,
-      `${defender.id} 使用 ${card.id} 反擊 ${attacker.id}，但距離不符（${card.rangeMin}-${card.rangeMax}）`
+      `${defender.id} 使用 ${card.id} 反擊 ${attacker.id}，但距離不符（${rangeMin}-${rangeMax}）`
     );
     return { reflected: false, damageToAttacker: 0, successRate, rangeValid: false };
   }
+
 
   const roll = Math.random();
   if (roll > successRate) {

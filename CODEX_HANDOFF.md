@@ -1,9 +1,10 @@
-# CODEX_HANDOFF.md V18
+# CODEX_HANDOFF.md V19
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V18
-- 更新日期時間：2026-08-09 00:10 HKT
+- 版本：V19
+- 更新日期時間：2026-08-09 02:51 HKT
+
 
 
 
@@ -134,10 +135,20 @@
 - `.github/workflows/ci.yml`：CI（main push + PR 觸發，build + test:all + verify:local）
 - `.github/workflows/docker.yml`：Docker 建置驗證（build + /api/health）
 - `docs/DEPLOYMENT.md` 已補測試指令總覽與 GitHub Actions CI 說明
+- Phase I-02：手牌上限 UI 選擇、牌庫重洗
+- `server/game/state/createInitialState.js`：起始牌庫 shuffle、起始朝向指向棋盤中心 (2,2)（`getFacingTowardCenter`）、起始手牌必定有 basic_buy（`ensureBasicBuyInHand`）
+- `server/game/rules/turnEngine.js`：牌庫耗盡時自動重洗棄牌堆（`drawCards`）、手牌上限棄牌（`discardToLimit` 依 pendingDiscards 優先）、basic_buy 永久固定（`isPermanentCard`）、免費轉向延後到最後（`applyFacingChange`）
+- `client/views/discardPicker.js`：手牌上限棄牌選擇 modal（已接入 app.js）
+- `tests/rules/createInitialState.shuffle.test.js`：起始牌庫隨機化測試
+- `tests/rules/createInitialState.facing.test.js`：起始位置固定 + 起始朝向指向 (2,2) 測試
+- `tests/rules/createInitialState.basicBuy.test.js`：basic_buy 永久固定 + 起始手牌必定有 basic_buy 測試
+- `tests/rules/turnEngine.deck.test.js`：牌庫重洗 + 手牌上限棄牌測試
+- `tests/rules/turnEngine.facingDelay.test.js`：免費轉向延後到最後測試
 
 
 
 ### 3.4 現階段重點風險
+
 
 - browser 端唔可以再直接 import CommonJS engine。
 - debug sandbox 必須長期維持 API contract 穩定。
@@ -148,7 +159,8 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`28` suites passed, `248` tests passed。
+- 全套 `npx jest --runInBand` 最新總數：`33` suites passed, `255` tests passed。
+
 - `tests/ai/aiDecision.test.js` 通過。
 - `tests/ai/aiMatch.e2e.test.js` 通過。
 - `node scripts/run-ai-match.js --rounds 5` 通過。
