@@ -91,6 +91,14 @@ function createMatchController(state, options = {}) {
     return result;
   }
 
+  // 玩家設定要棄的牌（手牌超過上限時）
+  function setPendingDiscards(playerId, discards) {
+    const result = gameEngine.setPendingDiscards(state, playerId, discards);
+    emitState();
+    return result;
+  }
+
+
   // 結算回合（所有玩家已選完）
   // 回傳 { ok, winner }
   function resolveTurn() {
@@ -215,6 +223,7 @@ function createMatchController(state, options = {}) {
     bindSocket,
     submitSelection,
     setFacing,
+    setPendingDiscards,
     resolveTurn,
     onDisconnect,
     onReconnect,
@@ -225,6 +234,7 @@ function createMatchController(state, options = {}) {
     getPlayerIdForSocket,
     serialize,
   };
+
 }
 
 function serializeCard(card) {

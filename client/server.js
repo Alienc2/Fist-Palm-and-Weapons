@@ -301,6 +301,34 @@ function createRequestHandler(options = {}) {
       return;
     }
 
+    if (req.method === "POST" && pathname === "/api/discard") {
+      if (!matchState) {
+        sendJson(res, 400, { ok: false, error: "no active match" });
+        return;
+      }
+      readJsonBody(req, (payload) => {
+        try {
+          const result = gameEngine.setPendingDiscards(
+            matchState,
+            payload.playerId,
+            payload.discards || []
+          );
+          sendJson(res, 200, {
+            ok: result.ok !== false,
+            reason: result.reason || null,
+            state: serializeState(matchState),
+          });
+        } catch (error) {
+          sendJson(res, 500, {
+            ok: false,
+            error: error && error.message ? error.message : "set pending discards failed",
+          });
+        }
+      });
+      return;
+    }
+
+
     if (req.method === "POST" && pathname === "/api/play") {
       if (!matchState) {
         sendJson(res, 400, { ok: false, error: "no active match" });

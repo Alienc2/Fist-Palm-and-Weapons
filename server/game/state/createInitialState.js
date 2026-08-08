@@ -145,6 +145,8 @@ function createPlayer(id, position, characterId) {
     hand,
     deck,
     discard: [],
+    handLimit: character.handLimit || 8,
+    pendingDiscards: [],
     position: { x: position.x, y: position.y },
     facing: "up",
     selectedCards: [],
@@ -154,6 +156,7 @@ function createPlayer(id, position, characterId) {
     isEliminated: false,
   };
 }
+
 
 function createInitialState(options = {}) {
   cardLoader.validateAllData();

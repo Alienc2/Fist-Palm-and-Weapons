@@ -86,12 +86,22 @@ class GameStore {
   }
 
 
+  // 由 server 廣播（Socket.IO）直接設定狀態
+  setState(state) {
+    this.state = state;
+    this.pendingSelections = {};
+    this.pendingFacing = {};
+    this.notify();
+    return this.state;
+  }
+
   async refreshState() {
     const data = await this.request("GET", "/api/state");
     this.state = data.state;
     this.notify();
     return this.state;
   }
+
 
   async submitSelection(playerId, selections) {
     const data = await this.request("POST", "/api/select", {

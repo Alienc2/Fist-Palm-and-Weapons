@@ -15,6 +15,9 @@ import { renderLog } from "./views/logView.js";
 import { playResolveAnimation } from "./views/resolveAnimation.js";
 import { showResultOverlay } from "./views/resultOverlay.js";
 import { handleCardSelection } from "./selectionFlow.js";
+import { socketClient } from "./socketClient.js";
+import { openLobby } from "./views/lobbyView.js";
+
 
 // ---- 渲染 ----
 
@@ -234,6 +237,40 @@ function bindEvents() {
     const next = html.dataset.theme === "dark" ? "light" : "dark";
     html.dataset.theme = next;
   });
+
+  // 多人對戰大廳
+  qs("#lobbyButton").addEventListener("click", () => {
+    openLobby();
+  });
+}
+
+// ---- 多人對戰：Socket.IO 事件 ----
+
+// 監聽 server 廣播，更新 gameStore 狀態
+function bindSocketEvents() {
+  // 對戰開始：把 server 狀態載入 gameStore
+  socketClient.on("match:start", (data) => {
+    if (data && data.state) {
+      gameStore.setState(data.state);
+    }
+  });
+
+  // 對戰狀態更新（選牌 / 回合解析）
+  socketClient.on("match:state", (state) => {
+    if (state) {
+      gameStore.setState(state);
+    }
+  });
+
+  // 對戰結束
+  socketClient.on("match:end", (data) => {
+    const state = gameStore.state;
+    if (state) {
+      showResultOverlay(state, () => {
+        gameStore.reset();
+      });
+    }
+  });
 }
 
 // ---- 啟動 ----
@@ -243,7 +280,13 @@ function init() {
   bindEvents();
   gameStore.subscribe(renderAll);
   renderAll(null);
+
+  // 建立 Socket.IO 連線（多人對戰）
+  socketClient.connect();
+  bindSocketEvents();
 }
 
 
 init();
+
+

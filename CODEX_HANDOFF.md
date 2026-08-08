@@ -1,9 +1,10 @@
-# CODEX_HANDOFF.md V16
+# CODEX_HANDOFF.md V17
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V16
-- 更新日期時間：2026-08-08 01:51 HKT
+- 版本：V17
+- 更新日期時間：2026-08-08 18:20 HKT
+
 
 
 
@@ -53,6 +54,8 @@
 | Phase F AI 與部署（SLICE-F-01） | `server/game/ai/aiDecision.js`、`server/game/ai/aiMatch.js`、`scripts/run-ai-match.js`、`tests/ai/*.test.js`、`Dockerfile`、`docker-compose.yml`、`docs/DEPLOYMENT.md` | `npm run test:ai`、`npm run ai:match`、`docker build` | 已完成 |
 | AI 對戰接入正式 UI（SLICE-F-02） | `client/server.js`、`client/index.html`、`client/app.js`、`client/gameStore.js`、`client/styles.css` | `npm run client` + AI 整合 smoke test | 已完成 |
 | Phase D 多人同步網路層（SLICE-D-05） | `server/network/roomManager.js`、`server/network/matchManager.js`、`server/rooms/matchmaking.js`、`server/network/socketServer.js`、`client/server.js` | `npx jest --runInBand tests/network` | 已完成 |
+| 多人對戰前端 UI（SLICE-H-01） | `client/socketClient.js`、`client/views/lobbyView.js`、`client/app.js`、`client/gameStore.js`、`client/index.html`、`client/styles.css` | `npm run client` + browser 驗證 + HTTP 200 smoke test | 已完成 |
+
 
 
 
@@ -115,6 +118,14 @@
 - `docs/DEPLOYMENT.md`：部署流程文件
 - `gameEngine.createMatch(options)` 已支援傳入 players 建立對戰
 - SLICE-F-02：AI 對戰接入正式 UI（`client/server.js` 支援 AI 玩家 + `/api/play` 自動選牌、`index.html` 遊玩人數 / 電腦敵人選擇、`app.js` 動態角色選單 + 玩家切換、`gameStore` 多玩家 + AI 設定、`styles.css` 表單樣式）
+- SLICE-H-01：多人對戰前端 UI（Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）
+- `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）
+- `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）
+- `client/app.js` 已接入多人對戰（`#lobbyButton` 開啟大廳、`bindSocketEvents` 監聽 match:start / match:state / match:end）
+- `client/gameStore.js` 已新增 `setState(state)`（由 server 廣播直接設定狀態）
+- `client/index.html` 已新增「多人對戰」按鈕 + 載入 `/socket.io/socket.io.js`
+- `client/styles.css` 已新增遊戲大廳樣式（lobby / room list / player status）
+
 
 
 ### 3.4 現階段重點風險
@@ -137,6 +148,8 @@
 - `tests/network/matchmaking.test.js` 通過。
 - `tests/network/socketServer.e2e.test.js` 通過（完整流程：建立房間 → 加入 → 準備 → 開始 → 選牌 → 回合解析）。
 - 正式 UI server 已附加 Socket.IO multiplayer server，`GET /api/health` 通過。
+- 多人對戰前端 UI smoke test 通過：`client/server.js` 啟動後 `/api/health`、`/socket.io/socket.io.js`、`/`、`/app.js`、`/socketClient.js`、`/views/lobbyView.js` 全部 HTTP 200。
+
 
 - `tests/rules/recoverResolver.test.js`：9 passed, 9 total。
 - `tests/rules/facingChangeResolver.test.js`：10 passed, 10 total。
@@ -199,7 +212,16 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `server/network/socketServer.js`：Socket.IO server 整合（房間 / 對戰 / 配對 / 斷線重連）。
 - `client/server.js` 已附加 Socket.IO multiplayer server。
 - `tests/network/roomManager.test.js` / `tests/network/matchManager.test.js` / `tests/network/matchmaking.test.js` / `tests/network/socketServer.e2e.test.js` 全部通過（44 tests）。
+- SLICE-H-01：多人對戰前端 UI 已完成（Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）。
+- `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）。
+- `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）。
+- `client/app.js` 已接入多人對戰（`#lobbyButton` 開啟大廳、`bindSocketEvents` 監聽 match:start / match:state / match:end）。
+- `client/gameStore.js` 已新增 `setState(state)`（由 server 廣播直接設定狀態）。
+- `client/index.html` 已新增「多人對戰」按鈕 + 載入 `/socket.io/socket.io.js`。
+- `client/styles.css` 已新增遊戲大廳樣式（lobby / room list / player status）。
+- 多人對戰前端 UI smoke test 通過（`client/server.js` 啟動後 `/api/health`、`/socket.io/socket.io.js`、`/`、`/app.js`、`/socketClient.js`、`/views/lobbyView.js` 全部 HTTP 200）。
 - SLICE-E-01：Phase E 正式 UI 骨架已完成（client server 靜態 + 遊戲 API、index.html、gameStore、layout、app、styles）。
+
 
 
 - SLICE-E-02：Phase E 正式 UI 視圖已完成（board / hand / selected / log / shop / target / facing / resolve / result）。
@@ -357,7 +379,27 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `server/game/debug/browser-debug-server.js`：debug API server / real engine runner。
 - `server/game/debug/scenarios.js`：scenario 資料 re-export / 共用入口。
 
+#### Client 正式 UI 層（Phase E / F / H）
+- `client/server.js`：正式 UI server（靜態檔案 + 遊戲 API + Socket.IO multiplayer server）。
+- `client/index.html`：正式 UI 入口頁面（遊玩人數 / 電腦敵人 / 角色選擇 / 玩家切換 / 多人對戰按鈕）。
+- `client/app.js`：正式 UI 主程式（事件綁定 / 選牌流程 / 結算動畫 / 結果 overlay / 動態角色選單 / 玩家切換 / 多人對戰接入）。
+- `client/gameStore.js`：前端狀態 store（create / select / play / reset / subscribe / 多玩家 + AI 設定 / activePlayer 切換 / setState）。
+- `client/layout.js`：DOM helper（el / qs / clear / modal / cardNode）。
+- `client/styles.css`：正式 UI 樣式（dark / light 主題 / 遊戲大廳）。
+- `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）。
+- `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）。
+- `client/views/boardView.js`：5×5 地圖 + 角色 token + 朝向。
+- `client/views/handView.js`：手牌顯示與選牌。
+- `client/views/selectedCardsView.js`：本回合選牌 / 移除 / 朝向設定。
+- `client/views/logView.js`：對戰紀錄。
+- `client/views/shopModal.js`：商店 modal。
+- `client/views/targetPicker.js`：攻擊目標選擇 modal。
+- `client/views/facingPicker.js`：朝向選擇 modal。
+- `client/views/resolveAnimation.js`：回合結算過場動畫。
+- `client/views/resultOverlay.js`：對戰結果 overlay。
+
 #### 測試層
+
 - `tests/rules/gameEngine.test.js`：核心 rules 單元測試。
 - `tests/rules/cardLoader.test.js`：資料載入測試。
 - `tests/rules/shopResolver.test.js`：shop resolver 測試。

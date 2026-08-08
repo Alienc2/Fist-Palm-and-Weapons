@@ -280,6 +280,31 @@ function createSocketServer(httpServer, options = {}) {
       if (ack) ack({ ok: result.ok !== false, reason: result.reason || null });
     });
 
+    // 設定要棄的牌（手牌超過上限時）
+    socket.on("match:discard", (payload = {}, ack) => {
+      const room = roomManager.findRoomBySocket(socket.id);
+      if (!room) {
+        if (ack) ack({ ok: false, reason: "NOT_IN_ROOM" });
+        return;
+      }
+
+      const controller = matches.get(room.id);
+      if (!controller) {
+        if (ack) ack({ ok: false, reason: "NO_MATCH" });
+        return;
+      }
+
+      const playerId = controller.getPlayerIdForSocket(socket.id);
+      if (!playerId) {
+        if (ack) ack({ ok: false, reason: "NOT_A_PLAYER" });
+        return;
+      }
+
+      const result = controller.setPendingDiscards(playerId, payload.discards || []);
+      if (ack) ack({ ok: result.ok !== false, reason: result.reason || null });
+    });
+
+
     // 手動結算回合（房主觸發，供測試 / 除錯）
     socket.on("match:play", (payload = {}, ack) => {
       const room = roomManager.findRoomBySocket(socket.id);

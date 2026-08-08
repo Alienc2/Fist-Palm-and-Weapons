@@ -24,6 +24,21 @@ function setFacing(state, playerId, facing) {
   return setFacingChange(player, facing);
 }
 
+// 設定玩家要棄的牌（手牌超過上限時，由玩家選擇要棄哪些牌）
+// discards: [{ instanceId }] 或 [{ card: { instanceId } }]
+function setPendingDiscards(state, playerId, discards = []) {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) throw new Error("player not found");
+
+  const normalized = discards.map((d) => {
+    if (d && d.card) return d.card;
+    return d;
+  });
+
+  player.pendingDiscards = normalized;
+  return { ok: true, pendingDiscards: normalized };
+}
+
 function playOneTurn(state) {
   resolveTurn(state);
 }
@@ -32,7 +47,9 @@ module.exports = {
   createMatch,
   submitSelection,
   setFacing,
+  setPendingDiscards,
   playOneTurn,
 };
+
 
 

@@ -1,10 +1,11 @@
-# CONTEXT.md V16
+# CONTEXT.md V17
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V16
-- 更新日期時間：2026-08-08 01:50 HKT
+- 版本：V17
+- 更新日期時間：2026-08-08 18:20 HKT
+
 
 
 
@@ -83,6 +84,13 @@
 - `tests/network/matchManager.test.js`：同步選牌單元測試
 - `tests/network/matchmaking.test.js`：配對系統單元測試
 - `tests/network/socketServer.e2e.test.js`：Socket.IO 多人對戰 E2E 測試
+- 多人對戰前端 UI（SLICE-H-01：`client/socketClient.js` Socket.IO client 模組 + `client/views/lobbyView.js` 大廳 UI + `client/app.js` 接入 + `client/gameStore.js` setState + `client/index.html` 多人對戰按鈕 + `client/styles.css` 大廳樣式）
+- `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）
+- `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）
+- `client/app.js` 已接入多人對戰（`#lobbyButton` 開啟大廳、`bindSocketEvents` 監聽 match:start / match:state / match:end）
+- `client/gameStore.js` 已新增 `setState(state)`（由 server 廣播直接設定狀態）
+- `client/index.html` 已新增「多人對戰」按鈕 + 載入 `/socket.io/socket.io.js`
+- `client/styles.css` 已新增遊戲大廳樣式（lobby / room list / player status）
 
 
 ### 已驗證結果
@@ -94,6 +102,8 @@
 - 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）
 - 網路層測試通過：`tests/network/roomManager.test.js`、`tests/network/matchManager.test.js`、`tests/network/matchmaking.test.js`、`tests/network/socketServer.e2e.test.js`（44 tests）
 - 正式 UI server 已附加 Socket.IO multiplayer server，`GET /api/health` 通過
+- 多人對戰前端 UI smoke test 通過：`client/server.js` 啟動後 `/api/health`、`/socket.io/socket.io.js`、`/`、`/app.js`、`/socketClient.js`、`/views/lobbyView.js` 全部 HTTP 200
+
 
 
 - `tests/ai/aiDecision.test.js`：通過
@@ -148,17 +158,19 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - Phase F AI 與部署已完成（SLICE-F-01：`ai_profiles` 接入 + AI decision + local run scripts + integration / e2e tests + deployment flow）。
 - AI 對戰接入正式 UI 已完成（SLICE-F-02：正式 UI 可選遊玩人數 / 電腦敵人，`/api/play` 自動為 AI 玩家選牌）。
 - Phase D 多人同步網路層已完成（SLICE-D-05：Socket.IO room / lobby / match / matchmaking）。
+- 多人對戰前端 UI 已完成（SLICE-H-01：Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）。
 - 全套 `npx jest --runInBand` 已達 `25 suites / 227 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過，Socket.IO multiplayer server 已附加。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
 
 ### P1
 - Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
-- 多人對戰前端 UI（Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）
+- 多人對戰前端 UI 的對戰中互動（選牌 / 朝向 / 棄牌透過 Socket.IO 同步，online 對戰完整流程）
 
 ## 6. 下一個需要完成的程式碼
-- 多人對戰前端 UI（Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）
+- 多人對戰前端 UI 的對戰中互動（選牌 / 朝向 / 棄牌透過 Socket.IO 同步，online 對戰完整流程）
 - Phase E 正式 UI 後續打磨（選牌流程 UX / 動畫 / 商店 / 結果 overlay 細節）
+
 
 
 
@@ -244,8 +256,11 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `client/views/facingPicker.js`：朝向選擇 modal
 - `client/views/resolveAnimation.js`：回合結算過場動畫
 - `client/views/resultOverlay.js`：對戰結果 overlay
+- `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）
+- `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）
 
 ### 測試層
+
 - `tests/rules/gameEngine.test.js`：核心 rules 單元測試
 - `tests/rules/cardLoader.test.js`：資料載入測試
 - `tests/rules/createInitialState.test.js`：初始狀態測試
@@ -387,6 +402,17 @@ Response shape：
 - `match:select` / `match:setFacing` / `match:state`（廣播）/ `match:start`（廣播）
 - `matchmaking:enqueue` / `matchmaking:dequeue` / `match:found`（廣播）
 - `room:update`（廣播）/ `match:end`（廣播）
+
+#### `socketClient.js`（前端 Socket.IO client，Phase H）
+- `connect(options)`：建立 Socket.IO 連線（`window.io` 由 `/socket.io/socket.io.js` 提供）。
+- `emit(event, payload)`：Promise 化 emit（支援 ack）。
+- `on(event, fn)` / `off(event, fn)`：訂閱 / 取消訂閱 server 廣播。
+- `getSocketId()`：取得目前 socket id（用於判斷是否為房主）。
+- 房間 API：`createRoom` / `joinRoom` / `leaveRoom` / `listRooms` / `setCharacter` / `setReady` / `startMatch`。
+- 對戰 API：`submitSelection` / `setFacing` / `setPendingDiscards` / `playTurn`。
+- 配對 API：`enqueueMatchmaking` / `dequeueMatchmaking`。
+- 監聽廣播：`room:update` / `match:start` / `match:state` / `match:round` / `match:end` / `match:found` / `matchmaking:timeout`。
+
 
 ## 9. 需要固定使用的程式碼
 

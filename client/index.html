@@ -22,8 +22,10 @@
       <button id="themeToggle" class="secondary-button" type="button" aria-label="切換主題">
         切換主題
       </button>
+      <button id="lobbyButton" class="secondary-button" type="button">多人對戰</button>
       <button id="newMatchButton" class="primary-button" type="button">新對戰</button>
     </div>
+
   </header>
 
   <main id="main" class="app-shell">
@@ -128,6 +130,10 @@
   <!-- 模態層 -->
   <div id="modalRoot" class="modal-root" hidden></div>
 
+  <!-- Socket.IO client（由 server 提供） -->
+  <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
+
+

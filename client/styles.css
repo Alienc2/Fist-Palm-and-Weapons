@@ -608,6 +608,73 @@ button:disabled {
   margin-top: 4px;
 }
 
+/* ---- 遊戲大廳（Phase H-01） ---- */
+.lobby-dialog {
+  max-width: 520px;
+  width: 100%;
+}
+.lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.lobby-title {
+  margin: 0;
+  font-size: 20px;
+}
+.lobby-status {
+  font-size: 13px;
+}
+.lobby-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel-2);
+}
+.lobby-section h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.lobby-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lobby-room-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+.room-code {
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+.room-info {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.room-player-name {
+  font-weight: 600;
+}
+.room-player-char {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.room-player-ready {
+  font-size: 13px;
+  color: var(--success);
+}
+
 /* ---- Responsive ---- */
 
 @media (max-width: 1100px) {
@@ -615,5 +682,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
 
 
