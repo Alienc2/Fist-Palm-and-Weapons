@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V17
+# CODEX_HANDOFF.md V18
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V17
-- 更新日期時間：2026-08-08 18:20 HKT
+- 版本：V18
+- 更新日期時間：2026-08-09 00:10 HKT
 
 
 
@@ -125,6 +125,15 @@
 - `client/gameStore.js` 已新增 `setState(state)`（由 server 廣播直接設定狀態）
 - `client/index.html` 已新增「多人對戰」按鈕 + 載入 `/socket.io/socket.io.js`
 - `client/styles.css` 已新增遊戲大廳樣式（lobby / room list / player status）
+- Phase J-01：2–4 人完整對戰 E2E 與壓力測試
+- `tests/ai/aiMatch.4p.test.js`：4P AI 對戰 E2E 測試
+- `tests/network/socketServer.e2e.test.js` 已擴充 3P / 4P 多人對戰 E2E 流程
+- `tests/stress/stress.test.js`：壓力測試（20 場並發 AI 對戰 / 100 回合長時間對戰 / 20 個 socket client）
+- `package.json` 已新增 `test:network`、`test:stress` 指令
+- Phase J-02：CI/CD（GitHub Actions）
+- `.github/workflows/ci.yml`：CI（main push + PR 觸發，build + test:all + verify:local）
+- `.github/workflows/docker.yml`：Docker 建置驗證（build + /api/health）
+- `docs/DEPLOYMENT.md` 已補測試指令總覽與 GitHub Actions CI 說明
 
 
 
@@ -139,7 +148,7 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`25` suites passed, `227` tests passed。
+- 全套 `npx jest --runInBand` 最新總數：`28` suites passed, `248` tests passed。
 - `tests/ai/aiDecision.test.js` 通過。
 - `tests/ai/aiMatch.e2e.test.js` 通過。
 - `node scripts/run-ai-match.js --rounds 5` 通過。

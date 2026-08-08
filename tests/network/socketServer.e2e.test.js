@@ -198,3 +198,148 @@ describe("socketServer - 多人對戰 E2E", () => {
     c1.client.close();
   });
 });
+
+// ---- Phase J-01：3P / 4P 多人對戰 E2E ----
+
+// 建立 N 個 client 並等待全部連線
+async function connectClients(port, names) {
+  const clients = names.map((name) => createClient(port, name));
+  await Promise.all(
+    clients.map((c) => new Promise((resolve) => c.client.on("connect", resolve)))
+  );
+  return clients;
+}
+
+// 建立房間並讓所有玩家加入、選角色、準備
+async function setupRoom(clients, maxPlayers, mode) {
+  const host = clients[0];
+  const createResult = await host.emit("room:create", {
+    name: host.name,
+    maxPlayers,
+    mode,
+  });
+  expect(createResult.ok).toBe(true);
+  const roomId = createResult.room.id;
+
+  for (const c of clients.slice(1)) {
+    const joinResult = await c.emit("room:join", { roomId, name: c.name });
+    expect(joinResult.ok).toBe(true);
+  }
+
+  const characters = ["char_attack", "char_defense", "char_move", "char_balanced"];
+  for (let i = 0; i < clients.length; i++) {
+    await clients[i].emit("room:setCharacter", { characterId: characters[i % characters.length] });
+    await clients[i].emit("room:setReady", { ready: true });
+  }
+
+  return roomId;
+}
+
+// 所有玩家各選一張牌，最後一位觸發回合解析
+async function selectAllAndResolve(clients, matchStartState) {
+  const lastIndex = clients.length - 1;
+  const stateUpdatePromise = waitForEvent(
+    clients[0].client,
+    "match:state",
+    (data) => data.round >= 2
+  );
+
+  for (let i = 0; i < clients.length; i++) {
+    const player = matchStartState.players.find((p) => p.id === clients[i].client.id);
+    const card = player.hand.find((c) => c.type === "attack") || player.hand[0];
+    const result = await clients[i].emit("match:select", {
+      selections: [{ card, extra: {} }],
+    });
+    expect(result.ok).toBe(true);
+    if (i === lastIndex) {
+      expect(result.allSubmitted).toBe(true);
+    } else {
+      expect(result.allSubmitted).toBe(false);
+    }
+  }
+
+  const stateUpdate = await stateUpdatePromise;
+  expect(stateUpdate.round).toBeGreaterThanOrEqual(2);
+  return stateUpdate;
+}
+
+describe("socketServer - 3P 多人對戰 E2E", () => {
+  let server;
+  let port;
+
+  beforeAll(async () => {
+    const result = await createTestServer();
+    server = result;
+    port = result.port;
+  });
+
+  afterAll(() => {
+    server.httpServer.close();
+  });
+
+  test("3P 完整流程：建立 → 加入 → 準備 → 開始 → 同步選牌 → 回合", async () => {
+    const clients = await connectClients(port, ["P1", "P2", "P3"]);
+    try {
+      const roomId = await setupRoom(clients, 3, "3p");
+
+      const matchStartPromise = waitForEvent(clients[0].client, "match:start");
+      const startResult = await clients[0].emit("room:start");
+      expect(startResult.ok).toBe(true);
+      expect(startResult.matchId).toBeTruthy();
+
+      const matchStart = await matchStartPromise;
+      expect(matchStart.state.players).toHaveLength(3);
+
+      await selectAllAndResolve(clients, matchStart.state);
+    } finally {
+      clients.forEach((c) => c.client.close());
+    }
+  });
+});
+
+describe("socketServer - 4P 多人對戰 E2E", () => {
+  let server;
+  let port;
+
+  beforeAll(async () => {
+    const result = await createTestServer();
+    server = result;
+    port = result.port;
+  });
+
+  afterAll(() => {
+    server.httpServer.close();
+  });
+
+  test("4P 完整流程：建立 → 加入 → 準備 → 開始 → 同步選牌 → 回合", async () => {
+    const clients = await connectClients(port, ["P1", "P2", "P3", "P4"]);
+    try {
+      const roomId = await setupRoom(clients, 4, "4p");
+
+      const matchStartPromise = waitForEvent(clients[0].client, "match:start");
+      const startResult = await clients[0].emit("room:start");
+      expect(startResult.ok).toBe(true);
+      expect(startResult.matchId).toBeTruthy();
+
+      const matchStart = await matchStartPromise;
+      expect(matchStart.state.players).toHaveLength(4);
+
+      await selectAllAndResolve(clients, matchStart.state);
+    } finally {
+      clients.forEach((c) => c.client.close());
+    }
+  });
+
+  test("4P 房間滿員後，第 5 位玩家無法加入", async () => {
+    const clients = await connectClients(port, ["P1", "P2", "P3", "P4", "P5"]);
+    try {
+      const roomId = await setupRoom(clients.slice(0, 4), 4, "4p");
+
+      const joinResult = await clients[4].emit("room:join", { roomId, name: "P5" });
+      expect(joinResult.ok).toBe(false);
+      expect(joinResult.reason).toBe("ROOM_FULL");
+    } finally {
+      clients.forEach((c) => c.client.close());
+    }
+  });
+});

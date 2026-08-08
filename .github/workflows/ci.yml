@@ -1,0 +1,43 @@
+# .github/workflows/ci.yml
+# Phase J-02：CI（GitHub Actions）
+# 觸發：main 分支 push + pull_request
+# 步驟：安裝依賴 → 建置資料 → 全部測試 → 本地驗證
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build card data
+        run: npm run build:data
+
+      - name: Run all tests
+        run: npm run test:all
+
+      - name: Run local verification
+        run: npm run verify:local

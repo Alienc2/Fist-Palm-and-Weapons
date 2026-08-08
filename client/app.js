@@ -17,6 +17,7 @@ import { showResultOverlay } from "./views/resultOverlay.js";
 import { handleCardSelection } from "./selectionFlow.js";
 import { socketClient } from "./socketClient.js";
 import { openLobby } from "./views/lobbyView.js";
+import { openDiscardPicker } from "./views/discardPicker.js";
 
 
 // ---- 渲染 ----
@@ -170,6 +171,25 @@ function readMatchConfig() {
 }
 
 
+// ---- 手牌上限棄牌流程（Phase I-02）----
+
+// 依序處理每個人類玩家的手牌上限棄牌。
+// AI 玩家不需 UI，server 會自動補棄。
+async function handleDiscardPhase() {
+  const state = gameStore.state;
+  if (!state) return;
+
+  const humanPlayers = state.players.filter((p) => !p.isAi);
+  for (const player of humanPlayers) {
+    const excess = gameStore.getDiscardExcess(player.id);
+    if (excess <= 0) continue;
+    // 等待玩家確認棄牌後才繼續下一位
+    await new Promise((resolve) => {
+      openDiscardPicker(player.id, () => resolve());
+    });
+  }
+}
+
 // ---- 事件 ----
 
 function bindEvents() {
@@ -211,6 +231,8 @@ function bindEvents() {
     try {
       // 先送出所有暫存選牌與朝向
       await gameStore.commitAllSelections();
+      // 依序處理每個人類玩家的手牌上限棄牌
+      await handleDiscardPhase();
       // 播放結算動畫（用結算前狀態）
       const before = gameStore.state;
       await playResolveAnimation({

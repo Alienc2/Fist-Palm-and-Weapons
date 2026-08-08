@@ -683,5 +683,39 @@ button:disabled {
   }
 }
 
+/* ---- 手牌上限棄牌選擇器（Phase I-02）---- */
+
+.discard-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.discard-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.discard-list .card {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.discard-list .card:hover {
+  transform: translateY(-3px);
+}
+
+.discard-list .card.is-selected {
+  outline: 3px solid var(--accent, #e0a63c);
+  box-shadow: 0 0 0 3px rgba(224, 166, 60, 0.35);
+}
+
+.discard-hint {
+  font-size: 0.9em;
+}
+
 
 

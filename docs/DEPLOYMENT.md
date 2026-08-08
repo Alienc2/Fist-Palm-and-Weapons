@@ -36,6 +36,15 @@ npm run verify:local
 ```
 執行 build-data + 3 個 debug scenario + rules 測試 + AI 測試。
 
+### 1.6 測試指令總覽
+```bash
+npm run test:rules      # rules 單元測試
+npm run test:ai         # AI 單元 + e2e 測試（含 4P AI 對戰）
+npm run test:network    # 網路層測試（含 3P / 4P 多人對戰 E2E）
+npm run test:stress     # 壓力測試（並發對戰 / 長時間回合 / 大量 client）
+npm run test:all        # 全部測試
+```
+
 ## 2. Docker 部署
 
 ### 2.1 建置映像
@@ -59,10 +68,19 @@ docker compose down
 ## 3. 部署流程（CI / CD 建議）
 
 1. **建置**：`npm run build:data`（CSV → generated JSON）
-2. **測試**：`npm run test:all`（rules + AI + debug）
+2. **測試**：`npm run test:all`（rules + AI + network + stress）
 3. **映像**：`docker build -t fpw-client .`
 4. **發佈**：推送映像至 registry，再於目標主機 `docker compose up -d`
 5. **驗證**：`GET /api/health` 應回傳 `{ ok: true }`
+
+### 3.1 GitHub Actions CI
+
+本專案已配置 GitHub Actions 自動化 CI，位於 `.github/workflows/`：
+
+- **`ci.yml`**：main 分支 push 或 pull_request 時觸發。執行 `npm ci` → `npm run build:data` → `npm run test:all` → `npm run verify:local`。
+- **`docker.yml`**：main 分支 push 或 pull_request 時觸發。建置 Docker 映像、啟動容器、驗證 `GET /api/health`。
+
+推送至 GitHub 後，可在 Actions 分頁查看執行結果。所有檢查通過（全綠）才代表品質門檻達標。
 
 ## 4. 環境變數
 

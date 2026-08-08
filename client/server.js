@@ -70,6 +70,7 @@ function serializePlayer(player) {
     guardSubtype: player.guardSubtype || null,
     isEliminated: !!player.isEliminated,
     isAi: !!player.isAi,
+    handLimit: player.handLimit || 8,
   };
 }
 

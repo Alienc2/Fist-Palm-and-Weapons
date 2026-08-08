@@ -14,6 +14,7 @@ class GameStore {
     this.activePlayerId = "P1";
     this.pendingSelections = {}; // playerId -> [{card, extra}]
     this.pendingFacing = {}; // playerId -> facing
+    this.pendingDiscards = {}; // playerId -> [{instanceId}]
     this.listeners = [];
     this.busy = false;
   }
@@ -78,6 +79,7 @@ class GameStore {
       this.state = data.state;
       this.pendingSelections = {};
       this.pendingFacing = {};
+      this.pendingDiscards = {};
       this.notify();
       return this.state;
     } finally {
@@ -91,6 +93,7 @@ class GameStore {
     this.state = state;
     this.pendingSelections = {};
     this.pendingFacing = {};
+    this.pendingDiscards = {};
     this.notify();
     return this.state;
   }
@@ -128,6 +131,7 @@ class GameStore {
     this.state = data.state;
     this.pendingSelections = {};
     this.pendingFacing = {};
+    this.pendingDiscards = {};
     this.notify();
     return this.state;
   }
@@ -137,6 +141,7 @@ class GameStore {
     this.state = null;
     this.pendingSelections = {};
     this.pendingFacing = {};
+    this.pendingDiscards = {};
     this.notify();
   }
 
@@ -202,6 +207,41 @@ class GameStore {
         await this.setFacing(playerId, facing);
       }
     }
+  }
+
+  // ---- 手牌上限棄牌管理（Phase I-02）----
+
+  getPendingDiscards(playerId) {
+    return this.pendingDiscards[playerId] || [];
+  }
+
+  // 設定要棄的牌（手牌超過上限時），並送出到 server
+  async setPendingDiscards(playerId, discards) {
+    const normalized = discards.map((d) => {
+      if (d && d.card) return d.card;
+      return d;
+    });
+    this.pendingDiscards[playerId] = normalized;
+    const data = await this.request("POST", "/api/discard", {
+      playerId,
+      discards: normalized,
+    });
+    this.state = data.state;
+    this.notify();
+    return data;
+  }
+
+  // 計算某玩家需要棄牌的張數（手牌超過上限的部分）
+  getDiscardExcess(playerId) {
+    const player = this.getPlayer(playerId);
+    if (!player || !player.hand) return 0;
+    const limit = player.handLimit || 8;
+    return Math.max(0, player.hand.length - limit);
+  }
+
+  clearPendingDiscards(playerId) {
+    this.pendingDiscards[playerId] = [];
+    this.notify();
   }
 }
 

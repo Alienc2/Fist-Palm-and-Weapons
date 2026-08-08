@@ -216,4 +216,8 @@ module.exports = {
   discardToLimit,
   endTurn,
   resolveCardByType,
+  shuffleArray,
+  drawCards,
 };
+
+

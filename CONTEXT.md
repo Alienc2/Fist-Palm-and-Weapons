@@ -1,10 +1,10 @@
-# CONTEXT.md V17
+# CONTEXT.md V18
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V17
-- 更新日期時間：2026-08-08 18:20 HKT
+- 版本：V18
+- 更新日期時間：2026-08-09 00:10 HKT
 
 
 
@@ -91,14 +91,23 @@
 - `client/gameStore.js` 已新增 `setState(state)`（由 server 廣播直接設定狀態）
 - `client/index.html` 已新增「多人對戰」按鈕 + 載入 `/socket.io/socket.io.js`
 - `client/styles.css` 已新增遊戲大廳樣式（lobby / room list / player status）
+- Phase J-01 補齊：2–4 人完整對戰 E2E、壓力測試
+- `tests/ai/aiMatch.4p.test.js`：4P AI 對戰 E2E 測試
+- `tests/network/socketServer.e2e.test.js` 已擴充 3P / 4P 多人對戰 E2E 流程
+- `tests/stress/stress.test.js`：壓力測試（20 場並發 AI 對戰 / 100 回合長時間對戰 / 20 個 socket client）
+- `package.json` 已新增 `test:network`、`test:stress` 指令
+- Phase J-02 補齊：CI/CD（GitHub Actions）
+- `.github/workflows/ci.yml`：CI（main push + PR 觸發，build + test:all + verify:local）
+- `.github/workflows/docker.yml`：Docker 建置驗證（build + /api/health）
+- `docs/DEPLOYMENT.md` 已補測試指令總覽與 GitHub Actions CI 說明
 
 
 ### 已驗證結果
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 25 passed, 25 total`
-- `Tests: 227 passed, 227 total`
+- 全套 `npx jest --runInBand`：`Test Suites: 28 passed, 28 total`
+- `Tests: 248 passed, 248 total`
 - 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）
 - 網路層測試通過：`tests/network/roomManager.test.js`、`tests/network/matchManager.test.js`、`tests/network/matchmaking.test.js`、`tests/network/socketServer.e2e.test.js`（44 tests）
 - 正式 UI server 已附加 Socket.IO multiplayer server，`GET /api/health` 通過
@@ -159,7 +168,7 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - AI 對戰接入正式 UI 已完成（SLICE-F-02：正式 UI 可選遊玩人數 / 電腦敵人，`/api/play` 自動為 AI 玩家選牌）。
 - Phase D 多人同步網路層已完成（SLICE-D-05：Socket.IO room / lobby / match / matchmaking）。
 - 多人對戰前端 UI 已完成（SLICE-H-01：Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）。
-- 全套 `npx jest --runInBand` 已達 `25 suites / 227 tests` 全綠。
+- 全套 `npx jest --runInBand` 已達 `28 suites / 248 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過，Socket.IO multiplayer server 已附加。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
 
