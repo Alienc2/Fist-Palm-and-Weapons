@@ -7,9 +7,10 @@ const { manhattanDistance } = require("./distance");
 // 解析 required_cards 字串，例如：
 //   "type:attack;count:3"
 //   "subtype:punch>palm>weapon"
-// 回傳 { type, count, subtypeSequence }
+//   "subtype:same;count:3"（同一 subtype 連續 count 張）
+// 回傳 { type, count, subtypeSequence, sameSubtype }
 function parseRequiredCards(requiredCards) {
-  const result = { type: null, count: null, subtypeSequence: null };
+  const result = { type: null, count: null, subtypeSequence: null, sameSubtype: false };
 
   if (!requiredCards) return result;
 
@@ -23,12 +24,17 @@ function parseRequiredCards(requiredCards) {
     } else if (key === "count") {
       result.count = Number(value);
     } else if (key === "subtype") {
-      result.subtypeSequence = value.split(">").map((s) => s.trim());
+      if (value === "same") {
+        result.sameSubtype = true;
+      } else {
+        result.subtypeSequence = value.split(">").map((s) => s.trim());
+      }
     }
   }
 
   return result;
 }
+
 
 // 檢查玩家 selectedCards 是否命中 sequence combo
 // selectedCards 為 [{ card, extra }, ...]
@@ -42,6 +48,12 @@ function detectSequenceCombo(state, player, combo) {
     return matchesSubtypeSequence(subtypes, req.subtypeSequence);
   }
 
+  if (req.sameSubtype && req.count) {
+    // 同一 subtype 連續 count 張比對
+    const subtypes = selected.map((entry) => entry.card?.subtype || null);
+    return matchesSameSubtypeCount(subtypes, req.count);
+  }
+
   if (req.type && req.count) {
     // 依 type 連續 count 張比對
     const types = selected.map((entry) => entry.card?.type || null);
@@ -50,6 +62,25 @@ function detectSequenceCombo(state, player, combo) {
 
   return false;
 }
+
+function matchesSameSubtypeCount(subtypes, count) {
+  if (!count || count <= 0) return false;
+  if (subtypes.length < count) return false;
+
+  let run = 0;
+  let prev = null;
+  for (const s of subtypes) {
+    if (s && s === prev) {
+      run += 1;
+    } else {
+      prev = s;
+      run = 1;
+    }
+    if (run >= count) return true;
+  }
+  return false;
+}
+
 
 function matchesSubtypeSequence(subtypes, sequence) {
   if (sequence.length === 0) return false;
@@ -155,12 +186,27 @@ function applyComboEffect(state, player, combo, target) {
   if (effectType === "guard_up") {
     const value = Number(params.value || 0);
     player.guardUp = (player.guardUp || 0) + value;
-    state.log.push(`${player.id} 觸發 combo ${combo.id}：防禦成功率 +${value}`);
+    state.log.push(`${player.id} 觸發 combo ${combo.id}：防禦力 +${value}`);
+    return { applied: true, effectType, params };
+  }
+
+  if (effectType === "move_bonus") {
+    const value = Number(params.value || 0);
+    player.comboMoveBonus = (player.comboMoveBonus || 0) + value;
+    state.log.push(`${player.id} 觸發 combo ${combo.id}：移動距離 +${value}`);
+    return { applied: true, effectType, params };
+  }
+
+  if (effectType === "line_attack") {
+    // 範圍攻擊：多於一名敵人，且兩名或以上同時位於一直線時，同時攻擊全部直線上敵人
+    player.lineAttackActive = true;
+    state.log.push(`${player.id} 觸發 combo ${combo.id}：直線範圍攻擊`);
     return { applied: true, effectType, params };
   }
 
   return { applied: false, effectType, params };
 }
+
 
 // 主入口：偵測並套用所有命中 combo
 // 回傳命中 combo 列表
@@ -192,8 +238,11 @@ function clearRoundEffects(player) {
   player.comboRangeBonus = 0;
   player.dodgeUp = 0;
   player.guardUp = 0;
+  player.comboMoveBonus = 0;
+  player.lineAttackActive = false;
   if (player.defenseDown) player.defenseDown = 0;
 }
+
 
 module.exports = {
   parseRequiredCards,

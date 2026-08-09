@@ -62,6 +62,10 @@ function getTargets(state, player, card, extra = {}) {
     return getCrossEnemyTargets(state, player);
   }
 
+  if (targeting === "line_enemies") {
+    return getLineEnemyTargets(state, player);
+  }
+
   return getDefaultEnemyTarget(state, player);
 }
 
@@ -72,6 +76,7 @@ module.exports = {
   getAllEnemyTargets,
   getAdjacentEnemyTargets,
   getCrossEnemyTargets,
+  getLineEnemyTargets,
   isTargetStillLegal,
   retargetDeclaredTargets,
   declareTargetSet,
@@ -80,6 +85,7 @@ module.exports = {
   applyRetargetInstruction,
   getTargets,
 };
+
 
 function isAdjacent(a, b) {
   const dx = Math.abs(a.x - b.x);
@@ -107,6 +113,13 @@ function getCrossEnemyTargets(state, player) {
   );
 }
 
+function getLineEnemyTargets(state, player) {
+  return getEnemies(state, player).filter((enemy) =>
+    isCrossAligned(player.position, enemy.position)
+  );
+}
+
+
 function isTargetStillLegal(state, sourcePlayer, card, target) {
   if (!target) return false;
   if (target.isEliminated) return false;
@@ -133,8 +146,13 @@ function isTargetStillLegal(state, sourcePlayer, card, target) {
     return current.id !== sourcePlayer.id && isCrossAligned(sourcePlayer.position, current.position);
   }
 
+  if (targeting === "line_enemies") {
+    return current.id !== sourcePlayer.id && isCrossAligned(sourcePlayer.position, current.position);
+  }
+
   return current.id !== sourcePlayer.id;
 }
+
 
 function retargetDeclaredTargets(state, sourcePlayer, card, declaredTargets, extra = {}) {
   if (!extra.retargetToId) {

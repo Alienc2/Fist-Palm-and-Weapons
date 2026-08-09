@@ -104,6 +104,7 @@ export function button(label, className, onClick, disabled = false) {
 }
 
 // 建立卡片 DOM（供 handView / selectedCardsView / shopModal 共用）
+// I-02-H：擴充卡牌內容排法，列出所有資料（camelCase 欄位）
 export function cardNode(card, options = {}) {
   const {
     onClick = null,
@@ -133,12 +134,36 @@ export function cardNode(card, options = {}) {
   const children = [
     el("div", { class: "card-header" }, [
       el("span", { class: "card-type", text: typeLabel }),
-      el("span", { class: "card-cost", text: showCost ? `MP ${card.mp_cost}` : "" }),
+      el("span", { class: "card-cost", text: showCost ? `MP ${card.mpCost}` : "" }),
     ]),
-    el("div", { class: "card-name", text: card.name_zh || card.id }),
+    el("div", { class: "card-name", text: card.name || card.id }),
     el("div", { class: "card-subtype", text: card.subtype || "" }),
-    el("div", { class: "card-desc", text: card.description_template || "" }),
   ];
+
+  // 依卡牌類型列出對應數值資料
+  const stats = [];
+  if (card.type === "attack") {
+    stats.push(`傷害 ${card.damage}`);
+    stats.push(`射程 ${card.rangeMin}~${card.rangeMax}`);
+  } else if (card.type === "move") {
+    stats.push(`移動 ${card.moveMin}~${card.moveMax}`);
+  } else if (card.type === "defense") {
+    stats.push(`格擋 ${card.blockValue}`);
+  } else if (card.type === "recover") {
+    stats.push(`回復 ${card.hpGain} HP`);
+  }
+  if (card.mpGain) stats.push(`+${card.mpGain} MP`);
+  if (card.drawCount) stats.push(`抽 ${card.drawCount} 張`);
+  if (card.buyCost) stats.push(`解封 ${card.buyCost} MP`);
+  if (stats.length > 0) {
+    children.push(el("div", { class: "card-stats", text: stats.join(" · ") }));
+  }
+
+  if (card.keywords && card.keywords.length > 0) {
+    children.push(
+      el("div", { class: "card-keywords", text: card.keywords.join("、") })
+    );
+  }
 
   if (showStock && card.stock !== undefined && card.stock !== "") {
     children.push(el("div", { class: "card-stock", text: `庫存 ${card.stock}` }));
@@ -146,3 +171,5 @@ export function cardNode(card, options = {}) {
 
   return el("div", attrs, children);
 }
+
+

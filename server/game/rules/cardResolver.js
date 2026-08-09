@@ -49,7 +49,23 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
 
   attacker.lastRevealedSubtype = card.subtype || "unknown";
 
-  for (const opponent of validation.legalTargets) {
+  // 揭牌時針對實際 target 偵測 board_pattern combo（方案 A）
+  resolveCombos(state, attacker, validation.legalTargets[0]);
+
+  // combo_line_attack：多目標直線攻擊，目標宣告層統一處理（targetingResolver line_enemies）
+  let targets = validation.legalTargets;
+  if (attacker.lineAttackActive) {
+    const lineCard = { ...card, targeting: "line_enemies" };
+    const lineDeclared = declareTargetSet(state, attacker, lineCard, extra);
+    const lineValidation = validateDeclaredTargets(state, attacker, lineCard, lineDeclared);
+    if (lineValidation.isValid && lineValidation.legalTargets.length >= 2) {
+      targets = lineValidation.legalTargets;
+      log(state, `${attacker.id} 觸發直線範圍攻擊，同時攻擊 ${targets.map((t) => t.id).join("、")}`);
+    }
+  }
+
+  for (const opponent of targets) {
+
     const comboRangeBonus = attacker.comboRangeBonus || 0;
     if (
       !isWithinRange(
@@ -63,9 +79,6 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
       continue;
     }
 
-    // 揭牌時針對實際 target 偵測 board_pattern combo（方案 A）
-    resolveCombos(state, attacker, opponent);
-
     const facingMod = getFacingModifiers(attacker, opponent);
     const defenderSubtype = opponent.lastRevealedSubtype || "neutral";
     const advMod = getAdvantageModifiers(card.subtype, defenderSubtype);
@@ -74,9 +87,9 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
 
     const frontDamageBonus =
       facingMod.relation === "front" ? getFrontDamageBonus(attacker) : 0;
+    // facingMod.damage 已移除：朝向改為影響防禦力計算，唔再影響傷害
     let damage =
       card.damage +
-      facingMod.damage +
       advMod.damage +
       comboDamageBonus +
       frontDamageBonus;
@@ -86,7 +99,16 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
     if (opponent.lastDefenseCard) {
       const frontDefenseBonus =
         facingMod.relation === "front" ? getFrontDefenseBonus(opponent) : 0;
-      block = (opponent.lastDefenseCard.blockValue || 0) + frontDefenseBonus;
+      const guardUp = opponent.guardUp || 0;
+      const defenseDown = opponent.defenseDown || 0;
+      // facingMod.defense：正面受到攻擊防禦力 +1、背面受到攻擊防禦力 −1
+      block =
+        (opponent.lastDefenseCard.blockValue || 0) +
+        frontDefenseBonus +
+        facingMod.defense +
+        guardUp -
+        defenseDown;
+      if (block < 0) block = 0;
       log(state, `${opponent.id} 的防禦殘留生效，減少 ${block} 傷害`);
       opponent.lastDefenseCard = null;
     }
@@ -108,6 +130,7 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
   }
 }
 
+
 function resolveDefense(state, player, card, extra = {}) {
   player.lastDefenseCard = {
     id: card.id,
@@ -128,10 +151,13 @@ function resolveMove(state, player, card, extra = {}) {
   }
 
   const steps = Math.abs(dx) + Math.abs(dy);
-  if (steps < card.moveMin || steps > card.moveMax) {
+  // combo_move_3：移動距離 +1
+  const moveMax = card.moveMax + (player.comboMoveBonus || 0);
+  if (steps < card.moveMin || steps > moveMax) {
     log(state, `${player.id} 移動 ${card.id} 步數不合法`);
     return;
   }
+
 
   const targetX = player.position.x + dx;
   const targetY = player.position.y + dy;

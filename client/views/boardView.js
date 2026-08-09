@@ -1,8 +1,10 @@
 // client/views/boardView.js
 // 5×5 地圖 + 角色 token + 朝向。
 // 顯示每位玩家的位置、朝向、HP/MP、角色名。
+// I-02-H2 / I-02-H3：移動/攻擊卡喺棋盤高亮可選格並點擊選擇。
 
 import { el, clear, qs } from "../layout.js";
+import { gameStore } from "../gameStore.js";
 
 const BOARD_SIZE = 5;
 
@@ -13,6 +15,71 @@ const FACING_ARROW = {
   right: "▶",
 };
 
+// 曼哈頓距離
+function manhattan(a, b) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+// 計算某格是否被其他玩家佔據
+function isOccupied(state, x, y, excludeId) {
+  return state.players.some(
+    (p) =>
+      p.id !== excludeId &&
+      !p.isEliminated &&
+      p.position &&
+      p.position.x === x &&
+      p.position.y === y
+  );
+}
+
+// 計算移動卡可移動格（曼哈頓距離喺 moveMin~moveMax、未被佔據）
+function getMoveTargets(state, player, card) {
+  const targets = [];
+  const moveMax = card.moveMax + (player.comboMoveBonus || 0);
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      const dist = manhattan(player.position, { x, y });
+      if (dist < card.moveMin || dist > moveMax) continue;
+      if (isOccupied(state, x, y, player.id)) continue;
+      targets.push({ x, y });
+    }
+  }
+  return targets;
+}
+
+// I-02-H4：計算玩家喺本回合已選移動卡後嘅預測位置
+// 前面已選嘅移動卡會累計位移，令後續攻擊卡嘅距離預覽用移動後位置
+function getPredictedPosition(state, playerId) {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) return null;
+  let x = player.position.x;
+  let y = player.position.y;
+  const pending = gameStore.getPendingSelections(playerId);
+  for (const item of pending) {
+    if (item.card && item.card.type === "move") {
+      x += Number(item.extra.dx) || 0;
+      y += Number(item.extra.dy) || 0;
+    }
+  }
+  return { x, y };
+}
+
+// 計算攻擊卡可攻擊敵人（距離喺 rangeMin~rangeMax）
+// I-02-H4：考慮前面已選移動卡嘅效果，用移動後位置計算距離
+function getAttackTargets(state, player, card) {
+  const comboRangeBonus = player.comboRangeBonus || 0;
+  const predicted = getPredictedPosition(state, player.id) || player.position;
+  return state.players.filter(
+    (p) =>
+      p.id !== player.id &&
+      !p.isEliminated &&
+      p.position &&
+      manhattan(predicted, p.position) >= card.rangeMin &&
+      manhattan(predicted, p.position) <= card.rangeMax + comboRangeBonus
+  );
+}
+
+
 export function renderBoard(state) {
   const container = qs("#boardView");
   clear(container);
@@ -20,6 +87,22 @@ export function renderBoard(state) {
   if (!state) {
     container.appendChild(el("p", { class: "muted-text", text: "開始對戰後顯示 5×5 棋盤。" }));
     return;
+  }
+
+  const selection = gameStore.getBoardSelection();
+  const activePlayer = selection
+    ? state.players.find((p) => p.id === selection.playerId)
+    : null;
+
+  // 預先計算可選格 / 可攻擊敵人
+  let moveTargets = [];
+  let attackTargets = [];
+  if (selection && activePlayer) {
+    if (selection.type === "move") {
+      moveTargets = getMoveTargets(state, activePlayer, selection.card);
+    } else if (selection.type === "attack") {
+      attackTargets = getAttackTargets(state, activePlayer, selection.card);
+    }
   }
 
   const grid = el("div", { class: "board-grid" });
@@ -36,6 +119,31 @@ export function renderBoard(state) {
       const occupant = state.players.find(
         (p) => p.position && p.position.x === x && p.position.y === y
       );
+
+      // I-02-H2：移動模式高亮可移動格
+      const isMoveTarget = moveTargets.some((t) => t.x === x && t.y === y);
+      if (isMoveTarget) {
+        cell.classList.add("is-move-target");
+        cell.addEventListener("click", () => {
+          const dx = x - activePlayer.position.x;
+          const dy = y - activePlayer.position.y;
+          gameStore.addSelection(activePlayer.id, selection.card, { dx, dy });
+          gameStore.clearBoardSelection();
+        });
+      }
+
+      // I-02-H3：攻擊模式高亮可攻擊敵人
+      const isAttackTarget =
+        occupant && attackTargets.some((t) => t.id === occupant.id);
+      if (isAttackTarget) {
+        cell.classList.add("is-attack-target");
+        cell.addEventListener("click", () => {
+          gameStore.addSelection(activePlayer.id, selection.card, {
+            preferredTargetId: occupant.id,
+          });
+          gameStore.clearBoardSelection();
+        });
+      }
 
       if (occupant) {
         const token = el("div", {
@@ -62,4 +170,16 @@ export function renderBoard(state) {
   }
 
   container.appendChild(grid);
+
+  // 顯示選擇模式提示
+  if (selection && activePlayer) {
+    const hint = el("div", {
+      class: "board-selection-hint",
+      text:
+        selection.type === "move"
+          ? `${activePlayer.id}：點擊綠色格選擇移動目標（取消：點擊「清空選牌」）`
+          : `${activePlayer.id}：點擊綠色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
+    });
+    container.appendChild(hint);
+  }
 }

@@ -117,9 +117,11 @@ describe("front_damage_bonus 整合", () => {
 
     resolveAttack(state, attacker, attackCard(), {});
 
-    // 傷害 = 2 (card) + 1 (front facing) + 1 (passive) = 4
-    expect(target.hp).toBe(10 - 4);
+    // 傷害 = 2 (card) + 1 (passive front_damage_bonus) = 3
+    // （facingMod.damage 已移除：朝向唔再影響傷害）
+    expect(target.hp).toBe(10 - 3);
   });
+
 
   test("非正面攻擊時不套用傷害加成", () => {
     const attacker = makePlayer("P1", [

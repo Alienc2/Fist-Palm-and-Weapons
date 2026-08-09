@@ -15,8 +15,10 @@ class GameStore {
     this.pendingSelections = {}; // playerId -> [{card, extra}]
     this.pendingFacing = {}; // playerId -> facing
     this.pendingDiscards = {}; // playerId -> [{instanceId}]
+    this.boardSelection = null; // { type: 'move'|'attack', card, playerId }
     this.listeners = [];
     this.busy = false;
+
   }
 
   subscribe(fn) {
@@ -184,10 +186,30 @@ class GameStore {
 
   clearSelections(playerId) {
     this.pendingSelections[playerId] = [];
+    this.boardSelection = null;
+    this.notify();
+  }
+
+
+  // ---- 棋盤選擇模式（I-02-H2 / I-02-H3）----
+  // 使用移動/攻擊卡時，喺棋盤高亮可選格並點擊選擇，取代 facingPicker / targetPicker
+
+  setBoardSelection(selection) {
+    this.boardSelection = selection;
+    this.notify();
+  }
+
+  getBoardSelection() {
+    return this.boardSelection;
+  }
+
+  clearBoardSelection() {
+    this.boardSelection = null;
     this.notify();
   }
 
   setPendingFacing(playerId, facing) {
+
     this.pendingFacing[playerId] = facing;
     this.notify();
   }

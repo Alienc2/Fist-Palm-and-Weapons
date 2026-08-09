@@ -1,5 +1,5 @@
 // client/views/handView.js
-// 手牌顯示。點擊手牌加入本回合選牌。
+// 手牌顯示。I-02-H：扇形排列喺畫面下方，hover 升高，可點擊打出。
 
 import { el, clear, qs, cardNode } from "../layout.js";
 import { gameStore } from "../gameStore.js";
@@ -31,22 +31,29 @@ export function renderHand(state) {
     return;
   }
 
-  const list = el("div", { class: "hand-list" });
+  // I-02-H：扇形排列（每張牌依 index 旋轉角度，底部對齊）
+  const fan = el("div", { class: "hand-fan" });
+  const count = player.hand.length;
+  const maxAngle = 30; // 最大扇形角度（度）
+  const step = count > 1 ? (maxAngle * 2) / (count - 1) : 0;
 
-  for (const card of player.hand) {
+  player.hand.forEach((card, index) => {
     const alreadySelected = pendingInstanceIds.has(card.instanceId || card.id);
-    list.appendChild(
-      cardNode(card, {
-        selected: alreadySelected,
-        disabled: alreadySelected,
-        onClick: () => {
-          if (alreadySelected) return;
-          handleCardSelection(player.id, card);
-        },
+    const angle = count > 1 ? -maxAngle + step * index : 0;
+    const cardEl = cardNode(card, {
+      selected: alreadySelected,
+      disabled: alreadySelected,
+      onClick: () => {
+        if (alreadySelected) return;
+        handleCardSelection(player.id, card);
+      },
+    });
+    cardEl.style.setProperty("--fan-angle", `${angle}deg`);
+    cardEl.style.setProperty("--fan-index", index);
+    fan.appendChild(cardEl);
+  });
 
-      })
-    );
-  }
-
-  container.appendChild(list);
+  container.appendChild(fan);
 }
+
+

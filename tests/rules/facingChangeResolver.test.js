@@ -127,8 +127,10 @@ describe("facing change 透過 turnEngine 整合", () => {
 
     playOneTurn(state);
 
-    // P2 為正面：damage 2 + front 1 + 破軍被動 front_damage_bonus 1 = 4
-    expect(p2.hp).toBe(hpBefore - 4);
+    // P2 為正面：damage 2 + 破軍被動 front_damage_bonus 1 = 3
+    // （facingMod.damage 已移除：朝向唔再影響傷害）
+    expect(p2.hp).toBe(hpBefore - 3);
   });
+
 
 });

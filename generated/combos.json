@@ -7,7 +7,7 @@
     "effect_type": "damage_bonus",
     "effect_params": "{\"last_attack_bonus\":1}",
     "duration": "instant",
-    "description": "連續3張攻擊，第3下攻擊傷害+1。"
+    "description": "同一類別攻擊咭連續3張，第3下攻擊傷害+1。"
   },
   {
     "id": "combo_punch_palm_weapon",
@@ -15,19 +15,19 @@
     "required_cards": "subtype:punch>palm>weapon",
     "required_board_pattern": "none",
     "effect_type": "defense_down",
-    "effect_params": "{\"value\":0.15}",
+    "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "順序拳、掌、武器，本回合目標防禦成功率-15%。"
+    "description": "順序拳、掌、武器，第3張武器攻擊時，敵人防禦力-1。"
   },
   {
     "id": "combo_move_3",
     "combo_type": "sequence",
     "required_cards": "type:move;count:3",
     "required_board_pattern": "none",
-    "effect_type": "dodge_up",
-    "effect_params": "{\"value\":0.15}",
+    "effect_type": "move_bonus",
+    "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "連續3張移動，本回合閃避率+15%。"
+    "description": "連續3張移動，本回合移動距離+1。"
   },
   {
     "id": "combo_defense_3",
@@ -35,9 +35,9 @@
     "required_cards": "type:defense;count:3",
     "required_board_pattern": "none",
     "effect_type": "guard_up",
-    "effect_params": "{\"value\":0.15}",
+    "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "連續3張防禦，本回合防禦成功率+15%。"
+    "description": "連續3張防禦，全部防禦力+1。"
   },
   {
     "id": "combo_p_p_advp_advpalm",
@@ -54,9 +54,9 @@
     "combo_type": "board_pattern",
     "required_cards": "",
     "required_board_pattern": "line",
-    "effect_type": "damage_bonus",
-    "effect_params": "{\"damage_bonus\":1}",
+    "effect_type": "line_attack",
+    "effect_params": "{}",
     "duration": "instant",
-    "description": "與目標成直線（同列或同行）時，傷害+1。"
+    "description": "多於一名敵人，且兩名或以上同時位於一直線時，該攻擊同時攻擊全部直線上敵人。"
   }
 ]

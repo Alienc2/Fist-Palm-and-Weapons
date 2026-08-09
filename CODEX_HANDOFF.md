@@ -1,9 +1,11 @@
-# CODEX_HANDOFF.md V19
+# CODEX_HANDOFF.md V21
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V19
-- 更新日期時間：2026-08-09 02:51 HKT
+- 版本：V21
+- 更新日期時間：2026-08-09 20:26 HKT
+
+
 
 
 
@@ -144,10 +146,37 @@
 - `tests/rules/createInitialState.basicBuy.test.js`：basic_buy 永久固定 + 起始手牌必定有 basic_buy 測試
 - `tests/rules/turnEngine.deck.test.js`：牌庫重洗 + 手牌上限棄牌測試
 - `tests/rules/turnEngine.facingDelay.test.js`：免費轉向延後到最後測試
+- Phase I-02-E：board_pattern combo 修正（方案 A）
+- `server/game/rules/turnEngine.js`：combo 偵測改為揭牌時針對實際 target 處理（`cardResolver.js` 揭牌時呼叫 `resolveCombos(state, attacker, target)`）
+- `tests/rules/comboResolver.boardPattern.test.js`：board_pattern combo 偵測測試（line / diagonal / surround / none）
+- Phase I-02-E2：攻擊目標 bug 修正（核心 bug）
+- `shared/cardLoader.js` `normalizeCard`：將 `target_rule` 映射到 `targeting`（`single`→`single_enemy`、`all_enemies`→`all_enemies`、`adjacent_enemy`→`adjacent_enemies`、`self`→`self_chosen_enemies`）
+- `server/game/rules/targetingResolver.js` `getDefaultEnemyTarget`：尊重 `extra.preferredTargetId`（人類玩家選嘅目標）
+- Phase I-02-E3：卡牌效果預測列為 UI 預覽功能（I-02-H4），server 執行順序保持即時累計
+- Phase I-02-F：對戰設定 UI 隱藏 + 對戰記錄移到左上
+- `client/app.js` `updateControls`：開始對戰後隱藏「對戰設定」section（`setupPanel.hidden = hasMatch`）
+- `client/styles.css`：`log-panel` 改為 fixed 左上（top 70px / left 16px）
+- Phase I-02-G：5×5 棋盤高度限制（唔超過畫面 4/5）
+- `client/styles.css`：`.board-view` / `.board-grid` 加 `max-height: 80vh`，cell 用 `min()` 控制尺寸
+- Phase I-02-H：手牌扇形 + 啤牌比例 + 完整資料排法
+- `client/views/handView.js`：扇形排列喺畫面下方（`hand-fan`，依 index 旋轉角度），hover 升高，可點擊打出
+- `client/styles.css`：扇形樣式、啤牌比例（約 2.5:3.5，120×168）
+- `client/layout.js` `cardNode`：擴充卡牌內容排法，列出所有資料（傷害 / 射程 / 移動 / 格擋 / 回復 / MP / 抽牌 / 解封 / keywords / 庫存）
+- `client/index.html`：打出嘅牌按順序左至右喺棋盤上方列出（`selected-panel` 移入 board-panel）
+- Phase I-02-H2：移動卡直接喺棋盤高亮可移動範圍 + 點擊地圖選擇
+- `client/views/boardView.js`：使用移動卡時高亮可移動格（`.is-move-target` 綠色），點擊地圖選擇移動目標（`extra.dx/dy`），取代 facingPicker 嘅移動方向選擇
+- Phase I-02-H3：攻擊卡直接喺棋盤高亮可攻擊敵人 + 點擊敵人選擇
+- `client/views/boardView.js`：使用攻擊卡時高亮可攻擊敵人（`.is-attack-target` 綠色），點擊敵人選擇目標（`extra.preferredTargetId`），取代 targetPicker 嘅目標選擇
+- Phase I-02-H4：卡牌效果預測（UI 預覽）
+- `client/views/boardView.js` `getPredictedPosition`：計算玩家喺本回合已選移動卡後嘅預測位置，攻擊卡距離預覽用移動後位置
+- Phase I-02-I：商店→解封 文字統一
+- `client/views/shopModal.js`、`client/index.html`、`client/selectionFlow.js`、`client/app.js`：文字改為「解封」「解封武功」
 
 
 
 ### 3.4 現階段重點風險
+
+
 
 
 - browser 端唔可以再直接 import CommonJS engine。
@@ -159,7 +188,10 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`33` suites passed, `255` tests passed。
+- 全套 `npx jest --runInBand` 最新總數：`35` suites passed, `280` tests passed。
+- 前端 JS 語法檢查通過（`node --input-type=module --check` 全部 OK）。
+
+
 
 - `tests/ai/aiDecision.test.js` 通過。
 - `tests/ai/aiMatch.e2e.test.js` 通過。
@@ -267,6 +299,18 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - SLICE-40F 已補 `POST /api/run-scenario` smoke / integration test，並已通過。
 - SLICE-40G 正在進行 browser sandbox 文件收口。
 - 不再依賴 browser direct import CommonJS engine。
+- Phase I-02-E：board_pattern combo 修正（方案 A）已完成（揭牌時針對實際 target 偵測，`tests/rules/comboResolver.boardPattern.test.js` 覆蓋 line / diagonal / surround / none）。
+- Phase I-02-E2：攻擊目標 bug 修正（核心 bug）已完成（`cardLoader.js` 將 `target_rule` 映射到 `targeting`、`targetingResolver.js` `getDefaultEnemyTarget` 尊重 `preferredTargetId`）。
+- Phase I-02-E3：卡牌效果預測已定案為 UI 預覽功能（I-02-H4），server 執行順序保持即時累計。
+- Phase I-02-F：對戰設定 UI 隱藏 + 對戰記錄移到左上已完成。
+- Phase I-02-G：5×5 棋盤高度限制（唔超過畫面 4/5）已完成。
+- Phase I-02-H：手牌扇形 + 啤牌比例 + 完整資料排法 + 打出嘅牌喺棋盤上方列出已完成。
+- Phase I-02-H2：移動卡直接喺棋盤高亮可移動範圍 + 點擊地圖選擇已完成。
+- Phase I-02-H3：攻擊卡直接喺棋盤高亮可攻擊敵人 + 點擊敵人選擇已完成。
+- Phase I-02-H4：卡牌效果預測（UI 預覽，攻擊距離用移動後位置）已完成。
+- Phase I-02-I：商店→解封 文字統一已完成。
+
+
 
 
 

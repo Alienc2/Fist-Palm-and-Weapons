@@ -3,7 +3,8 @@
 // 負責：
 //   1. 初始化 UI 事件
 //   2. 訂閱 gameStore 狀態更新並重新渲染各 view
-//   3. 處理選牌流程（攻擊選目標 / 移動選方向 / 購買開商店）
+//   3. 處理選牌流程（攻擊選目標 / 移動選方向 / 購買開解封武功）
+
 //   4. 結算回合（含動畫）
 
 import { gameStore } from "./gameStore.js";
@@ -102,12 +103,19 @@ function updateControls(state) {
   const playBtn = qs("#playTurnButton");
   const resetBtn = qs("#resetButton");
   const startBtn = qs("#startMatchButton");
+  const setupPanel = qs("#matchSetupPanel");
 
   const hasMatch = !!state;
   playBtn.disabled = !hasMatch;
   resetBtn.disabled = !hasMatch;
   startBtn.disabled = hasMatch;
+
+  // I-02-F：開始對戰後隱藏「對戰設定」section
+  if (setupPanel) {
+    setupPanel.hidden = hasMatch;
+  }
 }
+
 
 const CHARACTER_OPTIONS = [
   { value: "char_attack", label: "破軍（攻擊）" },

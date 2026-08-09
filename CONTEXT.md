@@ -1,10 +1,12 @@
-# CONTEXT.md V19
+# CONTEXT.md V21
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V19
-- 更新日期時間：2026-08-09 02:50 HKT
+- 版本：V21
+- 更新日期時間：2026-08-09 20:25 HKT
+
+
 
 
 
@@ -110,14 +112,42 @@
 - `tests/rules/createInitialState.basicBuy.test.js`：basic_buy 永久固定 + 起始手牌必定有 basic_buy 測試
 - `tests/rules/turnEngine.deck.test.js`：牌庫重洗 + 手牌上限棄牌測試
 - `tests/rules/turnEngine.facingDelay.test.js`：免費轉向延後到最後測試
+- Phase I-02-E：board_pattern combo 修正（方案 A）
+- `server/game/rules/turnEngine.js`：combo 偵測改為揭牌時針對實際 target 處理（`cardResolver.js` 揭牌時呼叫 `resolveCombos(state, attacker, target)`）
+- `tests/rules/comboResolver.boardPattern.test.js`：board_pattern combo 偵測測試（line / diagonal / surround / none）
+- Phase I-02-E2：攻擊目標 bug 修正（核心 bug）
+- `shared/cardLoader.js` `normalizeCard`：將 `target_rule` 映射到 `targeting`（`single`→`single_enemy`、`all_enemies`→`all_enemies`、`adjacent_enemy`→`adjacent_enemies`、`self`→`self_chosen_enemies`）
+- `server/game/rules/targetingResolver.js` `getDefaultEnemyTarget`：尊重 `extra.preferredTargetId`（人類玩家選嘅目標）
+- Phase I-02-E3：卡牌效果預測列為 UI 預覽功能（I-02-H4），server 執行順序保持即時累計
+- Phase I-02-F：對戰設定 UI 隱藏 + 對戰記錄移到左上
+- `client/app.js` `updateControls`：開始對戰後隱藏「對戰設定」section（`setupPanel.hidden = hasMatch`）
+- `client/styles.css`：`log-panel` 改為 fixed 左上（top 70px / left 16px）
+- Phase I-02-G：5×5 棋盤高度限制（唔超過畫面 4/5）
+- `client/styles.css`：`.board-view` / `.board-grid` 加 `max-height: 80vh`，cell 用 `min()` 控制尺寸
+- Phase I-02-H：手牌扇形 + 啤牌比例 + 完整資料排法
+- `client/views/handView.js`：扇形排列喺畫面下方（`hand-fan`，依 index 旋轉角度），hover 升高，可點擊打出
+- `client/styles.css`：扇形樣式、啤牌比例（約 2.5:3.5，120×168）
+- `client/layout.js` `cardNode`：擴充卡牌內容排法，列出所有資料（傷害 / 射程 / 移動 / 格擋 / 回復 / MP / 抽牌 / 解封 / keywords / 庫存）
+- `client/index.html`：打出嘅牌按順序左至右喺棋盤上方列出（`selected-panel` 移入 board-panel）
+- Phase I-02-H2：移動卡直接喺棋盤高亮可移動範圍 + 點擊地圖選擇
+- `client/views/boardView.js`：使用移動卡時高亮可移動格（`.is-move-target` 綠色），點擊地圖選擇移動目標（`extra.dx/dy`），取代 facingPicker 嘅移動方向選擇
+- Phase I-02-H3：攻擊卡直接喺棋盤高亮可攻擊敵人 + 點擊敵人選擇
+- `client/views/boardView.js`：使用攻擊卡時高亮可攻擊敵人（`.is-attack-target` 綠色），點擊敵人選擇目標（`extra.preferredTargetId`），取代 targetPicker 嘅目標選擇
+- Phase I-02-H4：卡牌效果預測（UI 預覽）
+- `client/views/boardView.js` `getPredictedPosition`：計算玩家喺本回合已選移動卡後嘅預測位置，攻擊卡距離預覽用移動後位置
+- Phase I-02-I：商店→解封 文字統一
+- `client/views/shopModal.js`、`client/index.html`、`client/selectionFlow.js`、`client/app.js`：文字改為「解封」「解封武功」
 
 
 ### 已驗證結果
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 33 passed, 33 total`
-- `Tests: 255 passed, 255 total`
+- 全套 `npx jest --runInBand`：`Test Suites: 35 passed, 35 total`
+- `Tests: 280 passed, 280 total`
+- 前端 JS 語法檢查通過（`node --input-type=module --check` 全部 OK）
+
+
 
 - 正式 UI server AI 整合 smoke test 通過（createMatch 含 AI 玩家 → `/api/play` 自動選牌 → 回合結算）
 - 網路層測試通過：`tests/network/roomManager.test.js`、`tests/network/matchManager.test.js`、`tests/network/matchmaking.test.js`、`tests/network/socketServer.e2e.test.js`（44 tests）
@@ -180,9 +210,21 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - Phase D 多人同步網路層已完成（SLICE-D-05：Socket.IO room / lobby / match / matchmaking）。
 - 多人對戰前端 UI 已完成（SLICE-H-01：Socket.IO client 接入正式 UI，online 2P / 3P / 4P 遊玩）。
 - Phase I-02 優化已完成：手牌上限 UI 選擇（discardPicker）、牌庫重洗（drawCards 重洗棄牌堆）、起始牌庫 shuffle、起始朝向指向中心、basic_buy 永久固定、免費轉向延後到最後。
-- 全套 `npx jest --runInBand` 已達 `33 suites / 255 tests` 全綠。
+- Phase I-02-E 已完成：board_pattern combo 修正（方案 A，揭牌時針對實際 target 偵測）。
+- Phase I-02-E2 已完成：攻擊目標 bug 修正（`target_rule` 映射到 `targeting`、`getDefaultEnemyTarget` 尊重 `preferredTargetId`）。
+- Phase I-02-E3 已定案：卡牌效果預測列為 UI 預覽功能（I-02-H4），server 執行順序保持即時累計。
+- Phase I-02-F 已完成：對戰設定 UI 隱藏 + 對戰記錄移到左上。
+- Phase I-02-G 已完成：5×5 棋盤高度限制（唔超過畫面 4/5）。
+- Phase I-02-H 已完成：手牌扇形 + 啤牌比例 + 完整資料排法 + 打出嘅牌喺棋盤上方列出。
+- Phase I-02-H2 已完成：移動卡直接喺棋盤高亮可移動範圍 + 點擊地圖選擇。
+- Phase I-02-H3 已完成：攻擊卡直接喺棋盤高亮可攻擊敵人 + 點擊敵人選擇。
+- Phase I-02-H4 已完成：卡牌效果預測（UI 預覽，攻擊距離用移動後位置）。
+- Phase I-02-I 已完成：商店→解封 文字統一。
+- 全套 `npx jest --runInBand` 已達 `35 suites / 280 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過，Socket.IO multiplayer server 已附加。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
+
+
 
 
 ### P1

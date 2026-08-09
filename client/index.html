@@ -31,8 +31,9 @@
   <main id="main" class="app-shell">
     <!-- 左側：對戰資訊 + 控制 -->
     <aside class="control-panel">
-      <section class="panel">
+      <section class="panel" id="matchSetupPanel">
         <h2>對戰設定</h2>
+
         <div class="field-row">
           <label class="field-label" for="humanCount">遊玩人數</label>
           <select id="humanCount" class="field-control">
@@ -80,8 +81,10 @@
         <h2>操作提示</h2>
         <ul class="notes-list">
           <li>點擊手牌加入本回合選牌。</li>
-          <li>攻擊卡需選擇目標；移動卡需選擇方向。</li>
-          <li>購買卡會開啟商店。</li>
+          <li>攻擊卡需點擊敵人選擇目標；移動卡需點擊地圖選擇移動目標。</li>
+          <li>購買卡會開啟解封武功。</li>
+
+
           <li>所有玩家選完牌後按「結算回合」。</li>
         </ul>
       </section>
@@ -89,35 +92,31 @@
 
     <!-- 中央：棋盤 -->
     <section class="board-panel">
-      <div id="boardView" class="board-view">
-        <p class="muted-text">開始對戰後顯示 5×5 棋盤。</p>
-      </div>
-    </section>
-
-    <!-- 右側：手牌 / 選牌 / 商店 -->
-    <aside class="side-panel">
-      <section class="panel">
-        <h2>手牌</h2>
-        <div id="handView" class="hand-view">
-          <p class="muted-text">開始對戰後顯示手牌。</p>
-        </div>
-      </section>
-
-      <section class="panel">
+      <!-- I-02-H：打出嘅牌按順序左至右喺上方列出 -->
+      <section class="panel selected-panel">
         <h2>本回合選牌</h2>
         <div id="selectedCardsView" class="selected-cards-view">
           <p class="muted-text">尚未選牌。</p>
         </div>
       </section>
 
+      <div id="boardView" class="board-view">
+        <p class="muted-text">開始對戰後顯示 5×5 棋盤。</p>
+      </div>
+    </section>
+
+    <!-- 右側：解封武功 -->
+    <aside class="side-panel">
       <section class="panel">
-        <h2>商店</h2>
+        <h2>解封武功</h2>
         <div id="shopView" class="shop-view">
-          <p class="muted-text">使用購買卡後開啟商店。</p>
+          <p class="muted-text">使用購買卡後開啟解封武功。</p>
         </div>
       </section>
+
     </aside>
   </main>
+
 
   <!-- 底部：對戰紀錄 -->
   <section class="log-panel">
@@ -126,6 +125,14 @@
       <p class="muted-text">尚無紀錄。</p>
     </div>
   </section>
+
+  <!-- 底部：手牌扇形（I-02-H） -->
+  <section class="hand-panel">
+    <div id="handView" class="hand-view">
+      <p class="muted-text">開始對戰後顯示手牌。</p>
+    </div>
+  </section>
+
 
   <!-- 模態層 -->
   <div id="modalRoot" class="modal-root" hidden></div>

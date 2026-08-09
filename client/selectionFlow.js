@@ -1,10 +1,10 @@
 // client/selectionFlow.js
 // 選牌流程共用邏輯：依卡牌類型決定 extra。
-// 由 app.js 與 handView.js 共用，確保攻擊選目標 / 移動選方向 / 購買開商店一致。
+// 由 app.js 與 handView.js 共用，確保攻擊選目標 / 移動選方向 / 購買開解封武功一致。
+// I-02-H2 / I-02-H3：移動/攻擊卡改為喺棋盤高亮選擇，取代 facingPicker / targetPicker。
+
 
 import { gameStore } from "./gameStore.js";
-import { openTargetPicker } from "./views/targetPicker.js";
-import { openFacingPicker } from "./views/facingPicker.js";
 import { openShopModal } from "./views/shopModal.js";
 
 export function facingToDxDy(facing) {
@@ -25,17 +25,14 @@ export function facingToDxDy(facing) {
 // 依卡牌類型決定 extra 並加入選牌
 export function handleCardSelection(playerId, card) {
   if (card.type === "attack") {
-    openTargetPicker(playerId, card, (targetId) => {
-      gameStore.addSelection(playerId, card, { preferredTargetId: targetId });
-    });
+    // I-02-H3：喺棋盤高亮可攻擊敵人，點擊敵人選擇目標
+    gameStore.setBoardSelection({ type: "attack", card, playerId });
     return;
   }
 
   if (card.type === "move") {
-    openFacingPicker(playerId, (facing) => {
-      const dxdy = facingToDxDy(facing);
-      gameStore.addSelection(playerId, card, dxdy);
-    });
+    // I-02-H2：喺棋盤高亮可移動格，點擊地圖選擇移動目標
+    gameStore.setBoardSelection({ type: "move", card, playerId });
     return;
   }
 
@@ -49,3 +46,5 @@ export function handleCardSelection(playerId, card) {
   // defense / recover / counter：無需額外 extra
   gameStore.addSelection(playerId, card, {});
 }
+
+

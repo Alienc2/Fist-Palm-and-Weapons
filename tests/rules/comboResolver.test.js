@@ -133,18 +133,27 @@ describe("applyComboEffect", () => {
     const player = makePlayer("P1", { x: 1, y: 1 });
     const target = makePlayer("P2", { x: 1, y: 2 });
     const state = makeState([player, target]);
-    const combo = { id: "c2", effectType: "defense_down", effectParams: { value: 0.15 } };
+    const combo = { id: "c2", effectType: "defense_down", effectParams: { value: 1 } };
     applyComboEffect(state, player, combo, target);
-    expect(target.defenseDown).toBe(0.15);
+    expect(target.defenseDown).toBe(1);
   });
 
-  test("dodge_up 增加閃避", () => {
+  test("guard_up 增加防禦力", () => {
     const player = makePlayer("P1", { x: 1, y: 1 });
     const state = makeState([player]);
-    const combo = { id: "c3", effectType: "dodge_up", effectParams: { value: 0.15 } };
+    const combo = { id: "c3", effectType: "guard_up", effectParams: { value: 1 } };
     applyComboEffect(state, player, combo, null);
-    expect(player.dodgeUp).toBe(0.15);
+    expect(player.guardUp).toBe(1);
   });
+
+  test("move_bonus 增加移動距離", () => {
+    const player = makePlayer("P1", { x: 1, y: 1 });
+    const state = makeState([player]);
+    const combo = { id: "c5", effectType: "move_bonus", effectParams: { value: 1 } };
+    applyComboEffect(state, player, combo, null);
+    expect(player.comboMoveBonus).toBe(1);
+  });
+
 
   test("range_damage_bonus 增加距離與傷害", () => {
     const player = makePlayer("P1", { x: 1, y: 1 });
@@ -180,15 +189,16 @@ describe("resolveCombos", () => {
     const player = makePlayer("P1", { x: 1, y: 1 });
     player.comboDamageBonus = 2;
     player.comboRangeBonus = 1;
-    player.dodgeUp = 0.15;
-    player.guardUp = 0.15;
-    player.defenseDown = 0.15;
+    player.guardUp = 1;
+    player.defenseDown = 1;
+    player.comboMoveBonus = 1;
 
     clearRoundEffects(player);
     expect(player.comboDamageBonus).toBe(0);
     expect(player.comboRangeBonus).toBe(0);
-    expect(player.dodgeUp).toBe(0);
     expect(player.guardUp).toBe(0);
     expect(player.defenseDown).toBe(0);
+    expect(player.comboMoveBonus).toBe(0);
   });
+
 });

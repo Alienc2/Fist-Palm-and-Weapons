@@ -1,5 +1,5 @@
 // client/views/shopModal.js
-// 商店 modal。顯示商店卡牌與庫存，供玩家選擇購買。
+// 解封武功 modal。顯示可解封嘅武功卡牌與庫存，供玩家選擇解封。
 
 import { el, openModal, closeModal, button, cardNode } from "../layout.js";
 import { gameStore } from "../gameStore.js";
@@ -14,12 +14,12 @@ export function openShopModal(playerId, onBuy) {
   const content = el("div", { class: "shop-modal" }, [
     el("p", {
       class: "muted-text",
-      text: `${playerId} 目前 MP：${player ? player.mp : "?"}。選擇要購買的卡牌：`,
+      text: `${playerId} 目前 MP：${player ? player.mp : "?"}。選擇要解封的武功：`,
     }),
   ]);
 
   if (shopCards.length === 0) {
-    content.appendChild(el("p", { class: "muted-text", text: "商店沒有卡牌。" }));
+    content.appendChild(el("p", { class: "muted-text", text: "暫時沒有可解封的武功。" }));
   } else {
     const grid = el("div", { class: "shop-grid" });
     for (const card of shopCards) {
@@ -40,7 +40,9 @@ export function openShopModal(playerId, onBuy) {
     content.appendChild(grid);
   }
 
-  openModal("商店", content, [
+  openModal("解封武功", content, [
     button("關閉", "secondary-button", () => closeModal()),
   ]);
 }
+
+

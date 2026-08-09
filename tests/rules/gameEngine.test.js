@@ -358,11 +358,12 @@ describe("advanced edge KO 規則", () => {
     playOneTurn(state);
 
     expect(p2.isEliminated).toBe(true);
-    // 因 combo_line_attack 觸發（同列直線），傷害 +1，令 HP 歸零優先於邊緣擊出
+    // 邊緣 + HP 低於 3 + advanced 攻擊命中 → 邊緣擊出
     expect(
-      state.log.some((msg) => msg.includes("HP 歸零"))
+      state.log.some((msg) => msg.includes("邊緣擊出"))
     ).toBe(true);
   });
+
   test("一般攻擊令目標 HP 歸零時會出場", () => {
 
     const state = createMatch();
@@ -486,9 +487,11 @@ describe("advantage 規則", () => {
 
     playOneTurn(state);
 
-    // front damage +1，再加 advantage damage +1，再加 combo_line_attack +1，總傷害應為 5
-    expect(state.log.some((msg) => msg.includes("造成 5 傷害"))).toBe(true);
+    // advantage damage +1（punch 打 weapon），總傷害 = 2 + 1 = 3
+    // （facingMod.damage 已移除，combo_line_attack 唔加傷害）
+    expect(state.log.some((msg) => msg.includes("造成 3 傷害"))).toBe(true);
   });
+
 
 
   test("拳打掌時有 disadvantage，傷害會減少", () => {
@@ -520,9 +523,11 @@ describe("advantage 規則", () => {
 
     playOneTurn(state);
 
-    // front damage +1，再加 disadvantage damage -1，再加 combo_line_attack +1，總傷害應為 3
-    expect(state.log.some((msg) => msg.includes("造成 3 傷害"))).toBe(true);
+    // disadvantage damage -1（punch 打 palm），總傷害 = 2 - 1 = 1
+    // （facingMod.damage 已移除，combo_line_attack 唔加傷害）
+    expect(state.log.some((msg) => msg.includes("造成 1 傷害"))).toBe(true);
   });
+
 
 
   test("無 defender subtype 時，advantage 視為 neutral", () => {
@@ -550,10 +555,12 @@ describe("advantage 規則", () => {
 
     playOneTurn(state);
 
-    // front damage +1，再加 combo_line_attack +1，總傷害應為 4
-    expect(state.log.some((msg) => msg.includes("造成 4 傷害"))).toBe(true);
+    // neutral：無 advantage / disadvantage 修正，總傷害 = 2
+    // （facingMod.damage 已移除，combo_line_attack 唔加傷害）
+    expect(state.log.some((msg) => msg.includes("造成 2 傷害"))).toBe(true);
 
   });
+
 });
 
 

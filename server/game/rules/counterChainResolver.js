@@ -8,31 +8,45 @@
 
 const { isWithinRange } = require("./distance");
 const { ADV_TABLE } = require("./advantage");
+const { getFacingModifiers } = require("./facing");
 
 function log(state, msg) {
   state.log.push(msg);
 }
 
-// 計算反擊成功率（GAME_SPEC §16 / §23.3）
-function getCounterSuccessRate(counterCard, incomingSubtype) {
-  // 通用反擊（勢回如潮功）固定 80%
+// 計算反擊成功率（按方向及武功）：
+// - 背向敵人正面任何攻擊：0%
+// - 側向敵人被剋武功：0%
+// - 其他組合：100%
+function getCounterSuccessRate(counterCard, incomingSubtype, defender, attacker) {
+  // shop_counter_1 固定 80%
   if (counterCard.id === "shop_counter_1") {
     return 0.8;
   }
 
+  // 方向判定：defender 相對 attacker 嘅朝向
+  let relation = null;
+  if (defender && attacker) {
+    relation = getFacingModifiers(defender, attacker).relation;
+  }
+
+  // 背向敵人正面任何攻擊：0%
+  if (relation === "back") {
+    return 0;
+  }
+
   const { strongAgainst, weakAgainst } = ADV_TABLE[counterCard.subtype] || {};
 
-  // 反擊類型剋制攻擊類型：100%
-  if (strongAgainst === incomingSubtype) {
-    return 1.0;
+  // 側向敵人被剋武功：0%
+  if (relation === "side" && weakAgainst === incomingSubtype) {
+    return 0;
   }
-  // 反擊類型被攻擊類型剋制：60%
-  if (weakAgainst === incomingSubtype) {
-    return 0.6;
-  }
-  // 同類：80%
-  return 0.8;
+
+  // 其他組合：100%
+  return 1.0;
 }
+
+
 
 
 // 驗證反擊卡對來源距離是否有效
@@ -48,8 +62,9 @@ function isCounterRangeValid(counterCard, counterPlayer, sourcePlayer) {
 }
 
 // 解析單次反擊。回傳 { reflected, damageToAttacker, successRate }。
-function resolveCounter(state, defender, card, incomingDamage, incomingSubtype, attacker) {
-  const successRate = getCounterSuccessRate(card, incomingSubtype);
+// chainCount：已成功反擊次數（每多 1 次有效反擊，反彈傷害再 +1）
+function resolveCounter(state, defender, card, incomingDamage, incomingSubtype, attacker, chainCount = 0) {
+  const successRate = getCounterSuccessRate(card, incomingSubtype, defender, attacker);
 
   // 距離驗證：反擊卡必須在來源距離內
   if (attacker && !isCounterRangeValid(card, defender, attacker)) {
@@ -72,13 +87,15 @@ function resolveCounter(state, defender, card, incomingDamage, incomingSubtype, 
     return { reflected: false, damageToAttacker: 0, successRate, rangeValid: true };
   }
 
-  const reflectedDamage = incomingDamage * 2;
+  // 反彈傷害：incomingDamage +1（每多 1 次有效反擊再 +1）
+  const reflectedDamage = incomingDamage + 1 + chainCount;
   log(
     state,
     `${defender.id} 成功反擊 ${card.id}，反彈 ${reflectedDamage} 傷害`
   );
   return { reflected: true, damageToAttacker: reflectedDamage, successRate, rangeValid: true };
 }
+
 
 // 解析完整反擊連鎖。
 // incomingAttack: { sourcePlayer, damage, subtype }
@@ -100,8 +117,10 @@ function resolveCounterChain(state, incomingAttack, counterCards) {
       counter.card,
       currentDamage,
       incomingAttack.subtype,
-      currentAttacker
+      currentAttacker,
+      chainCount
     );
+
 
     if (!result.reflected) {
       // 反擊失敗或距離不符，鏈終止，由當前承受者吃下最後傷害

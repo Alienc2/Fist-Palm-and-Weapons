@@ -1,5 +1,5 @@
 // client/views/selectedCardsView.js
-// 本回合選牌顯示。可移除選牌、設定朝向。
+// 本回合選牌顯示。I-02-H：打出嘅牌按順序左至右喺上方列出。
 
 import { el, clear, qs, cardNode, button } from "../layout.js";
 import { gameStore } from "../gameStore.js";
@@ -25,13 +25,14 @@ export function renderSelectedCards(state) {
   if (pending.length === 0) {
     container.appendChild(el("p", { class: "muted-text", text: "尚未選牌。" }));
   } else {
+    // I-02-H：水平排列，按順序左至右
     const list = el("div", { class: "selected-list" });
     pending.forEach((item, index) => {
       const cardEl = cardNode(item.card, {
         selected: true,
         onClick: () => gameStore.removeSelection(player.id, index),
       });
-      const removeBtn = button("移除", "mini-button", () =>
+      const removeBtn = button("×", "mini-button", () =>
         gameStore.removeSelection(player.id, index)
       );
       cardEl.appendChild(removeBtn);
@@ -62,3 +63,5 @@ export function renderSelectedCards(state) {
     );
   }
 }
+
+

@@ -9,7 +9,9 @@ const {
   declareTargetSet,
   getTargets,
   getDefaultEnemyTarget,
+  getLineEnemyTargets,
 } = require("../../server/game/rules/targetingResolver");
+
 const { resolveAttack } = require("../../server/game/rules/cardResolver");
 const cardLoader = require("../../shared/cardLoader");
 
@@ -142,3 +144,76 @@ describe("resolveAttack 距離內命中", () => {
     expect(state.log.some((msg) => msg.includes("距離不符"))).toBe(true);
   });
 });
+
+describe("getLineEnemyTargets（combo_line_attack 多目標直線）", () => {
+  test("回傳同 attacker 成直線嘅全部敵人", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemyA = makePlayer("P2", 1, 3); // 同 x
+    const enemyB = makePlayer("P3", 3, 1); // 同 y
+    const enemyC = makePlayer("P4", 3, 3); // 斜線，唔係直線
+    const state = makeState([attacker, enemyA, enemyB, enemyC]);
+
+    const targets = getLineEnemyTargets(state, attacker);
+    expect(targets).toHaveLength(2);
+    expect(targets.map((t) => t.id).sort()).toEqual(["P2", "P3"]);
+  });
+
+  test("line_enemies targeting 透過 getTargets 回傳直線敵人", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemyA = makePlayer("P2", 1, 3);
+    const enemyB = makePlayer("P3", 3, 3);
+    const state = makeState([attacker, enemyA, enemyB]);
+
+    const card = makeAttackCard({ targeting: "line_enemies" });
+    const targets = getTargets(state, attacker, card);
+    expect(targets).toHaveLength(1);
+    expect(targets[0].id).toBe("P2");
+  });
+
+  test("line_enemies 目標宣告（declareTargetSet）回傳完整直線目標", () => {
+    const attacker = makePlayer("P1", 1, 1);
+    const enemyA = makePlayer("P2", 1, 3);
+    const enemyB = makePlayer("P3", 3, 1);
+    const state = makeState([attacker, enemyA, enemyB]);
+
+    const card = makeAttackCard({ targeting: "line_enemies" });
+    const declared = declareTargetSet(state, attacker, card);
+    expect(declared.targets).toHaveLength(2);
+    expect(declared.targets.map((t) => t.id).sort()).toEqual(["P2", "P3"]);
+  });
+});
+
+describe("facingMod 影響防禦力", () => {
+  test("正面受到攻擊時防禦力 +1（block 增加）", () => {
+    const attacker = makePlayer("P1", 1, 1, { facing: "up" });
+    const enemy = makePlayer("P2", 1, 0, {
+      lastDefenseCard: { id: "def", blockValue: 3 },
+    });
+    const state = makeState([attacker, enemy]);
+
+    const card = makeAttackCard({ rangeMin: 1, rangeMax: 1, damage: 5 });
+    resolveAttack(state, attacker, card, { preferredTargetId: "P2" });
+
+    // 正面：block = 3 + 1 = 4，傷害 5 - 4 = 1
+    expect(enemy.hp).toBe(9);
+    expect(state.log.some((msg) => msg.includes("防禦殘留生效，減少 4 傷害"))).toBe(true);
+  });
+
+  test("背面受到攻擊時防禦力 −1（block 減少）", () => {
+    const attacker = makePlayer("P1", 1, 1, { facing: "up" });
+    const enemy = makePlayer("P2", 1, 2, {
+      lastDefenseCard: { id: "def", blockValue: 3 },
+    });
+    const state = makeState([attacker, enemy]);
+
+    const card = makeAttackCard({ rangeMin: 1, rangeMax: 1, damage: 5 });
+    resolveAttack(state, attacker, card, { preferredTargetId: "P2" });
+
+    // 背面：block = 3 - 1 = 2，傷害 5 - 2 = 3
+    expect(enemy.hp).toBe(7);
+    expect(state.log.some((msg) => msg.includes("防禦殘留生效，減少 2 傷害"))).toBe(true);
+  });
+});
+
+
+
