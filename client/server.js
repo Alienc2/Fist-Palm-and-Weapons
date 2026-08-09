@@ -77,34 +77,71 @@ function serializePlayer(player) {
 
 function serializeCard(card) {
   if (!card) return null;
+  // cardLoader.normalizeCard 已將欄位轉為 camelCase（name / mpCost / rangeMin / moveMin 等），
+  // 同時保留 snake_case 欄位（name_zh / alias_group / description_template / move_min 等），
+  // 確保前端 normalizeClientCard 一定讀到完整資料。
+  const name = card.name || card.name_zh;
+  const aliasGroup = card.aliasGroup || card.alias_group;
+  const description = card.description || card.description_template;
+  const mpCost = card.mpCost ?? card.mp_cost;
+  const buyCost = card.buyCost ?? card.buy_cost;
+  const rangeMin = card.rangeMin ?? card.range_min;
+  const rangeMax = card.rangeMax ?? card.range_max;
+  const moveMin = card.moveMin ?? card.move_min;
+  const moveMax = card.moveMax ?? card.move_max;
+  const blockValue = card.blockValue ?? card.block_value;
+  const hpGain = card.hpGain ?? card.hp_gain;
+  const mpGain = card.mpGain ?? card.mp_gain;
+  const drawCount = card.drawCount ?? card.draw_count;
+  const persistUntilTriggered = card.persistUntilTriggered ?? card.persist_until_triggered;
+  const targetRule = card.targetRule || card.target_rule;
+
   return {
     id: card.id,
     instanceId: card.instanceId,
     definitionId: card.definitionId,
-    name_zh: card.name_zh,
-    alias_group: card.alias_group,
+    // camelCase（前端 normalizeClientCard 主要讀呢套）
+    name,
+    aliasGroup,
+    description,
+    mpCost,
+    buyCost,
+    rangeMin,
+    rangeMax,
+    damage: card.damage,
+    blockValue,
+    hpGain,
+    mpGain,
+    drawCount,
+    moveMin,
+    moveMax,
+    stock: card.stock,
+    persistUntilTriggered,
+    keywords: card.keywords,
+    targeting: card.targeting,
+    // snake_case（向後兼容）
+    name_zh: name,
+    alias_group: aliasGroup,
     group: card.group,
     type: card.type,
     subtype: card.subtype,
-    mp_cost: card.mp_cost,
-    buy_cost: card.buy_cost,
-    range_min: card.range_min,
-    range_max: card.range_max,
-    damage: card.damage,
-    block_value: card.block_value,
-    hp_gain: card.hp_gain,
-    mp_gain: card.mp_gain,
-    draw_count: card.draw_count,
-    move_min: card.move_min,
-    move_max: card.move_max,
-    stock: card.stock,
-    persist_until_triggered: card.persist_until_triggered,
-    keywords: card.keywords,
-    target_rule: card.target_rule,
-    description_template: card.description_template,
+    mp_cost: mpCost,
+    buy_cost: buyCost,
+    range_min: rangeMin,
+    range_max: rangeMax,
+    block_value: blockValue,
+    hp_gain: hpGain,
+    mp_gain: mpGain,
+    draw_count: drawCount,
+    move_min: moveMin,
+    move_max: moveMax,
+    persist_until_triggered: persistUntilTriggered,
+    target_rule: targetRule,
+    description_template: description,
     enabled: card.enabled,
   };
 }
+
 
 function serializeShop(state) {
   return {

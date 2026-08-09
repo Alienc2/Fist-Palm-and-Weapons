@@ -1,10 +1,13 @@
-# CONTEXT.md V21
+# CONTEXT.md V24
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V21
-- 更新日期時間：2026-08-09 20:25 HKT
+- 版本：V24
+- 更新日期時間：2026-08-10 00:25 HKT
+
+
+
 
 
 
@@ -137,9 +140,21 @@
 - `client/views/boardView.js` `getPredictedPosition`：計算玩家喺本回合已選移動卡後嘅預測位置，攻擊卡距離預覽用移動後位置
 - Phase I-02-I：商店→解封 文字統一
 - `client/views/shopModal.js`、`client/index.html`、`client/selectionFlow.js`、`client/app.js`：文字改為「解封」「解封武功」
+- Phase I-02-J：前端 bug 修正（移動 / 攻擊 / 人數 / 棋盤 / 卡面）
+- `client/layout.js` `normalizeClientCard`：將可能係字串嘅數值欄位（mp_cost / buy_cost / range_min / range_max / move_min / move_max / damage / block_value / hp_gain / mp_gain / draw_count）統一轉為 number，令 `boardView` 距離 / 移動判定同 `cardNode` 卡面顯示正確
+- `client/layout.js` `cardNode`：`buyCost` 判斷改為 `> 0`，避免空字串轉 0 後誤顯示「解封 0 MP」
+- `client/app.js` `syncPlayerCountLimits`：遊玩人數 / 電腦敵人選項即時同步上限，令總對戰人數永遠 ≤ 4（例如 humanCount=4 時 aiCount 只能 0）
+- `client/styles.css`：`.board-cell` 用 `width/height: min(calc(80vh / 5), 140px)` 令 cell 保持正方形並隨畫面縮放
+- Phase I-02-J2：前端卡牌資料序列化修正（卡面 / 移動 / 攻擊 bug 根因）
+- `shared/cardLoader.js` `normalizeCard`：補 `aliasGroup`（`alias_group`）與 `description`（`description_template`）欄位，令前端卡面顯示正確名稱 / 副類別 / 描述
+- `client/server.js` `serializeCard`：改為讀 camelCase 欄位（`name` / `aliasGroup` / `description` / `moveMin` / `moveMax` / `rangeMin` / `rangeMax` / `targeting`），解決前端收到 `id` 當名稱、移動卡只能移到同一格、攻擊卡不能選敵人嘅根因
+- `client/styles.css`：`.board-cell` 尺寸改為 `min(calc(80vh / 5), 140px)` 並用 `aspect-ratio: 1` 保持正方形，令 5×5 棋盤按比例縮放
+- `client/views/boardView.js` + `client/index.html`：移動 / 攻擊選擇模式提示移到右邊「解封武功」下方（`#boardSelectionHintPanel`），避免遮住棋盤
 
 
 ### 已驗證結果
+
+
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過

@@ -58,6 +58,15 @@
         </div>
       </section>
 
+      <!-- 對戰紀錄：開始對戰後顯示，佔據「對戰設定」原本位置 -->
+      <section class="panel log-panel" id="logPanel" hidden>
+        <h2>對戰紀錄</h2>
+        <div id="logView" class="log-list">
+          <p class="muted-text">尚無紀錄。</p>
+        </div>
+      </section>
+
+
 
       <section class="panel">
         <h2>回合控制</h2>
@@ -114,19 +123,19 @@
         </div>
       </section>
 
+      <!-- I-02-H2/H3：選擇模式提示（移到右邊「解封武功」下方） -->
+      <section class="panel" id="boardSelectionHintPanel" hidden>
+        <h2>操作提示</h2>
+        <div id="boardSelectionHint" class="board-selection-hint"></div>
+      </section>
+
     </aside>
+
   </main>
 
 
-  <!-- 底部：對戰紀錄 -->
-  <section class="log-panel">
-    <h2>對戰紀錄</h2>
-    <div id="logView" class="log-list">
-      <p class="muted-text">尚無紀錄。</p>
-    </div>
-  </section>
-
   <!-- 底部：手牌扇形（I-02-H） -->
+
   <section class="hand-panel">
     <div id="handView" class="hand-view">
       <p class="muted-text">開始對戰後顯示手牌。</p>

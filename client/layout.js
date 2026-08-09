@@ -59,6 +59,42 @@ export function qsa(selector, root = document) {
   return Array.from(root.querySelectorAll(selector));
 }
 
+// 將 server 傳嚟嘅 snake_case 卡牌欄位統一轉為 camelCase，
+// 令前端（boardView / cardNode）可以一致讀取 rangeMin / moveMax / mpCost 等欄位。
+// 保留原始 snake_case 欄位作向後兼容。
+// 將可能係字串嘅數值欄位轉為 number（cards.json 中 mp_cost / range_min 等係字串）
+function toNum(value, fallback = 0) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+export function normalizeClientCard(card) {
+  if (!card) return card;
+  if (card.__normalized) return card;
+  const normalized = {
+    ...card,
+    __normalized: true,
+    name: card.name || card.name_zh || card.id,
+    aliasGroup: card.aliasGroup || card.alias_group || "",
+    mpCost: toNum(card.mpCost ?? card.mp_cost),
+    buyCost: toNum(card.buyCost ?? card.buy_cost),
+    rangeMin: toNum(card.rangeMin ?? card.range_min),
+    rangeMax: toNum(card.rangeMax ?? card.range_max),
+    moveMin: toNum(card.moveMin ?? card.move_min),
+    moveMax: toNum(card.moveMax ?? card.move_max),
+    damage: toNum(card.damage),
+    blockValue: toNum(card.blockValue ?? card.block_value),
+    hpGain: toNum(card.hpGain ?? card.hp_gain),
+    mpGain: toNum(card.mpGain ?? card.mp_gain),
+    drawCount: toNum(card.drawCount ?? card.draw_count),
+    description: card.description || card.description_template || "",
+  };
+  return normalized;
+}
+
+
+
 // 建立 modal 容器
 export function openModal(title, contentNode, actions = []) {
   const root = qs("#modalRoot");
@@ -104,7 +140,7 @@ export function button(label, className, onClick, disabled = false) {
 }
 
 // 建立卡片 DOM（供 handView / selectedCardsView / shopModal 共用）
-// I-02-H：擴充卡牌內容排法，列出所有資料（camelCase 欄位）
+// 卡面內容精簡：只顯示 name_zh、alias_group、mp_cost、buy_cost、description_template
 export function cardNode(card, options = {}) {
   const {
     onClick = null,
@@ -114,6 +150,9 @@ export function cardNode(card, options = {}) {
     showStock = false,
   } = options;
 
+  // 統一 snake_case → camelCase，確保讀到正確欄位
+  const c = normalizeClientCard(card);
+
   const typeLabel = {
     attack: "攻擊",
     defense: "防禦",
@@ -121,55 +160,44 @@ export function cardNode(card, options = {}) {
     buy: "購買",
     recover: "回復",
     counter: "反擊",
-  }[card.type] || card.type;
+  }[c.type] || c.type;
 
   const attrs = {
-    class: `card card-${card.type}${selected ? " is-selected" : ""}${
+    class: `card card-${c.type}${selected ? " is-selected" : ""}${
       disabled ? " is-disabled" : ""
     }`,
-    dataset: { cardId: card.id, instanceId: card.instanceId || "" },
+    dataset: { cardId: c.id, instanceId: c.instanceId || "" },
   };
   if (onClick) attrs.onclick = onClick;
 
   const children = [
     el("div", { class: "card-header" }, [
       el("span", { class: "card-type", text: typeLabel }),
-      el("span", { class: "card-cost", text: showCost ? `MP ${card.mpCost}` : "" }),
+      el("span", { class: "card-cost", text: showCost ? `MP ${c.mpCost}` : "" }),
     ]),
-    el("div", { class: "card-name", text: card.name || card.id }),
-    el("div", { class: "card-subtype", text: card.subtype || "" }),
+    // name_zh
+    el("div", { class: "card-name", text: c.name || c.id }),
+    // alias_group
+    el("div", { class: "card-subtype", text: c.aliasGroup || "" }),
   ];
 
-  // 依卡牌類型列出對應數值資料
-  const stats = [];
-  if (card.type === "attack") {
-    stats.push(`傷害 ${card.damage}`);
-    stats.push(`射程 ${card.rangeMin}~${card.rangeMax}`);
-  } else if (card.type === "move") {
-    stats.push(`移動 ${card.moveMin}~${card.moveMax}`);
-  } else if (card.type === "defense") {
-    stats.push(`格擋 ${card.blockValue}`);
-  } else if (card.type === "recover") {
-    stats.push(`回復 ${card.hpGain} HP`);
-  }
-  if (card.mpGain) stats.push(`+${card.mpGain} MP`);
-  if (card.drawCount) stats.push(`抽 ${card.drawCount} 張`);
-  if (card.buyCost) stats.push(`解封 ${card.buyCost} MP`);
-  if (stats.length > 0) {
-    children.push(el("div", { class: "card-stats", text: stats.join(" · ") }));
+  // buy_cost（解封費用）
+  if (showCost && c.buyCost > 0) {
+    children.push(el("div", { class: "card-buy", text: `解封 ${c.buyCost} MP` }));
   }
 
-  if (card.keywords && card.keywords.length > 0) {
-    children.push(
-      el("div", { class: "card-keywords", text: card.keywords.join("、") })
-    );
+
+  // description_template
+  if (c.description) {
+    children.push(el("div", { class: "card-desc", text: c.description }));
   }
 
-  if (showStock && card.stock !== undefined && card.stock !== "") {
-    children.push(el("div", { class: "card-stock", text: `庫存 ${card.stock}` }));
+  if (showStock && c.stock !== undefined && c.stock !== "") {
+    children.push(el("div", { class: "card-stock", text: `庫存 ${c.stock}` }));
   }
 
   return el("div", attrs, children);
 }
+
 
 

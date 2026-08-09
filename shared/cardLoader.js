@@ -245,6 +245,8 @@ function normalizeCard(card) {
     id: card.id,
     definitionId: undefined,
     name: card.name_zh,
+    aliasGroup: card.alias_group,
+    description: card.description_template,
     group: card.group,
     type: card.type,
     subtype: card.subtype,
@@ -272,6 +274,7 @@ function normalizeCard(card) {
     enabled: normalizeBoolean(card.enabled),
   };
 }
+
 
 
 function normalizeCharacter(character) {

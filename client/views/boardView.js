@@ -3,8 +3,9 @@
 // 顯示每位玩家的位置、朝向、HP/MP、角色名。
 // I-02-H2 / I-02-H3：移動/攻擊卡喺棋盤高亮可選格並點擊選擇。
 
-import { el, clear, qs } from "../layout.js";
+import { el, clear, qs, normalizeClientCard } from "../layout.js";
 import { gameStore } from "../gameStore.js";
+
 
 const BOARD_SIZE = 5;
 
@@ -34,12 +35,15 @@ function isOccupied(state, x, y, excludeId) {
 
 // 計算移動卡可移動格（曼哈頓距離喺 moveMin~moveMax、未被佔據）
 function getMoveTargets(state, player, card) {
+  const c = normalizeClientCard(card);
   const targets = [];
-  const moveMax = card.moveMax + (player.comboMoveBonus || 0);
+  const moveMax = c.moveMax + (player.comboMoveBonus || 0);
+
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
       const dist = manhattan(player.position, { x, y });
-      if (dist < card.moveMin || dist > moveMax) continue;
+      if (dist < c.moveMin || dist > moveMax) continue;
+
       if (isOccupied(state, x, y, player.id)) continue;
       targets.push({ x, y });
     }
@@ -67,6 +71,7 @@ function getPredictedPosition(state, playerId) {
 // 計算攻擊卡可攻擊敵人（距離喺 rangeMin~rangeMax）
 // I-02-H4：考慮前面已選移動卡嘅效果，用移動後位置計算距離
 function getAttackTargets(state, player, card) {
+  const c = normalizeClientCard(card);
   const comboRangeBonus = player.comboRangeBonus || 0;
   const predicted = getPredictedPosition(state, player.id) || player.position;
   return state.players.filter(
@@ -74,20 +79,28 @@ function getAttackTargets(state, player, card) {
       p.id !== player.id &&
       !p.isEliminated &&
       p.position &&
-      manhattan(predicted, p.position) >= card.rangeMin &&
-      manhattan(predicted, p.position) <= card.rangeMax + comboRangeBonus
+      manhattan(predicted, p.position) >= c.rangeMin &&
+      manhattan(predicted, p.position) <= c.rangeMax + comboRangeBonus
   );
 }
+
 
 
 export function renderBoard(state) {
   const container = qs("#boardView");
   clear(container);
 
+  // I-02-H2/H3：選擇模式提示移到右邊「解封武功」下方
+  const hintPanel = qs("#boardSelectionHintPanel");
+  const hintBox = qs("#boardSelectionHint");
+  if (hintPanel) hintPanel.hidden = true;
+  if (hintBox) clear(hintBox);
+
   if (!state) {
     container.appendChild(el("p", { class: "muted-text", text: "開始對戰後顯示 5×5 棋盤。" }));
     return;
   }
+
 
   const selection = gameStore.getBoardSelection();
   const activePlayer = selection
@@ -171,15 +184,19 @@ export function renderBoard(state) {
 
   container.appendChild(grid);
 
-  // 顯示選擇模式提示
-  if (selection && activePlayer) {
-    const hint = el("div", {
-      class: "board-selection-hint",
-      text:
-        selection.type === "move"
-          ? `${activePlayer.id}：點擊綠色格選擇移動目標（取消：點擊「清空選牌」）`
-          : `${activePlayer.id}：點擊綠色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
-    });
-    container.appendChild(hint);
+  // I-02-H2/H3：選擇模式提示移到右邊「解封武功」下方
+  if (selection && activePlayer && hintPanel && hintBox) {
+    hintBox.appendChild(
+      el("div", {
+        class: "board-selection-hint",
+        text:
+          selection.type === "move"
+            ? `${activePlayer.id}：點擊綠色格選擇移動目標（取消：點擊「清空選牌」）`
+            : `${activePlayer.id}：點擊綠色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
+      })
+    );
+    hintPanel.hidden = false;
   }
 }
+
+

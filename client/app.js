@@ -104,17 +104,22 @@ function updateControls(state) {
   const resetBtn = qs("#resetButton");
   const startBtn = qs("#startMatchButton");
   const setupPanel = qs("#matchSetupPanel");
+  const logPanel = qs("#logPanel");
 
   const hasMatch = !!state;
   playBtn.disabled = !hasMatch;
   resetBtn.disabled = !hasMatch;
   startBtn.disabled = hasMatch;
 
-  // I-02-F：開始對戰後隱藏「對戰設定」section
+  // 開始對戰後：隱藏「對戰設定」，顯示「對戰紀錄」（佔據原本位置，唔會浮空）
   if (setupPanel) {
     setupPanel.hidden = hasMatch;
   }
+  if (logPanel) {
+    logPanel.hidden = !hasMatch;
+  }
 }
+
 
 
 const CHARACTER_OPTIONS = [
@@ -156,12 +161,50 @@ function renderCharacterSelects() {
   }
 }
 
+// 同步「遊玩人數」與「電腦敵人」選項上限，令總對戰人數永遠 ≤ 4
+// 例如 humanCount=4 時 aiCount 只能 0；aiCount=3 時 humanCount 只能 1
+function syncPlayerCountLimits() {
+  const humanSelect = qs("#humanCount");
+  const aiSelect = qs("#aiCount");
+  if (!humanSelect || !aiSelect) return;
+
+  const humanCount = Number(humanSelect.value || 1);
+  const aiCount = Number(aiSelect.value || 0);
+
+  // 依目前 humanCount 調整 aiCount 上限
+  const maxAi = 4 - humanCount;
+  for (const opt of aiSelect.options) {
+    opt.disabled = Number(opt.value) > maxAi;
+  }
+  if (aiCount > maxAi) {
+    aiSelect.value = String(maxAi);
+  }
+
+  // 依目前 aiCount 調整 humanCount 上限
+  const maxHuman = 4 - Number(aiSelect.value || 0);
+  for (const opt of humanSelect.options) {
+    opt.disabled = Number(opt.value) > maxHuman;
+  }
+  if (Number(humanSelect.value) > maxHuman) {
+    humanSelect.value = String(maxHuman);
+  }
+
+  renderCharacterSelects();
+}
+
+
 // 依遊玩人數 / 電腦敵人建立對戰設定
 function readMatchConfig() {
   const humanCount = Number(qs("#humanCount").value || 1);
   const aiCount = Number(qs("#aiCount").value || 0);
 
+  // 總對戰人數限制：人類 + 電腦敵人唔可以超過 4 人
+  if (humanCount + aiCount > 4) {
+    throw new Error("總對戰人數不可超過 4 人（遊玩人數 + 電腦敵人）");
+  }
+
   const players = [];
+
   // 人類玩家
   for (let i = 1; i <= humanCount; i++) {
     const charSelect = qs(`#p${i}Character`);
@@ -211,10 +254,14 @@ async function handleDiscardPhase() {
 // ---- 事件 ----
 
 function bindEvents() {
-  // 遊玩人數改變時重新產生角色下拉選單
+  // 遊玩人數 / 電腦敵人改變時同步選項上限（總人數 ≤ 4）並重新產生角色下拉選單
   qs("#humanCount").addEventListener("change", () => {
-    renderCharacterSelects();
+    syncPlayerCountLimits();
   });
+  qs("#aiCount").addEventListener("change", () => {
+    syncPlayerCountLimits();
+  });
+
 
   // 切換目前操作玩家
   qs("#activePlayerSelect").addEventListener("change", (event) => {
@@ -222,8 +269,8 @@ function bindEvents() {
   });
 
   qs("#startMatchButton").addEventListener("click", async () => {
-    const config = readMatchConfig();
     try {
+      const config = readMatchConfig();
       await gameStore.createMatch(config);
     } catch (error) {
       alert(`開始對戰失敗：${error.message}`);
@@ -232,13 +279,14 @@ function bindEvents() {
 
 
   qs("#newMatchButton").addEventListener("click", async () => {
-    const config = readMatchConfig();
     try {
+      const config = readMatchConfig();
       await gameStore.createMatch(config);
     } catch (error) {
       alert(`新對戰失敗：${error.message}`);
     }
   });
+
 
 
   qs("#resetButton").addEventListener("click", async () => {
@@ -317,9 +365,11 @@ function bindSocketEvents() {
 
 function init() {
   renderCharacterSelects();
+  syncPlayerCountLimits();
   bindEvents();
   gameStore.subscribe(renderAll);
   renderAll(null);
+
 
   // 建立 Socket.IO 連線（多人對戰）
   socketClient.connect();

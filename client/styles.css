@@ -240,21 +240,26 @@ button:disabled {
 }
 
 /* ---- Board ---- */
-/* I-02-G：5×5 棋盤高度限制（唔超過畫面 4/5） */
+/* I-02-G：5×5 棋盤按比例縮放（唔超過畫面 4/5，避免出現拉動邊） */
 .board-view {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
-  min-height: 420px;
+  min-height: 0;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .board-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  max-height: 80vh;
+  /* 用 min() 控制整體寬度，令棋盤按比例縮放並唔超過畫面 4/5 */
+  width: min(calc(80vh - 32px), 100%);
+  max-width: 100%;
 }
 .board-cell {
   aspect-ratio: 1;
@@ -265,10 +270,13 @@ button:disabled {
   align-items: center;
   justify-content: center;
   position: relative;
-  min-height: 90px;
-  /* 用 min() 控制 cell 尺寸，確保唔超過畫面 4/5 */
-  height: min(calc(80vh / 5), 140px);
+  /* cell 由 grid 自動分配寬度，aspect-ratio 保持正方形，隨畫面縮放 */
+  width: 100%;
+  height: auto;
 }
+
+
+
 
 .board-cell-coord {
   color: var(--text-muted);
@@ -373,8 +381,8 @@ button:disabled {
   justify-content: center;
   padding: 0 20px 12px;
   pointer-events: none;
-  min-height: 0;
-  max-height: none;
+  /* 統一高度：放大後卡牌高度 252px + 底部 padding，避免浮空 */
+  height: 264px;
   overflow: visible;
 }
 
@@ -384,11 +392,12 @@ button:disabled {
   justify-content: center;
   gap: 0;
   pointer-events: auto;
+  height: 100%;
 }
-/* 啤牌比例（約 2.5:3.5） */
+/* 啤牌比例（約 2.5:3.5）· 尺寸放大 50%（120→180 / 168→252） */
 .hand-fan .card {
-  width: 120px;
-  height: 168px;
+  width: 180px;
+  height: 252px;
   flex: 0 0 auto;
   transform-origin: bottom center;
   transform: rotate(var(--fan-angle, 0deg)) translateY(calc(var(--fan-index, 0) * 0px));
@@ -397,10 +406,11 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 .hand-fan .card:hover:not(.is-disabled) {
-  transform: rotate(var(--fan-angle, 0deg)) translateY(-24px);
+  transform: rotate(var(--fan-angle, 0deg)) translateY(-36px);
   z-index: 10;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
+
 
 
 /* ---- Card ---- */
@@ -513,19 +523,9 @@ button:disabled {
 }
 
 /* ---- Log ---- */
-/* I-02-F：對戰記錄移到左上（fixed） */
+/* I-02-F：對戰記錄移到左上（佔據「對戰設定」原本位置，跟隨 control-panel 流動） */
 .log-panel {
-  position: fixed;
-  top: 70px;
-  left: 16px;
-  width: 300px;
   max-height: 40vh;
-  z-index: 40;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: var(--shadow);
   overflow-y: auto;
 }
 .log-panel h2 {
@@ -538,6 +538,7 @@ button:disabled {
   max-height: 30vh;
   overflow-y: auto;
 }
+
 
 .log-list-inner {
   display: flex;
