@@ -147,11 +147,13 @@ describe("recover 透過 turnEngine 整合", () => {
 
     // recover 抽 1 張 + turnEngine drawPhase 抽 2 張 = 共抽 3 張
     expect(p1.hp).toBe(7);
-    expect(p1.mp).toBe(3);
+    // MP：recover 加 1（2→3）+ 回合結束補 3（3→6），clamp 到 maxMp 5 → 5
+    expect(p1.mp).toBe(5);
     expect(p1.hand.length).toBe(handBefore + 3);
     expect(p1.deck.length).toBe(deckBefore - 3);
     expect(state.log.some((msg) => msg.includes("回復 2 HP"))).toBe(true);
     expect(state.log.some((msg) => msg.includes("回復 1 MP"))).toBe(true);
+
 
   });
 });

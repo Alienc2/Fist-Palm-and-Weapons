@@ -128,13 +128,14 @@ describe("move 規則", () => {
       moveMax: 1,
     };
 
-    submitSelection(state, "P1", [{ card: moveCard, extra: { dx: 1, dy: 0 } }]);
+    submitSelection(state, "P1", [{ card: moveCard, extra: { targetX: 2, targetY: 1 } }]);
     submitSelection(state, "P2", []);
 
     playOneTurn(state);
 
     expect(p1.position).toEqual({ x: 2, y: 1 });
     expect(state.log.some((msg) => msg.includes("移動到 (2,1)"))).toBe(true);
+
   });
 
   test("非法移動不會更新位置", () => {
@@ -151,7 +152,7 @@ describe("move 規則", () => {
     };
 
     submitSelection(state, "P1", [
-      { card: moveCard, extra: { dx: 2, dy: 0 } },
+      { card: moveCard, extra: { targetX: 3, targetY: 1 } },
     ]);
     submitSelection(state, "P2", []);
 
@@ -159,6 +160,7 @@ describe("move 規則", () => {
 
     expect(p1.position).toEqual({ x: 1, y: 1 });
     expect(state.log.some((msg) => msg.includes("步數不合法"))).toBe(true);
+
   });
 
   test("移動到有玩家佔據嘅格會失敗（避免疊格）", () => {
@@ -179,7 +181,7 @@ describe("move 規則", () => {
     };
 
     submitSelection(state, "P1", [
-      { card: moveCard, extra: { dx: 1, dy: 0 } },
+      { card: moveCard, extra: { targetX: 2, targetY: 1 } },
     ]);
     submitSelection(state, "P2", []);
 
@@ -187,6 +189,7 @@ describe("move 規則", () => {
 
     expect(p1.position).toEqual({ x: 1, y: 1 });
     expect(state.log.some((msg) => msg.includes("已被佔據"))).toBe(true);
+
   });
 });
 
@@ -216,7 +219,8 @@ describe("shopResolver / buy 流程", () => {
     const state = createMatch();
     const [p1] = state.players;
 
-    p1.mp = 99;
+    // maxMp 統一為 8，設為上限以確保有足夠 MP 購買
+    p1.mp = 8;
 
     const buyCard = {
       id: "basic_buy",
@@ -240,7 +244,6 @@ describe("shopResolver / buy 流程", () => {
     const targetShopCard = state.shop.cards[0];
     const beforeStock = targetShopCard.stock;
     const beforeDiscard = p1.discard.length;
-    const beforeMp = p1.mp;
 
     submitSelection(state, "P1", [{ card: buyCard, extra: { shopCardId: targetShopCard.id } }]);    
     submitSelection(state, "P2", []);
@@ -248,12 +251,16 @@ describe("shopResolver / buy 流程", () => {
     playOneTurn(state);
 
     expect(p1.discard.length).toBe(beforeDiscard + 1);
-    expect(p1.mp).toBe(beforeMp - targetShopCard.buyCost);
+    // 購買扣 2 MP，回合結束補 3 MP（clamp 到 maxMp 8）
+    expect(p1.mp).toBe(8);
+    // 驗證購買確實消耗咗 MP
+    expect(state.log.some((msg) => msg.includes("消耗 2 MP"))).toBe(true);
 
     const updatedShopCard = state.shop.cards.find((card) => card.id === targetShopCard.id);
     expect(updatedShopCard.stock).toBe(beforeStock - 1);
     expect(state.log.some((msg) => msg.includes("購買"))).toBe(true);
   });
+
 
   test("MP 不足時不會成功購買", () => {
     const state = createMatch();
@@ -606,14 +613,15 @@ describe("resolveTurn 交錯揭牌順序", () => {
     };
 
     submitSelection(state, "P1", [
-      { card: p1Move, extra: { dx: 1, dy: 0 } },
+      { card: p1Move, extra: { targetX: 2, targetY: 1 } },
       { card: p1Buy },
     ]);
 
     submitSelection(state, "P2", [
       { card: p2Defense },
-      { card: p2Move, extra: { dx: -1, dy: 0 } },
+      { card: p2Move, extra: { targetX: 2, targetY: 3 } },
     ]);
+
 
     playOneTurn(state);
 

@@ -26,7 +26,8 @@ function make4PState() {
   });
 }
 
-function moveCard(dx, dy) {
+// I-02：移動卡改用絕對座標（targetX / targetY），避免交錯揭牌時相對位移累積誤差
+function moveCard(tx, ty) {
   return {
     id: "move_1",
     type: "move",
@@ -35,6 +36,7 @@ function moveCard(dx, dy) {
     moveMax: 3,
   };
 }
+
 
 function attackCard() {
   return {
@@ -55,9 +57,9 @@ describe("多人引擎 - 3P", () => {
     const p2 = state.players.find((p) => p.id === "P2");
     const p3 = state.players.find((p) => p.id === "P3");
 
-    p1.selectedCards = [{ card: moveCard(1, 0), extra: { dx: 1, dy: 0 } }];
-    p2.selectedCards = [{ card: moveCard(0, 1), extra: { dx: 0, dy: 1 } }];
-    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { dx: -1, dy: 0 } }];
+    p1.selectedCards = [{ card: moveCard(1, 0), extra: { targetX: 2, targetY: 1 } }];
+    p2.selectedCards = [{ card: moveCard(0, 1), extra: { targetX: 3, targetY: 2 } }];
+    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { targetX: 1, targetY: 3 } }];
 
     resolveTurn(state);
 
@@ -73,9 +75,10 @@ describe("多人引擎 - 3P", () => {
     const p2 = state.players.find((p) => p.id === "P2");
     const p3 = state.players.find((p) => p.id === "P3");
 
-    p1.selectedCards = [{ card: moveCard(1, 0), extra: { dx: 1, dy: 0 } }];
-    p2.selectedCards = [{ card: moveCard(0, 1), extra: { dx: 0, dy: 1 } }];
-    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { dx: -1, dy: 0 } }];
+    p1.selectedCards = [{ card: moveCard(1, 0), extra: { targetX: 2, targetY: 1 } }];
+    p2.selectedCards = [{ card: moveCard(0, 1), extra: { targetX: 3, targetY: 2 } }];
+    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { targetX: 1, targetY: 3 } }];
+
 
     resolveTurn(state);
 
@@ -112,11 +115,19 @@ describe("多人引擎 - 4P", () => {
     const state = make4PState();
     const players = state.players;
 
+    // 每位玩家向右移 1 格（絕對座標）
+    const targets = [
+      { x: 2, y: 1 },
+      { x: 4, y: 1 },
+      { x: 2, y: 3 },
+      { x: 4, y: 3 },
+    ];
     players.forEach((p, index) => {
       p.selectedCards = [
-        { card: moveCard(1, 0), extra: { dx: 1, dy: 0 } },
+        { card: moveCard(1, 0), extra: { targetX: targets[index].x, targetY: targets[index].y } },
       ];
     });
+
 
     resolveTurn(state);
 
@@ -137,10 +148,11 @@ describe("多人引擎 - 4P", () => {
     p2.isEliminated = true;
     p2.hp = 0;
 
-    p1.selectedCards = [{ card: moveCard(1, 0), extra: { dx: 1, dy: 0 } }];
-    p2.selectedCards = [{ card: moveCard(0, 1), extra: { dx: 0, dy: 1 } }];
-    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { dx: -1, dy: 0 } }];
-    p4.selectedCards = [{ card: moveCard(0, -1), extra: { dx: 0, dy: -1 } }];
+    p1.selectedCards = [{ card: moveCard(1, 0), extra: { targetX: 2, targetY: 1 } }];
+    p2.selectedCards = [{ card: moveCard(0, 1), extra: { targetX: 3, targetY: 2 } }];
+    p3.selectedCards = [{ card: moveCard(-1, 0), extra: { targetX: 0, targetY: 3 } }];
+    p4.selectedCards = [{ card: moveCard(0, -1), extra: { targetX: 3, targetY: 2 } }];
+
 
     resolveTurn(state);
 

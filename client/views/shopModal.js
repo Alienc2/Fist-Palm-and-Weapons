@@ -41,8 +41,9 @@ export function openShopModal(playerId, onBuy) {
   }
 
   openModal("解封武功", content, [
-    button("關閉", "secondary-button", () => closeModal()),
+    button("不購買", "secondary-button", () => closeModal()),
   ]);
 }
+
 
 

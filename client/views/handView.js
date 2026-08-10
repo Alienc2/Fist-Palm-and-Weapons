@@ -37,6 +37,15 @@ export function renderHand(state) {
   const maxAngle = 30; // 最大扇形角度（度）
   const step = count > 1 ? (maxAngle * 2) / (count - 1) : 0;
 
+  // I-02-H：8 張或以上時縮細卡牌，確保扇形唔超出視窗
+  // 基準：卡寬 180px、每張重疊 36px（margin -18px 兩側）
+  const baseWidth = 180;
+  const overlap = 36;
+  const totalWidth = baseWidth + (count - 1) * (baseWidth - overlap);
+  const viewportWidth = window.innerWidth || 1280;
+  const availableWidth = viewportWidth - 40; // 左右各 20px padding
+  const scale = Math.min(1, availableWidth / totalWidth);
+
   player.hand.forEach((card, index) => {
     const alreadySelected = pendingInstanceIds.has(card.instanceId || card.id);
     const angle = count > 1 ? -maxAngle + step * index : 0;
@@ -50,10 +59,12 @@ export function renderHand(state) {
     });
     cardEl.style.setProperty("--fan-angle", `${angle}deg`);
     cardEl.style.setProperty("--fan-index", index);
+    cardEl.style.setProperty("--card-scale", scale);
     fan.appendChild(cardEl);
   });
 
   container.appendChild(fan);
 }
+
 
 

@@ -1,10 +1,11 @@
-# CONTEXT.md V24
+# CONTEXT.md V25
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V24
-- 更新日期時間：2026-08-10 00:25 HKT
+- 版本：V25
+- 更新日期時間：2026-08-10 02:50 HKT
+
 
 
 
@@ -150,17 +151,27 @@
 - `client/server.js` `serializeCard`：改為讀 camelCase 欄位（`name` / `aliasGroup` / `description` / `moveMin` / `moveMax` / `rangeMin` / `rangeMax` / `targeting`），解決前端收到 `id` 當名稱、移動卡只能移到同一格、攻擊卡不能選敵人嘅根因
 - `client/styles.css`：`.board-cell` 尺寸改為 `min(calc(80vh / 5), 140px)` 並用 `aspect-ratio: 1` 保持正方形，令 5×5 棋盤按比例縮放
 - `client/views/boardView.js` + `client/index.html`：移動 / 攻擊選擇模式提示移到右邊「解封武功」下方（`#boardSelectionHintPanel`），避免遮住棋盤
+- Phase I-02-K：對戰體驗修正（MP / 移動 / 對戰記錄 / 扇形 / 攻擊標注）
+- `server/game/rules/turnEngine.js`：每回合每位玩家補 3 MP（clamp 到 maxMp），總 MP 上限 8
+- `server/game/rules/cardResolver.js` `resolveMove`：移動卡改用絕對座標（`extra.targetX/targetY`），避免交錯揭牌時相對位移累積誤差；禁止移動到被佔據格
+- `client/views/logView.js`：對戰記錄顯示回合數 / 卡牌數 / 角色名（`name_zh`）
+- `client/views/handView.js` + `client/styles.css`：扇形 8 張唔超出視窗（依手牌數縮放角度 / 位移）
+- `client/views/boardView.js` + `client/styles.css`：攻擊範圍標注語意（可攻擊敵人用紅色 `.is-attack-target`，移動格用綠色 `.is-move-target`）
+- `tests/rules/multiplayerEngine.test.js`：移動測試改用 `extra.targetX/targetY`（對齊絕對座標）
+- `tests/rules/recoverResolver.test.js`：MP 預期更新（recover +1 + 回合補 3，clamp 到 maxMp 5 → 5）
 
 
 ### 已驗證結果
 
 
+
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 35 passed, 35 total`
-- `Tests: 280 passed, 280 total`
+- 全套 `npx jest --runInBand`：`Test Suites: 36 passed, 36 total`
+- `Tests: 284 passed, 284 total`
 - 前端 JS 語法檢查通過（`node --input-type=module --check` 全部 OK）
+
 
 
 
@@ -235,9 +246,11 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - Phase I-02-H3 已完成：攻擊卡直接喺棋盤高亮可攻擊敵人 + 點擊敵人選擇。
 - Phase I-02-H4 已完成：卡牌效果預測（UI 預覽，攻擊距離用移動後位置）。
 - Phase I-02-I 已完成：商店→解封 文字統一。
-- 全套 `npx jest --runInBand` 已達 `35 suites / 280 tests` 全綠。
+- Phase I-02-K 已完成：對戰體驗修正（每回合補 3 MP / 移動卡絕對座標 / 對戰記錄回合數與卡牌數 / 扇形 8 張唔超出視窗 / 攻擊範圍紅色標注）。
+- 全套 `npx jest --runInBand` 已達 `36 suites / 284 tests` 全綠。
 - `npm run client` 正式 UI server 已可啟動，`/api/health` 通過，Socket.IO multiplayer server 已附加。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
+
 
 
 

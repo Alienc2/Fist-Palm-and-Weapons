@@ -20,11 +20,29 @@ const {
 
 
 
+// 每回合開始補 3 MP（第 1 回合保持預設 MP，第 2 回合起開始補）
+const MP_REGEN_PER_ROUND = 3;
+
 function startRound(state) {
   state.phase = "ROUND_START";
   state.round += 1;
   state.revealIndex = 0;
+
+  // 第 1 回合（round === 1）唔補 MP，保持角色預設 MP；
+  // 第 2 回合起每回合開始補 3 MP，上限為 maxMp（統一 8）
+  if (state.round > 1) {
+    for (const p of state.players) {
+      if (p.isEliminated) continue;
+      const before = p.mp;
+      p.mp = Math.min(p.maxMp, p.mp + MP_REGEN_PER_ROUND);
+      const actual = p.mp - before;
+      if (actual > 0) {
+        state.log.push(`${p.id} 回合開始回復 ${actual} MP（${p.mp}/${p.maxMp} MP）`);
+      }
+    }
+  }
 }
+
 
 // 洗牌（Fisher-Yates）
 function shuffleArray(arr, rng = Math.random) {

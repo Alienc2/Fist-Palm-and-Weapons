@@ -192,7 +192,8 @@ export function renderBoard(state) {
         text:
           selection.type === "move"
             ? `${activePlayer.id}：點擊綠色格選擇移動目標（取消：點擊「清空選牌」）`
-            : `${activePlayer.id}：點擊綠色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
+            : `${activePlayer.id}：點擊紅色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
+
       })
     );
     hintPanel.hidden = false;

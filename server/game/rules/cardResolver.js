@@ -142,14 +142,17 @@ function resolveDefense(state, player, card, extra = {}) {
 }
 
 function resolveMove(state, player, card, extra = {}) {
-  const dx = Number(extra.dx);
-  const dy = Number(extra.dy);
+  // 使用絕對座標（targetX / targetY），避免交錯揭牌時相對位移累積誤差
+  const targetX = Number(extra.targetX);
+  const targetY = Number(extra.targetY);
 
-  if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
-    log(state, `${player.id} 移動 ${card.id} 失敗：缺少 extra.dx / extra.dy`);
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) {
+    log(state, `${player.id} 移動 ${card.id} 失敗：缺少 extra.targetX / extra.targetY`);
     return;
   }
 
+  const dx = targetX - player.position.x;
+  const dy = targetY - player.position.y;
   const steps = Math.abs(dx) + Math.abs(dy);
   // combo_move_3：移動距離 +1
   const moveMax = card.moveMax + (player.comboMoveBonus || 0);
@@ -158,9 +161,6 @@ function resolveMove(state, player, card, extra = {}) {
     return;
   }
 
-
-  const targetX = player.position.x + dx;
-  const targetY = player.position.y + dy;
 
   // 禁止移動到有玩家佔據嘅格（避免疊格，令距離 0 嘅攻擊失效）
   const occupied = state.players.some(

@@ -1,7 +1,38 @@
 // client/views/logView.js
 // 對戰紀錄顯示。
+// I-02：顯示回合數、每位玩家手牌數，並將 log 中嘅卡牌 id 轉換為 name_zh。
 
 import { el, clear, qs } from "../layout.js";
+
+// 從 state.players 收集所有卡牌，建立 id -> name_zh 對照表
+function buildCardNameMap(state) {
+  const map = {};
+  for (const p of state.players || []) {
+    const allCards = [
+      ...(p.hand || []),
+      ...(p.deck || []),
+      ...(p.discard || []),
+      ...(p.selectedCards || []),
+    ];
+    for (const card of allCards) {
+      if (card && card.id && card.name_zh) {
+        map[card.id] = card.name_zh;
+      }
+    }
+  }
+  return map;
+}
+
+// 將 log 訊息中出現嘅卡牌 id 替換為 name_zh
+function localizeCardNames(msg, nameMap) {
+  let result = msg;
+  for (const [id, nameZh] of Object.entries(nameMap)) {
+    if (id && nameZh && result.includes(id)) {
+      result = result.split(id).join(nameZh);
+    }
+  }
+  return result;
+}
 
 export function renderLog(state) {
   const container = qs("#logView");
@@ -12,12 +43,27 @@ export function renderLog(state) {
     return;
   }
 
+  // 回合數 + 每位玩家手牌數 header
+  const header = el("div", { class: "log-header" });
+  const round = state.round || 1;
+  header.appendChild(el("span", { class: "log-round", text: `回合 ${round}` }));
+  for (const p of state.players || []) {
+    const handCount = (p.hand || []).length;
+    header.appendChild(
+      el("span", { class: "log-player-count", text: `${p.id} 手牌 ${handCount}` })
+    );
+  }
+  container.appendChild(header);
+
+  const nameMap = buildCardNameMap(state);
   const list = el("div", { class: "log-list-inner" });
   for (const msg of state.log) {
-    list.appendChild(el("div", { class: "log-entry", text: msg }));
+    list.appendChild(el("div", { class: "log-entry", text: localizeCardNames(msg, nameMap) }));
   }
   container.appendChild(list);
 
   // 自動捲到底部
   container.scrollTop = container.scrollHeight;
 }
+
+

@@ -192,7 +192,9 @@ function createPlayer(id, position, characterId) {
     hp: character.initialHp,
     maxHp: character.initialHp,
     mp: character.initialMp,
-    maxMp: character.initialMp,
+    // maxMp 統一為 8（每回合補 3 MP，上限 8）；mp 保留角色初始值
+    maxMp: 8,
+
     hand,
     deck,
     discard: [],
