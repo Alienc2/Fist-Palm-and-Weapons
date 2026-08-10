@@ -462,18 +462,18 @@ button:disabled {
   color: var(--text-muted);
 }
 .card-name {
-  font-weight: 700;
-  font-size: 13px;
-  margin: 4px 0 2px;
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 .card-subtype {
   font-size: 11px;
   color: var(--text-muted);
 }
 .card-desc {
-  font-size: 11px;
+  font-size: clamp(13px, 2.2vw, 16px);
   color: var(--text-muted);
-  margin-top: 4px;
+  line-height: 1.5;
 }
 .card-stock {
   font-size: 11px;
