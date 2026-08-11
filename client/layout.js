@@ -148,6 +148,7 @@ export function cardNode(card, options = {}) {
     disabled = false,
     showCost = true,
     showStock = false,
+    showBack = false,
   } = options;
 
   // 統一 snake_case → camelCase，確保讀到正確欄位
@@ -170,7 +171,9 @@ export function cardNode(card, options = {}) {
   };
   if (onClick) attrs.onclick = onClick;
 
-  const children = [
+  // P0：卡面圖片層。載入成功時隱藏文字層，失敗時保留現有銀黑咭面 + 文字。
+  // 卡背（showBack）為預留契約，現時冇 view 使用。
+  const faceChildren = [
     el("div", { class: "card-header" }, [
       el("span", { class: "card-type", text: typeLabel }),
       el("span", { class: "card-cost", text: showCost ? `MP ${c.mpCost}` : "" }),
@@ -183,20 +186,35 @@ export function cardNode(card, options = {}) {
 
   // buy_cost（解封費用）
   if (showCost && c.buyCost > 0) {
-    children.push(el("div", { class: "card-buy", text: `解封 ${c.buyCost} MP` }));
+    faceChildren.push(el("div", { class: "card-buy", text: `解封 ${c.buyCost} MP` }));
   }
-
 
   // description_template
   if (c.description) {
-    children.push(el("div", { class: "card-desc", text: c.description }));
+    faceChildren.push(el("div", { class: "card-desc", text: c.description }));
   }
 
   if (showStock && c.stock !== undefined && c.stock !== "") {
-    children.push(el("div", { class: "card-stock", text: `庫存 ${c.stock}` }));
+    faceChildren.push(el("div", { class: "card-stock", text: `庫存 ${c.stock}` }));
   }
 
-  return el("div", attrs, children);
+  const faceLayer = el("div", { class: "card-face-layer" }, faceChildren);
+
+  const cardNodeRoot = el("div", attrs, [
+    el("img", {
+      class: "card-img",
+      src: showBack ? "assets/cards/card_back_default.png" : `assets/cards/${c.id}.png`,
+      alt: c.name || c.id,
+      onerror: (e) => {
+        e.target.remove();
+      },
+      onload: () => {
+        faceLayer.hidden = true;
+      },
+    }),
+    faceLayer,
+  ]);
+  return cardNodeRoot;
 }
 
 

@@ -351,19 +351,52 @@ button:disabled {
 }
 .token-name {
   font-weight: 800;
-  font-size: 13px;
+  font-size: clamp(14px, 2.5vw, 18px);
+}
+.token-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.token-fallback-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+}
+.token-fallback-triangle {
+  width: 40%;
+  aspect-ratio: 1;
+  background: var(--text);
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  margin-bottom: 2px;
+}
+.token-facing-up {
+  transform: rotate(0deg);
+}
+.token-facing-down {
+  transform: rotate(180deg);
+}
+.token-facing-left {
+  transform: rotate(-90deg);
+}
+.token-facing-right {
+  transform: rotate(90deg);
 }
 .token-char {
-  font-size: 11px;
-}
-.token-facing {
-  font-size: 16px;
+  font-size: clamp(12px, 2vw, 15px);
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .token-hp {
   color: var(--danger);
-}
-.token-mp {
-  color: var(--success);
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-weight: 700;
 }
 
 /* ---- Hand ---- */
@@ -418,12 +451,25 @@ button:disabled {
 
 /* ---- Card ---- */
 .card {
+  position: relative;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
   transition: transform 0.12s, border-color 0.12s;
+}
+.card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.card-face-layer {
+  position: relative;
+  z-index: 1;
 }
 .card:hover:not(.is-disabled) {
   transform: translateY(-2px);
@@ -471,7 +517,7 @@ button:disabled {
   color: var(--text-muted);
 }
 .card-desc {
-  font-size: clamp(13px, 2.2vw, 16px);
+  font-size: clamp(14px, 2.5vw, 18px);
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -567,7 +613,7 @@ button:disabled {
   gap: 4px;
 }
 .log-entry {
-  font-size: 12px;
+  font-size: clamp(14px, 2.5vw, 18px);
   padding: 4px 8px;
   background: var(--bg-panel-2);
   border-radius: 6px;

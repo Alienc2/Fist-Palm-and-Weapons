@@ -86,6 +86,63 @@ function getAttackTargets(state, player, card) {
 
 
 
+const SLOT_COLORS = ["red", "blue", "green", "yellow"];
+
+// 將 facing 值正常化為 up/down/left/right（FACING_ARROW key）
+function normalizeFacing(facing) {
+  if (FACING_ARROW[facing]) return facing;
+  const keys = ["up", "down", "left", "right"];
+  return keys.includes(String(facing).toLowerCase()) ? String(facing).toLowerCase() : "up";
+}
+
+// 依玩家槽 index 取得定色（P1 red / P2 blue / P3 green / P4 yellow）
+function slotColor(occupant, state) {
+  const index = state.players.indexOf(occupant);
+  return SLOT_COLORS[index % SLOT_COLORS.length] || "gray";
+}
+
+// P0：token 渲染（角色名 + HP，無 MP / 朝向文字）。
+// 朝向改由圖片 / fallback 三角形方向視覺呈現。
+// 圖片 404 → 三角形 fallback（clip-path，依 facing 旋轉）+ 角色名 + HP，外框用槽色。
+function renderToken(occupant, state) {
+  const color = slotColor(occupant, state);
+  const facing = normalizeFacing(occupant.facing);
+  const charName = occupant.characterName || occupant.characterId || occupant.id || "";
+
+  const src = `assets/tokens/token_${charName}_${color}_${facing}.png`;
+  const container = el("div", {
+    class: `board-token token-${color}${occupant.isEliminated ? " is-eliminated" : ""}`,
+  }, [
+    el("div", { class: "token-name", text: occupant.id }),
+  ]);
+
+  const img = el("img", {
+    class: "token-img",
+    src,
+    alt: charName,
+    dataset: { facing },
+    onerror: () => {
+      img.remove();
+      const tri = el("div", {
+        class: `token-fallback-triangle token-facing-${facing}`,
+      });
+      container.appendChild(
+        el("div", { class: "token-fallback-body" }, [
+          tri,
+          el("div", { class: "token-char", text: charName }),
+          el("div", {
+            class: "token-hp",
+            text: `HP ${occupant.hp}/${occupant.maxHp}`,
+          }),
+        ])
+      );
+    },
+  });
+  container.appendChild(img);
+
+  return container;
+}
+
 export function renderBoard(state) {
   const container = qs("#boardView");
   clear(container);
@@ -159,21 +216,7 @@ export function renderBoard(state) {
       }
 
       if (occupant) {
-        const token = el("div", {
-          class: `board-token token-${occupant.tokenColor || "gray"}${
-            occupant.isEliminated ? " is-eliminated" : ""
-          }`,
-        }, [
-          el("div", { class: "token-name", text: occupant.id }),
-          el("div", { class: "token-char", text: occupant.characterName || "" }),
-          el("div", {
-            class: "token-facing",
-            text: FACING_ARROW[occupant.facing] || "?",
-          }),
-          el("div", { class: "token-hp", text: `HP ${occupant.hp}/${occupant.maxHp}` }),
-          el("div", { class: "token-mp", text: `MP ${occupant.mp}/${occupant.maxMp}` }),
-        ]);
-        cell.appendChild(token);
+        cell.appendChild(renderToken(occupant, state));
       } else {
         cell.appendChild(el("div", { class: "board-cell-coord", text: `${x},${y}` }));
       }
