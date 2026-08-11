@@ -61,26 +61,23 @@ function getPredictedPosition(state, playerId) {
   const pending = gameStore.getPendingSelections(playerId);
   for (const item of pending) {
     if (item.card && item.card.type === "move") {
-      x += Number(item.extra.dx) || 0;
-      y += Number(item.extra.dy) || 0;
+      x = Number(item.extra.targetX) || x;
+      y = Number(item.extra.targetY) || y;
     }
   }
   return { x, y };
 }
 
-// 計算攻擊卡可攻擊敵人（距離喺 rangeMin~rangeMax）
+// 計算攻擊卡可攻擊敵人（UI 唔篩距離，高亮全部未淘汰敵人；距離由 server 結算把關）
 // I-02-H4：考慮前面已選移動卡嘅效果，用移動後位置計算距離
 function getAttackTargets(state, player, card) {
-  const c = normalizeClientCard(card);
-  const comboRangeBonus = player.comboRangeBonus || 0;
-  const predicted = getPredictedPosition(state, player.id) || player.position;
   return state.players.filter(
     (p) =>
       p.id !== player.id &&
       !p.isEliminated &&
       p.position &&
-      manhattan(predicted, p.position) >= c.rangeMin &&
-      manhattan(predicted, p.position) <= c.rangeMax + comboRangeBonus
+      p.position.x !== undefined &&
+      p.position.y !== undefined
   );
 }
 
@@ -195,9 +192,10 @@ export function renderBoard(state) {
       if (isMoveTarget) {
         cell.classList.add("is-move-target");
         cell.addEventListener("click", () => {
-          const dx = x - activePlayer.position.x;
-          const dy = y - activePlayer.position.y;
-          gameStore.addSelection(activePlayer.id, selection.card, { dx, dy });
+          gameStore.addSelection(activePlayer.id, selection.card, {
+            targetX: x,
+            targetY: y,
+          });
           gameStore.clearBoardSelection();
         });
       }
@@ -235,7 +233,7 @@ export function renderBoard(state) {
         text:
           selection.type === "move"
             ? `${activePlayer.id}：點擊綠色格選擇移動目標（取消：點擊「清空選牌」）`
-            : `${activePlayer.id}：點擊紅色敵人選擇攻擊目標（取消：點擊「清空選牌」）`,
+            : `${activePlayer.id}：點擊紅色敵人選擇攻擊目標（射程外結算會失敗；取消：點擊「清空選牌」）`,
 
       })
     );

@@ -1,5 +1,7 @@
 // client/views/facingPicker.js
-// 朝向選擇器（modal）。選擇 up / down / left / right / none。
+// DEPRECATED：朝向選擇已改為「本回合選牌」面板內 5 個按鍵（見 selectedCardsView.js），
+// 此 modal 不再由主流程引用，保留作 legacy reference（按專案慣例唔刪檔）。
+// 選擇 up / down / left / right / none。
 
 import { el, openModal, closeModal, button } from "../layout.js";
 

@@ -16,6 +16,9 @@
   --card-bg: #262b36;
   --card-border: #3a4150;
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  /* 佈局常量：頂欄高度 / 手牌區高度（D bug 2 修復用） */
+  --topbar-height: 70px;
+  --hand-height: 264px;
 }
 
 html[data-theme="light"] {
@@ -68,6 +71,10 @@ body {
   padding: 12px 20px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
+  /* safe-area（iOS 瀏海／橫額），桌面不受影響 */
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
 }
 .brand {
   display: flex;
@@ -145,6 +152,8 @@ button:disabled {
   gap: 16px;
   padding: 16px;
   min-height: calc(100vh - 70px);
+  /* 底部預留固定手牌區高度，避免棋盤被遮底 */
+  padding-bottom: calc(var(--hand-height) + 16px);
 }
 .control-panel,
 .side-panel {
@@ -247,7 +256,7 @@ button:disabled {
   border-radius: 12px;
   padding: 14px;
   min-height: 0;
-  max-height: 80vh;
+  max-height: min(80vh, calc(100vh - var(--topbar-height) - var(--hand-height) - 32px));
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -257,8 +266,8 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
-  /* 用 min() 控制整體寬度，令棋盤按比例縮放並唔超過畫面 4/5 */
-  width: min(calc(80vh - 32px), 100%);
+  /* 用 min() 控制整體寬度，令棋盤按比例縮放並唔超過可用高度 */
+  width: min(calc(100vh - var(--topbar-height) - var(--hand-height) - 32px), 100%);
   max-width: 100%;
 }
 .board-cell {
@@ -408,15 +417,18 @@ button:disabled {
   right: 0;
   z-index: 30;
   pointer-events: none;
+  /* safe-area：iOS 底部手勢橫條，桌面唔受影響 */
+  padding-left: max(0px, env(safe-area-inset-left));
+  padding-right: max(0px, env(safe-area-inset-right));
 }
 .hand-view {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 0 20px 12px;
+  padding: 0 20px max(12px, env(safe-area-inset-bottom));
   pointer-events: none;
   /* 統一高度：放大後卡牌高度 252px + 底部 padding，避免浮空 */
-  height: 264px;
+  height: var(--hand-height);
   overflow: visible;
 }
 
@@ -558,6 +570,12 @@ button:disabled {
   font-size: 12px;
   color: var(--text-muted);
 }
+.facing-option.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 700;
+}
 
 
 /* ---- Shop ---- */
@@ -673,6 +691,20 @@ button:disabled {
   gap: 8px;
   padding: 12px 18px;
   border-top: 1px solid var(--border);
+}
+
+/* ---- Tutorial overlay（Task H）---- */
+.tutorial-dialog {
+  max-width: 440px;
+}
+.tutorial-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--text);
+}
+.tutorial-steps li {
+  margin-bottom: 8px;
 }
 
 /* ---- Facing picker ---- */
@@ -840,6 +872,39 @@ button:disabled {
   .app-shell {
     grid-template-columns: 1fr;
   }
+}
+
+/* 手機直向：棋盤置中、面板單欄、預留手牌高度唔遮底 */
+@media (max-width: 720px), (orientation: portrait) and (max-height: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    padding-bottom: calc(var(--hand-height) + 16px);
+  }
+  .board-panel {
+    order: -1;
+  }
+  .board-view {
+    max-height: min(72vh, calc(100vh - var(--topbar-height) - var(--hand-height) - 32px));
+  }
+  .board-grid {
+    width: min(calc(100vh - var(--topbar-height) - var(--hand-height) - 32px), 100%);
+  }
+  .side-panel .panel:first-child {
+    display: none;
+  }
+}
+
+/* 摺疊「操作提示」（Task F）：預設收起，summary 有手風琴效果 */
+.help-panel summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.help-panel[open] summary {
+  margin-bottom: 10px;
 }
 
 /* ---- 手牌上限棄牌選擇器（Phase I-02）---- */

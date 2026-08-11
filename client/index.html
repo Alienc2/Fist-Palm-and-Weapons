@@ -2,7 +2,7 @@
 <html lang="zh-HK" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Fist Palm and Weapons — 正式對戰 UI</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -87,15 +87,15 @@
 
 
       <section class="panel">
-        <h2>操作提示</h2>
-        <ul class="notes-list">
-          <li>點擊手牌加入本回合選牌。</li>
-          <li>攻擊卡需點擊敵人選擇目標；移動卡需點擊地圖選擇移動目標。</li>
-          <li>購買卡會開啟解封武功。</li>
-
-
-          <li>所有玩家選完牌後按「結算回合」。</li>
-        </ul>
+        <details class="help-panel" closed>
+          <summary>操作提示</summary>
+          <ul class="notes-list">
+            <li>點擊手牌加入本回合選牌。</li>
+            <li>攻擊卡需點擊敵人選擇目標；移動卡需點擊地圖選擇移動目標。</li>
+            <li>購買卡會開啟解封武功。</li>
+            <li>所有玩家選完牌後按「結算回合」。</li>
+          </ul>
+        </details>
       </section>
     </aside>
 
@@ -145,6 +145,9 @@
 
   <!-- 模態層 -->
   <div id="modalRoot" class="modal-root" hidden></div>
+
+  <!-- 教學提示浮層（首次開始對戰時顯示一次） -->
+  <div id="tutorialRoot" class="modal-root" hidden></div>
 
   <!-- Socket.IO client（由 server 提供） -->
   <script src="/socket.io/socket.io.js"></script>

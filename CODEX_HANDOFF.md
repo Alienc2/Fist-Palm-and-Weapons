@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V25
+# CODEX_HANDOFF.md V27
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V25
-- 更新日期時間：2026-08-10 02:52 HKT
+- 版本：V27
+- 更新日期時間：2026-08-11 17:15 HKT
 
 
 
@@ -193,6 +193,20 @@
 - `client/views/boardView.js` + `client/styles.css`：攻擊範圍標注語意（可攻擊敵人用紅色 `.is-attack-target`，移動格用綠色 `.is-move-target`）
 - `tests/rules/multiplayerEngine.test.js`：移動測試改用 `extra.targetX/targetY`（對齊絕對座標）
 - `tests/rules/recoverResolver.test.js`：MP 預期更新（recover +1 + 回合補 3，clamp 到 maxMp 5 → 5）
+- Phase P1：佈局／層次／引導 + 棋盤佈局（UI bug 修正 + UI 打磨）
+- `client/views/boardView.js`：移動格 click 改用絕對座標 `{ targetX, targetY }`，`getPredictedPosition` 同樣改讀 `targetX/targetY`；`getAttackTargets` 移除距離篩選，改高亮全部未淘汰敵人（server 結算把關距離）
+- `client/views/selectedCardsView.js`：朝向改為 5 個按鍵（上▲ / 下▼ / 左◀ / 右▶ / 保持），「保持」→ `"none"`，即時 `setPendingFacing`，依 `getPendingFacing || player.facing` 加 `.is-active`；移除 `openFacingPicker` import
+- `client/views/facingPicker.js`：標示為 deprecated（不再由主流程引用，保留作 legacy）
+- `client/styles.css`：新增 `--topbar-height: 70px` / `--hand-height: 264px`、`.app-shell` 底部預留手牌高度、`.board-view` / `.board-grid` 高度改用 `100vh - topbar - hand`、直向 media query、safe-area（`env()` + `max()` fallback）、`.help-panel`（`<details>`）、`.facing-option.is-active`、`.tutorial-dialog` / `.tutorial-steps`
+- `client/index.html`：viewport 加 `viewport-fit=cover`、控制面板「操作提示」改為 `<details>`（預設收起）、新增 `#tutorialRoot`
+- `client/app.js`：`renderPlayerStatus` 移除座標與朝向 span；`startMatchButton` / `newMatchButton` 成功後呼叫 `maybeShowTutorial()`
+- `client/views/tutorialOverlay.js`：新增教學提示浮層（首次開始對戰顯示一次，localStorage 記住已睇過）
+- 註：移動修復回歸守門為 `tests/rules/multiplayerEngine.test.js`（已用 targetX/targetY）
+- Phase P0：阻斷閱讀/操作 + 資產基礎（字型 ≥14px、精簡 token、資產目錄、token/卡牌圖片 fallback）
+- `client/views/boardView.js`：抽出 `renderToken(occupant, state)`；token 只顯示「P# / 角色名 / HP」，移除 `token-facing` / `token-mp` 文字；`SLOT_COLORS` 前端玩家槽定色（`state.players.indexOf % 4`）、`normalizeFacing`；圖片 `assets/tokens/token_<name_zh>_<color>_<facing>.png`，404 → 三角形 fallback（clip-path + facing 旋轉 + 槽色圍邊）
+- `client/layout.js` `cardNode()`：新增 `showBack` option；卡面圖層 `assets/cards/<id>.png`，載入成功隱藏文字層、404 移除圖片保留銀黑咭面
+- `client/styles.css`：核心文字 `clamp(14px, 2.5vw, 18px)`（`.card-desc` / `.log-entry` / `.token-name` / `.token-hp`）；移除 `.token-mp`；新增 `.token-img` / `.token-fallback-triangle` / `.card-img` / `.card-face-layer`
+- `client/assets/{tokens,cards,boards}/.gitkeep`：資產目錄（P0 全 placeholder，執行走 fallback 屬預期）
 
 
 
@@ -213,8 +227,9 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`36` suites passed, `284` tests passed。
-- 前端 JS 語法檢查通過（`node --input-type=module --check` 全部 OK）。
+- 全套 `npx jest --runInBand` 最新總數：`34` suites passed, `2` failed, `36` total；`274` tests passed。
+- 註：2 個失敗 suites（`tests/network/socketServer.e2e.test.js`、`tests/stress/stress.test.js`）係既有環境問題：`socket.io-client` 喺 devDependencies 但 `node_modules` 未有安裝，與 P0 client 前端改動無關。
+- 前端 JS 語法檢查通過（`node --input-type=module --check`；本機 pipe 對非 ASCII 有編碼問題，P0 用 temp `.mjs` copy 檢查，boardView / layout 都 OK）。
 
 
 
@@ -336,6 +351,9 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - Phase I-02-H4：卡牌效果預測（UI 預覽，攻擊距離用移動後位置）已完成。
 - Phase I-02-I：商店→解封 文字統一已完成。
 - Phase I-02-K：對戰體驗修正已完成（每回合補 3 MP / 移動卡絕對座標 / 對戰記錄回合數與卡牌數 / 扇形 8 張唔超出視窗 / 攻擊範圍紅色標注）。
+- Phase P1：佈局／層次／引導 + 棋盤佈局已完成（移動卡絕對座標修復 / 攻擊卡選敵放寬 / 朝向 5 按鍵 / 手牌唔遮棋盤 / safe-area / 摺疊操作提示 / 精簡玩家狀態列 / 教學提示浮層）。
+- Phase P0：阻斷閱讀/操作 + 資產基礎已完成（核心戰鬥文字 ≥14px、棋盤 token 精簡為「角色名 + HP」、資產目錄、token/卡牌圖片 fallback）。P0 資產全為 placeholder，執行走三角形 / 銀黑 fallback 屬預期。
+- 前端 JS 語法檢查通過（temp `.mjs` copy）；全套 `npx jest --runInBand` 保持 `34 suites / 274 tests` 綠（2 個失敗為既有 `socket.io-client` 缺裝，與 P0 前端改動無關）。
 
 
 
@@ -410,6 +428,30 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - integration / e2e tests
 - deployment flow
 
+### 11. Phase P1 佈局／層次／引導 + 棋盤佈局（已完成）
+- 移動卡絕對座標修復（Bug 1）
+- 攻擊卡選敵放寬（Bug 3）
+- 朝向 5 按鍵取代彈窗（Bug 4）
+- 手牌唔遮棋盤 + 手機直向棋盤佈局（Bug 2 / Task 9）
+- safe-area（Task 10）
+- 摺疊「操作提示」（Task 6）
+- 精簡玩家狀態列（Task 7）
+- 教學提示浮層（Task 8）
+
+### 12. Phase E 正式 UI 後續打磨
+- 選牌流程 UX
+- 結算動畫 / 商店 / 結果 overlay 細節
+
+### 13. 多人對戰前端 UI 的對戰中互動
+- 選牌 / 朝向 / 棄牌透過 Socket.IO 同步
+- online 對戰完整流程
+
+### 14. Phase P0 阻斷閱讀/操作 + 資產基礎（已完成）
+- 核心戰鬥文字 ≥14px（`clamp(14px, 2.5vw, 18px)`）
+- 棋盤 token 精簡為「角色名 + HP」
+- 資產目錄結構（`client/assets/{tokens,cards,boards}`）
+- token 圖片 fallback（三角形）+ 卡牌 fallback（銀黑咭面）
+
 ## 7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
 ### 7.1 檔案樹與主要功能
 #### 文件
@@ -481,15 +523,17 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - `client/styles.css`：正式 UI 樣式（dark / light 主題 / 遊戲大廳）。
 - `client/socketClient.js`：前端 Socket.IO 連線模組（connect / emit / on / 房間 API / 對戰 API / 配對 API / getSocketId）。
 - `client/views/lobbyView.js`：遊戲大廳 UI（建立 / 加入 / 列表 / 選角色 / 準備 / 開始對戰）。
-- `client/views/boardView.js`：5×5 地圖 + 角色 token + 朝向。
+- `client/views/boardView.js`：5×5 地圖 + 角色 token + 朝向（token 精簡為「角色名 + HP」，含圖片 fallback）。
 - `client/views/handView.js`：手牌顯示與選牌。
 - `client/views/selectedCardsView.js`：本回合選牌 / 移除 / 朝向設定。
 - `client/views/logView.js`：對戰紀錄。
 - `client/views/shopModal.js`：商店 modal。
 - `client/views/targetPicker.js`：攻擊目標選擇 modal。
-- `client/views/facingPicker.js`：朝向選擇 modal。
+- `client/views/facingPicker.js`：朝向選擇 modal（deprecated，保留作 legacy）。
 - `client/views/resolveAnimation.js`：回合結算過場動畫。
 - `client/views/resultOverlay.js`：對戰結果 overlay。
+- `client/views/tutorialOverlay.js`：教學提示浮層（首次開始對戰顯示一次）。
+- `client/assets/{tokens,cards,boards}/.gitkeep`：資產目錄結構（token / 卡面 / 棋盤圖片；P0 全為 placeholder，運行時走 fallback）。
 
 #### 測試層
 

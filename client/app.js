@@ -19,6 +19,7 @@ import { handleCardSelection } from "./selectionFlow.js";
 import { socketClient } from "./socketClient.js";
 import { openLobby } from "./views/lobbyView.js";
 import { openDiscardPicker } from "./views/discardPicker.js";
+import { maybeShowTutorial } from "./views/tutorialOverlay.js";
 
 
 // ---- 渲染 ----
@@ -82,8 +83,6 @@ function renderPlayerStatus(state) {
       el("span", { class: "player-char", text: p.characterName }),
       el("span", { class: "player-hp", text: `HP ${p.hp}/${p.maxHp}` }),
       el("span", { class: "player-mp", text: `MP ${p.mp}/${p.maxMp}` }),
-      el("span", { class: "player-pos", text: `(${p.position.x},${p.position.y})` }),
-      el("span", { class: "player-facing", text: `朝 ${p.facing}` }),
     ]);
     if (p.isEliminated) row.classList.add("is-eliminated");
     container.appendChild(row);
@@ -272,6 +271,7 @@ function bindEvents() {
     try {
       const config = readMatchConfig();
       await gameStore.createMatch(config);
+      maybeShowTutorial();
     } catch (error) {
       alert(`開始對戰失敗：${error.message}`);
     }
@@ -282,6 +282,7 @@ function bindEvents() {
     try {
       const config = readMatchConfig();
       await gameStore.createMatch(config);
+      maybeShowTutorial();
     } catch (error) {
       alert(`新對戰失敗：${error.message}`);
     }

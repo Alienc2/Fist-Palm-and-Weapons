@@ -3,7 +3,15 @@
 
 import { el, clear, qs, cardNode, button } from "../layout.js";
 import { gameStore } from "../gameStore.js";
-import { openFacingPicker } from "./facingPicker.js";
+
+// 朝向選擇：本回合內用 5 個按鍵即時設定（上▲ / 下▼ / 左◀ / 右▶ / 保持）
+const FACING_OPTIONS = [
+  { value: "up", label: "上 ▲" },
+  { value: "down", label: "下 ▼" },
+  { value: "left", label: "左 ◀" },
+  { value: "right", label: "右 ▶" },
+  { value: "none", label: "保持" },
+];
 
 export function renderSelectedCards(state) {
   const container = qs("#selectedCardsView");
@@ -41,19 +49,20 @@ export function renderSelectedCards(state) {
     container.appendChild(list);
   }
 
-  // 朝向設定
+  // 朝向設定：5 個按鍵即時 setPendingFacing，「保持」→ "none"
   const facingRow = el("div", { class: "facing-row" });
   const currentFacing = gameStore.getPendingFacing(player.id) || player.facing;
   facingRow.appendChild(
-    el("span", { class: "facing-label", text: `朝向：${currentFacing}` })
+    el("span", { class: "facing-label", text: "朝向：" })
   );
-  facingRow.appendChild(
-    button("設定朝向", "secondary-button", () => {
-      openFacingPicker(player.id, (facing) => {
-        gameStore.setPendingFacing(player.id, facing);
-      });
-    })
-  );
+  for (const opt of FACING_OPTIONS) {
+    const isActive = String(currentFacing) === String(opt.value);
+    facingRow.appendChild(
+      button(opt.label, `facing-option${isActive ? " is-active" : ""}`, () => {
+        gameStore.setPendingFacing(player.id, opt.value);
+      })
+    );
+  }
   container.appendChild(facingRow);
 
   // 清空選牌
