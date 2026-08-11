@@ -109,13 +109,14 @@ body {
 /* ---- Buttons ---- */
 .primary-button,
 .secondary-button,
-.mini-button,
 .facing-option,
 .target-option {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
+  /* P2：主按鈕觸控區 ≥44px 高 */
+  padding: 14px 22px;
+  min-height: 44px;
+  font-size: 15px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -135,8 +136,10 @@ body {
   border-color: var(--accent);
 }
 .mini-button {
-  padding: 4px 8px;
-  font-size: 11px;
+  /* P2：mini 保持緊湊但可點（≥36px 高） */
+  padding: 8px 12px;
+  min-height: 36px;
+  font-size: 12px;
   background: var(--bg-panel-2);
   color: var(--text);
 }
@@ -435,21 +438,27 @@ button:disabled {
 .hand-fan {
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  /* P2：保留扇形但加橫向掃（滑鼠／觸控可左右捲動） */
+  justify-content: flex-start;
   gap: 0;
   pointer-events: auto;
+  width: 100%;
   height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
-/* 啤牌比例（約 2.5:3.5）· 尺寸放大 50%（120→180 / 168→252） */
+/* 啤牌比例（約 2.5:3.5）· P2：寬 clamp(120px,18vw,160px)，高按比例 */
 .hand-fan .card {
-  width: 180px;
-  height: 252px;
+  width: clamp(120px, 18vw, 160px);
+  height: calc(clamp(120px, 18vw, 160px) * 1.4);
   flex: 0 0 auto;
   transform-origin: bottom center;
   /* I-02-H：8 張或以上時用 --card-scale 縮細，確保唔超出視窗 */
   transform: rotate(var(--fan-angle, 0deg)) translateY(calc(var(--fan-index, 0) * 0px)) scale(var(--card-scale, 1));
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  margin: 0 -18px;
+  margin: 0 -16px;
   box-shadow: var(--shadow);
 }
 .hand-fan .card:hover:not(.is-disabled) {
@@ -939,6 +948,125 @@ button:disabled {
 
 .discard-hint {
   font-size: 0.9em;
+}
+
+/* ---- P2：回合事件驅動動畫 ---- */
+
+/* 飛卡／傷害 popup 專用固定層（唔遮操作） */
+.anim-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 飛向中央／目標嘅卡 */
+.anim-card {
+  position: absolute;
+  width: 72px;
+  height: 100px;
+  background: var(--card-bg, #2a2d3a);
+  border: 2px solid var(--accent, #4f8cff);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  transform: translate(0, 0) scale(0.6);
+  opacity: 0;
+  transition: transform 0.45s ease, opacity 0.2s ease;
+  padding: 4px;
+  word-break: break-all;
+}
+.anim-card.is-flying {
+  transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1);
+  opacity: 1;
+}
+
+/* 傷害 popup */
+.anim-damage {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--danger, #ff5c5c);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  animation: animDamageRise 0.9s ease forwards;
+}
+@keyframes animDamageRise {
+  0% { opacity: 0; transform: translate(-50%, -30%); }
+  15% { opacity: 1; transform: translate(-50%, -70%); }
+  100% { opacity: 0; transform: translate(-50%, -140%); }
+}
+
+/* Token 移動動畫：由 --move-dx/--move-dy 位移滑入目前格 */
+.board-token.token-move {
+  animation: tokenMove 0.38s ease;
+}
+@keyframes tokenMove {
+  from { transform: translate(var(--move-dx, 0px), var(--move-dy, 0px)); }
+  to { transform: translate(0, 0); }
+}
+
+/* Token 動作動畫：attack / hit / defend / combo / miss / counter */
+.board-token.token-anim-attack {
+  animation: tokenAttack 0.4s ease;
+}
+@keyframes tokenAttack {
+  0% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-6px, 0) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.board-token.token-anim-hit {
+  animation: tokenHit 0.35s ease;
+}
+@keyframes tokenHit {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(4px, 0) rotate(3deg); }
+  50% { transform: translate(-4px, 0) rotate(-3deg); }
+  75% { transform: translate(2px, 0); }
+}
+
+.board-token.token-anim-defend {
+  animation: tokenDefend 0.5s ease;
+}
+@keyframes tokenDefend {
+  0% { box-shadow: 0 0 0 0 rgba(76, 208, 125, 0.7); }
+  50% { box-shadow: 0 0 0 12px rgba(76, 208, 125, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(76, 208, 125, 0); }
+}
+
+.board-token.token-anim-combo {
+  animation: tokenCombo 0.6s ease;
+}
+@keyframes tokenCombo {
+  0% { transform: scale(1) rotate(0); filter: brightness(1); }
+  50% { transform: scale(1.2) rotate(180deg); filter: brightness(1.6); }
+  100% { transform: scale(1) rotate(360deg); filter: brightness(1); }
+}
+
+.board-token.token-anim-miss {
+  animation: tokenMiss 0.3s ease;
+}
+@keyframes tokenMiss {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.board-token.token-anim-counter {
+  animation: tokenCounter 0.5s ease;
+}
+@keyframes tokenCounter {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8px, -8px) scale(1.15); border-color: var(--warning, #ffc24b); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 

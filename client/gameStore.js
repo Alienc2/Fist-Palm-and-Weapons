@@ -18,6 +18,7 @@ class GameStore {
     this.boardSelection = null; // { type: 'move'|'attack', card, playerId }
     this.listeners = [];
     this.busy = false;
+    this.lastEvents = [];
 
   }
 
@@ -82,6 +83,7 @@ class GameStore {
       this.pendingSelections = {};
       this.pendingFacing = {};
       this.pendingDiscards = {};
+      this.lastEvents = [];
       this.notify();
       return this.state;
     } finally {
@@ -131,6 +133,7 @@ class GameStore {
   async playTurn() {
     const data = await this.request("POST", "/api/play");
     this.state = data.state;
+    this.lastEvents = data.events || [];
     this.pendingSelections = {};
     this.pendingFacing = {};
     this.pendingDiscards = {};

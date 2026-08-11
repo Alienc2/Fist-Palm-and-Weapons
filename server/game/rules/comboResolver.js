@@ -4,6 +4,12 @@
 const cardLoader = require("../../../shared/cardLoader");
 const { manhattanDistance } = require("./distance");
 
+// P2：結構化回合事件流
+function emit(state, ev) {
+  if (!state.events) state.events = [];
+  state.events.push(ev);
+}
+
 // 解析 required_cards 字串，例如：
 //   "type:attack;count:3"
 //   "subtype:punch>palm>weapon"
@@ -225,6 +231,7 @@ function resolveCombos(state, player, target) {
 
     const result = applyComboEffect(state, player, combo, target);
     if (result.applied) {
+      emit(state, { type: "combo", playerId: player.id, comboId: combo.id });
       triggered.push({ id: combo.id, ...result });
     }
   }

@@ -73,10 +73,11 @@ function createSocketServer(httpServer, options = {}) {
         onStateChange: (state) => {
           broadcastMatchState(room.id, controller);
         },
-        onRoundComplete: (state) => {
+        onRoundComplete: (state, events) => {
           io.to(room.id).emit("match:round", {
             round: state.round,
             log: state.log,
+            events: events || [],
           });
         },
         onMatchEnd: (state, winnerId) => {

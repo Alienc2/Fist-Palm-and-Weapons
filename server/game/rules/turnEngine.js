@@ -23,6 +23,12 @@ const {
 // 每回合開始補 3 MP（第 1 回合保持預設 MP，第 2 回合起開始補）
 const MP_REGEN_PER_ROUND = 3;
 
+// P2：結構化回合事件流
+function emit(state, ev) {
+  if (!state.events) state.events = [];
+  state.events.push(ev);
+}
+
 function startRound(state) {
   state.phase = "ROUND_START";
   state.round += 1;
@@ -38,6 +44,7 @@ function startRound(state) {
       const actual = p.mp - before;
       if (actual > 0) {
         state.log.push(`${p.id} 回合開始回復 ${actual} MP（${p.mp}/${p.maxMp} MP）`);
+        emit(state, { type: "regen", playerId: p.id, amount: actual, mp: p.mp });
       }
     }
   }
@@ -78,6 +85,9 @@ function drawPhase(state) {
     // 抽2張；牌庫不足時自動重洗棄牌堆
     const drawn = drawCards(p, 2, state.rng || Math.random, (msg) => state.log.push(msg));
     p.hand.push(...drawn);
+    if (drawn.length > 0) {
+      emit(state, { type: "draw", playerId: p.id, count: drawn.length });
+    }
   }
 }
 
@@ -149,6 +159,10 @@ function endTurn(state) {
 function resolveTurn(state) {
   state.phase = "RESOLVE_TURN";
 
+  // P2：重置本回合事件流，並標記目前解析嘅回合
+  state.events = [];
+  emit(state, { type: "round", round: state.round });
+
   // 依 turnOrder 取得本回合玩家順序（由 startingPlayerIndex 輪轉）
   const turnOrder = state.turnOrder || state.players.map((p) => p.id);
   const startIndex = state.startingPlayerIndex || 0;
@@ -188,10 +202,21 @@ function resolveTurn(state) {
 
   // 免費轉向延後到最後：喺所有卡牌效果解析完之後先套用
   for (const p of state.players) {
-    applyFacingChange(state, p);
+    const facingResult = applyFacingChange(state, p);
+    if (facingResult && facingResult.changed) {
+      emit(state, {
+        type: "facing",
+        playerId: p.id,
+        from: facingResult.before,
+        to: facingResult.facing,
+      });
+    }
   }
 
-  resolveEliminations(state);
+  const eliminated = resolveEliminations(state);
+  for (const e of eliminated) {
+    emit(state, { type: "eliminate", playerId: e.playerId });
+  }
 
   endTurn(state);
   drawPhase(state);
@@ -213,6 +238,14 @@ function resolveCardByType(state, player, cardEntry) {
     state.log.push(`${player.id} 使用 ${card.id || "unknown_card"} 失敗：缺少 card.type`);
     return;
   }
+
+  // P2：每張打出/揭牌嘅卡 emit reveal（飛向中央）
+  emit(state, {
+    type: "reveal",
+    playerId: player.id,
+    cardId: card.id,
+    cardType: card.type,
+  });
 
   if (card.type === "attack") {
     const item = createStackItem(state, player, card, extra);

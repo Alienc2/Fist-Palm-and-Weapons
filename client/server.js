@@ -379,7 +379,11 @@ function createRequestHandler(options = {}) {
           autoSelectAiPlayers(matchState, { aiPlayerIds });
         }
         gameEngine.playOneTurn(matchState);
-        sendJson(res, 200, { ok: true, state: serializeState(matchState) });
+        sendJson(res, 200, {
+          ok: true,
+          state: serializeState(matchState),
+          events: gameEngine.takeEvents(matchState),
+        });
       } catch (error) {
         sendJson(res, 500, {
           ok: false,

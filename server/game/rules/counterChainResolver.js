@@ -14,6 +14,12 @@ function log(state, msg) {
   state.log.push(msg);
 }
 
+// P2：結構化回合事件流
+function emit(state, ev) {
+  if (!state.events) state.events = [];
+  state.events.push(ev);
+}
+
 // 計算反擊成功率（按方向及武功）：
 // - 背向敵人正面任何攻擊：0%
 // - 側向敵人被剋武功：0%
@@ -120,6 +126,14 @@ function resolveCounterChain(state, incomingAttack, counterCards) {
       currentAttacker,
       chainCount
     );
+
+    emit(state, {
+      type: "counter",
+      defenderId: counterPlayer.id,
+      cardId: counter.card.id,
+      success: result.reflected,
+      reflectedDamage: result.reflected ? result.damageToAttacker : 0,
+    });
 
 
     if (!result.reflected) {

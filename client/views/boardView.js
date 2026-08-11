@@ -9,6 +9,64 @@ import { gameStore } from "../gameStore.js";
 
 const BOARD_SIZE = 5;
 
+// P2：token 動畫基建。tokenCache: playerId -> { el, x, y }
+// 供移動／攻擊／防禦／連擊／Miss 動畫重用節點（配合 renderBoard 每次重建）
+const tokenCache = new Map();
+
+// P2：取得某玩家的 token 元素（供動畫使用）
+export function getTokenEl(playerId) {
+  const entry = tokenCache.get(playerId);
+  return entry ? entry.el : null;
+}
+
+// P2：新對戰／reset 時清空 token 動畫快取
+export function resetTokenCache() {
+  tokenCache.clear();
+}
+
+// P2：量度單格尺寸（像素），供移動／攻擊動畫換算
+function cellSize() {
+  const grid = qs(".board-grid");
+  if (!grid) return { w: 100, h: 100 };
+  const cell = grid.querySelector(".board-cell");
+  if (!cell) return { w: grid.clientWidth / BOARD_SIZE, h: grid.clientHeight / BOARD_SIZE };
+  const rect = cell.getBoundingClientRect();
+  return { w: rect.width, h: rect.height };
+}
+
+// P2：token 移動動畫 — 由 from 格滑行到目前位置（to）。
+// 因為 renderBoard 已把 token 放到最終格，動畫用負向位移再復位。
+export function playTokenMove(playerId, from, to) {
+  const el = getTokenEl(playerId);
+  if (!el || !from || !to) return;
+  const { w, h } = cellSize();
+  const dxPx = (to.x - from.x) * w;
+  const dyPx = (to.y - from.y) * h;
+  if (dxPx === 0 && dyPx === 0) return;
+  el.classList.remove("token-move");
+  // 強制 reflow，令 keyframe 可以重播
+  void el.offsetWidth;
+  el.style.setProperty("--move-dx", `${-dxPx}px`);
+  el.style.setProperty("--move-dy", `${-dyPx}px`);
+  el.classList.add("token-move");
+}
+
+// P2：token 動作動畫（attack / defend / combo / miss）
+// 加 class，animationend 後移除還原。
+export function playTokenAction(playerId, action) {
+  const el = getTokenEl(playerId);
+  if (!el) return;
+  const className = `token-anim-${action}`;
+  el.classList.remove(className);
+  void el.offsetWidth;
+  el.classList.add(className);
+  const onEnd = () => {
+    el.classList.remove(className);
+    el.removeEventListener("animationend", onEnd);
+  };
+  el.addEventListener("animationend", onEnd);
+}
+
 const FACING_ARROW = {
   up: "▲",
   down: "▼",
@@ -151,6 +209,7 @@ export function renderBoard(state) {
   if (hintBox) clear(hintBox);
 
   if (!state) {
+    resetTokenCache();
     container.appendChild(el("p", { class: "muted-text", text: "開始對戰後顯示 5×5 棋盤。" }));
     return;
   }
@@ -214,7 +273,9 @@ export function renderBoard(state) {
       }
 
       if (occupant) {
-        cell.appendChild(renderToken(occupant, state));
+        const tokenEl = renderToken(occupant, state);
+        tokenCache.set(occupant.id, { el: tokenEl, x, y });
+        cell.appendChild(tokenEl);
       } else {
         cell.appendChild(el("div", { class: "board-cell-coord", text: `${x},${y}` }));
       }

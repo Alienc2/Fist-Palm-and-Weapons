@@ -245,6 +245,7 @@ function createInitialState(options = {}) {
     stack: [],
     eliminatedPlayers: [],
     log: [],
+    events: [],
   };
 }
 

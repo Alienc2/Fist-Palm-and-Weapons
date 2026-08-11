@@ -300,14 +300,17 @@ function bindEvents() {
       await gameStore.commitAllSelections();
       // 依序處理每個人類玩家的手牌上限棄牌
       await handleDiscardPhase();
-      // 播放結算動畫（用結算前狀態）
+      // 結算前回合數（摘要顯示用）
       const before = gameStore.state;
-      await playResolveAnimation({
-        round: before ? before.round : 1,
-        players: before ? before.players : [],
-      });
+      const beforeRound = before ? before.round : 1;
       // 執行結算
       const after = await gameStore.playTurn();
+      // 播放事件驅動動畫（reveal / move / attack / defend / combo / miss）
+      await playResolveAnimation({
+        round: beforeRound,
+        players: after ? after.players : [],
+        events: gameStore.lastEvents,
+      });
       // 檢查對戰是否結束
       const alive = after.players.filter((p) => !p.isEliminated);
       if (alive.length <= 1) {
@@ -359,6 +362,17 @@ function bindSocketEvents() {
         gameStore.reset();
       });
     }
+  });
+
+  // 回合結算（事件驅動動畫）
+  socketClient.on("match:round", (data) => {
+    const state = gameStore.state;
+    if (!state || !data) return;
+    playResolveAnimation({
+      round: data.round,
+      players: state.players || [],
+      events: data.events || [],
+    });
   });
 }
 

@@ -110,8 +110,9 @@ function createMatchController(state, options = {}) {
 
     gameEngine.playOneTurn(state);
     submitted.clear();
+    const events = gameEngine.takeEvents(state);
 
-    if (onRoundComplete) onRoundComplete(state);
+    if (onRoundComplete) onRoundComplete(state, events);
 
     // 檢查遊戲是否結束
     const alive = state.players.filter((p) => !p.isEliminated);

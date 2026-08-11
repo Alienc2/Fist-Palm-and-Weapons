@@ -43,12 +43,21 @@ function playOneTurn(state) {
   resolveTurn(state);
 }
 
+// P2：取回並清空 state.events（避免每個 turn 之間累積／payload 膨脹）
+function takeEvents(state) {
+  if (!state) return [];
+  const events = Array.isArray(state.events) ? state.events : [];
+  state.events = [];
+  return events;
+}
+
 module.exports = {
   createMatch,
   submitSelection,
   setFacing,
   setPendingDiscards,
   playOneTurn,
+  takeEvents,
 };
 
 

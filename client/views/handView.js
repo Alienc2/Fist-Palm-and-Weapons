@@ -38,9 +38,9 @@ export function renderHand(state) {
   const step = count > 1 ? (maxAngle * 2) / (count - 1) : 0;
 
   // I-02-H：8 張或以上時縮細卡牌，確保扇形唔超出視窗
-  // 基準：卡寬 180px、每張重疊 36px（margin -18px 兩側）
-  const baseWidth = 180;
-  const overlap = 36;
+  // P2：基準卡寬對齊 CSS clamp(120px,18vw,160px)
+  const baseWidth = Math.min(160, Math.max(120, window.innerWidth * 0.18));
+  const overlap = 32;
   const totalWidth = baseWidth + (count - 1) * (baseWidth - overlap);
   const viewportWidth = window.innerWidth || 1280;
   const availableWidth = viewportWidth - 40; // 左右各 20px padding

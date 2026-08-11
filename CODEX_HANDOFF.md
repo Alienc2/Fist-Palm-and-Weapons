@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V27
+# CODEX_HANDOFF.md V28
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V27
-- 更新日期時間：2026-08-11 17:15 HKT
+- 版本：V28
+- 更新日期時間：2026-08-11 21:30 HKT
 
 
 
@@ -212,6 +212,22 @@
 
 ### 3.4 現階段重點風險
 
+- Phase P2：觸控舒適度 + 動畫系統（server 結構化事件流 + 前端動畫）已完成
+- `server/game/state/createInitialState.js`：新增 `events: []`
+- `server/game/rules/turnEngine.js`：`resolveTurn` 重置 events + emit `round`；`startRound` emit `regen`；`drawPhase` emit `draw`；`resolveCardByType` emit `reveal`；`applyFacingChange` 後 emit `facing`；`resolveEliminations` 後 emit `eliminate`
+- `server/game/rules/cardResolver.js`：`emit()` helper；`resolveAttack` emit `attack`（miss/block/finalDamage/combo）、`resolveDefense` emit `defend`、`resolveMove` emit `move`、`resolveBuy` emit `buy`、`resolveRecover` emit `recover`
+- `server/game/rules/comboResolver.js` emit `combo`；`counterChainResolver.js` emit `counter`
+- `server/game/gameEngine.js`：新增 `takeEvents(state)`
+- `client/server.js` `/api/play` 回傳 `events`；`client/gameStore.js` 暫存 `lastEvents`
+- `server/network/matchManager.js` / `socketServer.js`：`match:round` payload 加 `events`
+- `client/app.js`：結算改用事件驅動動畫 + `match:round` handler
+- `client/views/resolveAnimation.js`：重寫為事件驅動動畫（reveal / attack / damage popup / move / defend / combo / counter / miss）
+- `client/views/boardView.js`：`tokenCache` + `getTokenEl` / `resetTokenCache` / `playTokenMove` / `playTokenAction`
+- `client/styles.css`：按鈕 ≥44px（mini ≥36px）、`.hand-fan` 橫向掃 + 新卡寬、`.anim-layer` / `.anim-card` / `.anim-damage` / `.token-move` / `.token-anim-*`
+- `client/views/handView.js`：`baseWidth` / `overlap` 對齊新卡寬
+- `tests/rules/eventStream.test.js`：新增事件流測試
+- `tests/rules/createInitialState.test.js`：斷言 `state.events` 係 array
+
 
 
 
@@ -227,9 +243,9 @@
 - `npm run build:data` 通過。
 - `npm run test:rules` 通過。
 - `npm run test:ai` 通過。
-- 全套 `npx jest --runInBand` 最新總數：`34` suites passed, `2` failed, `36` total；`274` tests passed。
-- 註：2 個失敗 suites（`tests/network/socketServer.e2e.test.js`、`tests/stress/stress.test.js`）係既有環境問題：`socket.io-client` 喺 devDependencies 但 `node_modules` 未有安裝，與 P0 client 前端改動無關。
-- 前端 JS 語法檢查通過（`node --input-type=module --check`；本機 pipe 對非 ASCII 有編碼問題，P0 用 temp `.mjs` copy 檢查，boardView / layout 都 OK）。
+- 全套 `npx jest --runInBand` 最新總數：`37` suites passed, `287` tests passed（全綠，含 `tests/network/socketServer.e2e.test.js` 與 `tests/stress/stress.test.js`）。
+- 前端 JS 語法檢查通過（temp `.mjs` copy，`node --check`；resolveAnimation / boardView / handView / app / gameStore 全部 OK）。
+- `/api/play` 事件流 smoke test 通過（round, reveal, move, defend, reveal, attack, draw, draw, regen, regen）。
 
 
 
@@ -353,7 +369,8 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - Phase I-02-K：對戰體驗修正已完成（每回合補 3 MP / 移動卡絕對座標 / 對戰記錄回合數與卡牌數 / 扇形 8 張唔超出視窗 / 攻擊範圍紅色標注）。
 - Phase P1：佈局／層次／引導 + 棋盤佈局已完成（移動卡絕對座標修復 / 攻擊卡選敵放寬 / 朝向 5 按鍵 / 手牌唔遮棋盤 / safe-area / 摺疊操作提示 / 精簡玩家狀態列 / 教學提示浮層）。
 - Phase P0：阻斷閱讀/操作 + 資產基礎已完成（核心戰鬥文字 ≥14px、棋盤 token 精簡為「角色名 + HP」、資產目錄、token/卡牌圖片 fallback）。P0 資產全為 placeholder，執行走三角形 / 銀黑 fallback 屬預期。
-- 前端 JS 語法檢查通過（temp `.mjs` copy）；全套 `npx jest --runInBand` 保持 `34 suites / 274 tests` 綠（2 個失敗為既有 `socket.io-client` 缺裝，與 P0 前端改動無關）。
+- 前端 JS 語法檢查通過（temp `.mjs` copy）；全套 `npx jest --runInBand` 保持 `37 suites / 287 tests` 全綠。
+- Phase P2：觸控舒適度 + 動畫系統已完成（server 結構化回合事件流 `state.events` + `/api/play` / `match:round` 回傳 events；前端按鈕 ≥44px、手牌橫向掃、咭牌飛向中央/目標、token 移動/攻擊/防禦/連擊/Miss 動畫）。
 
 
 
@@ -451,6 +468,14 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - 棋盤 token 精簡為「角色名 + HP」
 - 資產目錄結構（`client/assets/{tokens,cards,boards}`）
 - token 圖片 fallback（三角形）+ 卡牌 fallback（銀黑咭面）
+
+### 15. Phase P2 觸控舒適度 + 動畫系統（已完成）
+- server 結構化回合事件流（`state.events` + `takeEvents`，`/api/play` / `match:round` 回傳 events）
+- 按鈕觸控區 ≥44px（mini ≥36px）
+- 手牌保留扇形 + 橫向掃（`.hand-fan` `overflow-x:auto` + 卡寬 `clamp(120px,18vw,160px)`）
+- 咭牌飛向中央（reveal）/ 飛向目標 + 傷害 popup（attack）
+- token 移動 / 攻擊 / 防禦 / 連擊 / Miss / Hit / Counter 動畫
+- `tests/rules/eventStream.test.js`
 
 ## 7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
 ### 7.1 檔案樹與主要功能
@@ -658,3 +683,12 @@ Defense extra：
 - 若規格改動，先改 `docs/GAME_SPEC.md`，再改 test，再改 code。
 - 重大 slice 完成後，更新 `CODEX_HANDOFF.md` 同 `CONTEXT.md`。
 - 保持相同 heading 編號與順序，避免未來自動化或人工 review 時格式漂移。
+
+```text
+【交接狀態】
+- CODEX_HANDOFF.md 是否已更新：已更新至 V28
+- 本次修改檔案：CONTEXT.md、CODEX_HANDOFF.md、server/game/state/createInitialState.js、server/game/rules/{turnEngine,cardResolver,comboResolver,counterChainResolver}.js、server/game/gameEngine.js、server/network/{matchManager,socketServer}.js、client/{server,gameStore,app}.js、client/views/{resolveAnimation,boardView,handView}.js、client/styles.css、tests/rules/eventStream.test.js、tests/rules/createInitialState.test.js
+- 測試結果：build:data 通過；test:rules 200 passed；test:network 47 passed；全套 jest 37 suites / 287 tests 全綠；前端 JS 語法檢查（temp .mjs `node --check`）OK；`/api/play` 事件流 smoke test 通過
+- 目前風險：動畫時序依賴 server 事件順序（已用受控 scenario 鎖定）；手牌橫向掃改用 `overflow-x:auto` 或會裁切扇形邊緣（視覺上可接受）；動畫純 client，唔影響 `/api/play` 主流程
+- 下一個最安全任務：多人對戰前端 UI 的對戰中互動（選牌 / 朝向 / 棄牌透過 Socket.IO 同步，online 對戰完整流程）
+```

@@ -17,6 +17,12 @@ function log(state, msg) {
   state.log.push(msg);
 }
 
+// P2：結構化回合事件流。push 到 state.events（若尚未初始化則建立）
+function emit(state, ev) {
+  if (!state.events) state.events = [];
+  state.events.push(ev);
+}
+
 
 function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTargetSet = null) {
   let declaredTargetSet =
@@ -76,6 +82,17 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
       )
     ) {
       log(state, `${attacker.id} 使用 ${card.id} 指向 ${opponent.id}，但距離不符`);
+      emit(state, {
+        type: "attack",
+        attackerId: attacker.id,
+        targetId: opponent.id,
+        cardId: card.id,
+        damage: card.damage || 0,
+        block: 0,
+        finalDamage: 0,
+        miss: true,
+        combo: false,
+      });
       continue;
     }
 
@@ -127,6 +144,18 @@ function resolveAttack(state, attacker, card, extra = {}, incomingDeclaredTarget
       state,
       `${attacker.id} 使用 ${card.id} 命中 ${opponent.id}，造成 ${finalDamage} 傷害（${opponent.hp} HP）`
     );
+
+    emit(state, {
+      type: "attack",
+      attackerId: attacker.id,
+      targetId: opponent.id,
+      cardId: card.id,
+      damage,
+      block,
+      finalDamage,
+      miss: finalDamage === 0,
+      combo: (attacker.comboDamageBonus || 0) > 0,
+    });
   }
 }
 
@@ -139,6 +168,7 @@ function resolveDefense(state, player, card, extra = {}) {
   player.lastRevealedSubtype = card.subtype || "any";
   player.guardSubtype = card.subtype || "any";
   log(state, `${player.id} 使用防禦 ${card.id}，效果殘留至觸發或回合結束`);
+  emit(state, { type: "defend", playerId: player.id, cardId: card.id });
 }
 
 function resolveMove(state, player, card, extra = {}) {
@@ -175,10 +205,18 @@ function resolveMove(state, player, card, extra = {}) {
     return;
   }
 
+  const from = { x: player.position.x, y: player.position.y };
   player.position.x = targetX;
   player.position.y = targetY;
   player.lastRevealedSubtype = card.subtype || "step";
   log(state, `${player.id} 移動到 (${player.position.x},${player.position.y})`);
+  emit(state, {
+    type: "move",
+    playerId: player.id,
+    from,
+    to: { x: player.position.x, y: player.position.y },
+    cardId: card.id,
+  });
 }
 
 
@@ -191,6 +229,12 @@ function resolveBuy(state, player, card, extra = {}) {
     return;
   }
 
+  emit(state, {
+    type: "buy",
+    playerId: player.id,
+    cardId: card.id,
+    shopCardId: extra.shopCardId,
+  });
   buyFromShop(state, player, extra.shopCardId);
 }
 
@@ -200,19 +244,21 @@ function resolveRecover(state, player, card, extra = {}) {
   const hpGain = Number(card.hpGain) || 0;
   const mpGain = Number(card.mpGain) || 0;
   const drawCount = Number(card.drawCount) || 0;
+  let hpActual = 0;
+  let mpActual = 0;
 
   if (hpGain > 0) {
     const before = player.hp;
     player.hp = Math.min(player.maxHp, player.hp + hpGain);
-    const actual = player.hp - before;
-    log(state, `${player.id} 使用 ${card.id} 回復 ${actual} HP（${player.hp}/${player.maxHp} HP）`);
+    hpActual = player.hp - before;
+    log(state, `${player.id} 使用 ${card.id} 回復 ${hpActual} HP（${player.hp}/${player.maxHp} HP）`);
   }
 
   if (mpGain > 0) {
     const before = player.mp;
     player.mp = Math.min(player.maxMp, player.mp + mpGain);
-    const actual = player.mp - before;
-    log(state, `${player.id} 使用 ${card.id} 回復 ${actual} MP（${player.mp}/${player.maxMp} MP）`);
+    mpActual = player.mp - before;
+    log(state, `${player.id} 使用 ${card.id} 回復 ${mpActual} MP（${player.mp}/${player.maxMp} MP）`);
   }
 
   if (drawCount > 0) {
@@ -229,6 +275,14 @@ function resolveRecover(state, player, card, extra = {}) {
   if (hpGain <= 0 && mpGain <= 0 && drawCount <= 0) {
     log(state, `${player.id} 使用 ${card.id}，但沒有可回復的效果`);
   }
+
+  emit(state, {
+    type: "recover",
+    playerId: player.id,
+    cardId: card.id,
+    hp: hpActual,
+    mp: mpActual,
+  });
 }
 
 

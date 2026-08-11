@@ -1,10 +1,10 @@
-# CONTEXT.md V27
+# CONTEXT.md V28
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V27
-- 更新日期時間：2026-08-11 17:15 HKT
+- 版本：V28
+- 更新日期時間：2026-08-11 21:30 HKT
 
 
 
@@ -150,9 +150,9 @@
 - `shared/cardLoader.js` `normalizeCard`：補 `aliasGroup`（`alias_group`）與 `description`（`description_template`）欄位，令前端卡面顯示正確名稱 / 副類別 / 描述
 - `client/server.js` `serializeCard`：改為讀 camelCase 欄位（`name` / `aliasGroup` / `description` / `moveMin` / `moveMax` / `rangeMin` / `rangeMax` / `targeting`），解決前端收到 `id` 當名稱、移動卡只能移到同一格、攻擊卡不能選敵人嘅根因
 - `client/styles.css`：`.board-cell` 尺寸改為 `min(calc(80vh / 5), 140px)` 並用 `aspect-ratio: 1` 保持正方形，令 5×5 棋盤按比例縮放
+- `client/styles.css`：`.board-cell` 尺寸改為 `min(calc(80vh / 5), 140px)` 並用 `aspect-ratio: 1` 保持正方形，令 5×5 棋盤按比例縮放
 - `client/views/boardView.js` + `client/index.html`：移動 / 攻擊選擇模式提示移到右邊「解封武功」下方（`#boardSelectionHintPanel`），避免遮住棋盤
 - Phase I-02-K：對戰體驗修正（MP / 移動 / 對戰記錄 / 扇形 / 攻擊標注）
-- `server/game/rules/turnEngine.js`：每回合每位玩家補 3 MP（clamp 到 maxMp），總 MP 上限 8
 - `server/game/rules/cardResolver.js` `resolveMove`：移動卡改用絕對座標（`extra.targetX/targetY`），避免交錯揭牌時相對位移累積誤差；禁止移動到被佔據格
 - `client/views/logView.js`：對戰記錄顯示回合數 / 卡牌數 / 角色名（`name_zh`）
 - `client/views/handView.js` + `client/styles.css`：扇形 8 張唔超出視窗（依手牌數縮放角度 / 位移）
@@ -176,6 +176,23 @@
 - `client/styles.css`：核心戰鬥文字提升至 `clamp(14px, 2.5vw, 18px)`（`.card-desc` / `.log-entry` / `.token-name` / `.token-hp`，`.card-name` 原本已符合唔改）；移除 `.token-mp`；新增 `.token-img` / `.token-fallback-triangle`（`token-facing-up/down/left/right` 旋轉）/ `.card-img` / `.card-face-layer`
 - `client/assets/{tokens,cards,boards}/.gitkeep`：資產目錄結構（git 追蹤空目錄；P0 資產全部為 placeholder，故執行後 token 走三角形 fallback、卡牌走銀黑 fallback 屬預期）
 - 決策：token 顏色唔用引擎 `occupant.tokenColor`（CSV 為 snake_case `token_color`，實戰中常係 undefined），改由前端玩家槽 index 定色；卡牌 id 命名如 `basic_punch_1`，卡面 = `assets/cards/<id>.png`、卡背 = `card_back_default.png`
+- Phase P2：觸控舒適度 + 動畫系統（server 結構化事件流 + 前端動畫）
+- `server/game/state/createInitialState.js`：新增 `events: []`（回合事件流容器）
+- `server/game/rules/turnEngine.js`：`resolveTurn` 開始重置 `state.events` 並 emit `round`；`startRound` emit `regen`（round>1）；`drawPhase` emit `draw`；`resolveCardByType` 每張揭牌 emit `reveal`；`applyFacingChange` 後 emit `facing`；`resolveEliminations` 後 emit `eliminate`
+- `server/game/rules/cardResolver.js`：新增 `emit(state, ev)` helper；`resolveAttack` 每個 target emit `attack`（含 miss / block / finalDamage / combo）、`resolveDefense` emit `defend`、`resolveMove` emit `move`（from/to）、`resolveBuy` emit `buy`、`resolveRecover` emit `recover`
+- `server/game/rules/comboResolver.js` emit `combo`；`counterChainResolver.js` emit `counter`（success / reflectedDamage）
+- `server/game/gameEngine.js`：新增 `takeEvents(state)`（取回並清空 `state.events`）
+- `client/server.js` `/api/play`：回傳 `{ ok, state, events: takeEvents(matchState) }`
+- `client/gameStore.js`：`playTurn()` 暫存 `lastEvents`；`createMatch` / `reset` 清空
+- `server/network/matchManager.js`：`resolveTurn` 取 events 並傳給 `onRoundComplete(state, events)`
+- `server/network/socketServer.js`：`match:round` payload 加 `events`
+- `client/app.js`：結算改用事件驅動動畫（`playResolveAnimation({ round, players, events })`）；`bindSocketEvents` 新增 `match:round` handler
+- `client/views/resolveAnimation.js`：重寫為事件驅動（reveal 飛向中央 / attack 飛向目標 + 傷害 popup / move / defend / combo / counter / miss 動畫），全部事件播完先出 HP/MP 摘要 overlay
+- `client/views/boardView.js`：新增 `tokenCache` + `getTokenEl` / `resetTokenCache` / `playTokenMove` / `playTokenAction`（attack / defend / combo / miss / hit / counter）
+- `client/styles.css`：任務 11 主按鈕 ≥44px（mini ≥36px）；任務 12 `.hand-fan` 加橫向掃（`overflow-x:auto`）+ 卡寬 `clamp(120px,18vw,160px)`；新增 `.anim-layer` / `.anim-card` / `.anim-damage` / `.token-move` / `.token-anim-*` keyframes
+- `client/views/handView.js`：`baseWidth` / `overlap` 對齊新卡寬（160 / 32）
+- `tests/rules/eventStream.test.js`：新增事件流測試（move → attack → defend → buy → combo；takeEvents）
+- `tests/rules/createInitialState.test.js`：斷言 `state.events` 係 array
 
 
 ### 已驗證結果
@@ -185,9 +202,9 @@
 - `npm run build:data` 通過
 - `npm run test:rules` 通過
 - `npm run test:ai` 通過
-- 全套 `npx jest --runInBand`：`Test Suites: 34 passed, 2 failed, 36 total`；`Tests: 274 passed, 274 total`
-- 註：2 個失敗 suites（`tests/network/socketServer.e2e.test.js`、`tests/stress/stress.test.js`）係既有環境問題：`socket.io-client` 喺 devDependencies 但 `node_modules` 未有安裝，與 P0 client 前端改動無關
-- 前端 JS 語法檢查通過（`node --input-type=module --check` 全部 OK；本機 pipe 對非 ASCII 有編碼問題，P0 用 temp `.mjs` copy 檢查，boardView / layout 都 OK）
+- 全套 `npx jest --runInBand`：`Test Suites: 37 passed, 37 total`；`Tests: 287 passed, 287 total`（全綠，含 `tests/network/socketServer.e2e.test.js` 與 `tests/stress/stress.test.js`）
+- 前端 JS 語法檢查通過（temp `.mjs` copy，`node --check`；resolveAnimation / boardView / handView / app / gameStore 全部 OK）
+- `/api/play` 事件流 smoke test 通過（round, reveal, move, reveal, defend, reveal, attack, draw, draw, regen, regen）
 
 
 
@@ -269,6 +286,7 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - `npm run ai:match` AI 對戰 CLI 已可執行。
 - Phase P1 已完成：佈局／層次／引導 + 棋盤佈局（移動卡絕對座標修復、攻擊卡選敵放寬、朝向 5 按鍵、手牌唔遮棋盤、safe-area、摺疊操作提示、精簡玩家狀態列、教學提示浮層）。
 - Phase P0 已完成：阻斷閱讀/操作 + 資產基礎（核心戰鬥文字 ≥14px、棋盤 token 精簡為「角色名 + HP」、資產目錄、token/卡牌圖片 fallback）。因 P0 資產全部為 placeholder，執行後 token 走三角形 fallback、卡牌走銀黑 fallback 屬預期。
+- Phase P2 已完成：觸控舒適度 + 動畫系統（server 結構化回合事件流 `state.events` + `takeEvents`、`/api/play` / `match:round` 回傳 events；按鈕 ≥44px、手牌橫向掃、咭牌飛向中央/目標 + 傷害 popup、token 移動/攻擊/防禦/連擊/Miss 動畫）。
 
 
 

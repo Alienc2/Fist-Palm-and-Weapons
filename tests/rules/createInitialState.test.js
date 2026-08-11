@@ -46,5 +46,6 @@ describe("createInitialState authoritative contract", () => {
     expect(Array.isArray(state.stack)).toBe(true);
     expect(Array.isArray(state.eliminatedPlayers)).toBe(true);
     expect(Array.isArray(state.log)).toBe(true);
+    expect(Array.isArray(state.events)).toBe(true);
   });
 });
