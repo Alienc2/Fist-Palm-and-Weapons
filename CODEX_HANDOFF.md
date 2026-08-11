@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V28
+# CODEX_HANDOFF.md V29
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V28
-- 更新日期時間：2026-08-11 21:30 HKT
+- 版本：V29
+- 更新日期時間：2026-08-11 23:10 HKT
 
 
 
@@ -227,6 +227,10 @@
 - `client/views/handView.js`：`baseWidth` / `overlap` 對齊新卡寬
 - `tests/rules/eventStream.test.js`：新增事件流測試
 - `tests/rules/createInitialState.test.js`：斷言 `state.events` 係 array
+- Phase P3：色彩／輔助（任務 9 + 任務 10）
+- `client/styles.css`：深色主題 `--text-muted` #8b93a3 → #a0a8b8（對 #0f1115 ≈ 7.9:1 ≥4.5:1）；淺色主題 #5c6675 維持不變（已達 5.37:1）
+- `client/layout.js` `cardNode()`：卡牌類型 icon map（attack ⚔️ / defense 🛡️ / move ➤ / buy 🛒 / recover ❤️ / counter 🔄），`.card-type` 顯示 `${icon} ${typeLabel}`，未知 type 唔加 icon
+- `client/views/boardView.js` `renderToken()`：fallback `.token-hp` 由 `HP x/y` 改為 `❤️ x/y`（只加 HP，不加 MP / ⚡）
 
 
 
@@ -246,6 +250,7 @@
 - 全套 `npx jest --runInBand` 最新總數：`37` suites passed, `287` tests passed（全綠，含 `tests/network/socketServer.e2e.test.js` 與 `tests/stress/stress.test.js`）。
 - 前端 JS 語法檢查通過（temp `.mjs` copy，`node --check`；resolveAnimation / boardView / handView / app / gameStore 全部 OK）。
 - `/api/play` 事件流 smoke test 通過（round, reveal, move, defend, reveal, attack, draw, draw, regen, regen）。
+- Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）。
 
 
 
@@ -371,6 +376,8 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - Phase P0：阻斷閱讀/操作 + 資產基礎已完成（核心戰鬥文字 ≥14px、棋盤 token 精簡為「角色名 + HP」、資產目錄、token/卡牌圖片 fallback）。P0 資產全為 placeholder，執行走三角形 / 銀黑 fallback 屬預期。
 - 前端 JS 語法檢查通過（temp `.mjs` copy）；全套 `npx jest --runInBand` 保持 `37 suites / 287 tests` 全綠。
 - Phase P2：觸控舒適度 + 動畫系統已完成（server 結構化回合事件流 `state.events` + `/api/play` / `match:round` 回傳 events；前端按鈕 ≥44px、手牌橫向掃、咭牌飛向中央/目標、token 移動/攻擊/防禦/連擊/Miss 動畫）。
+- Phase P3：色彩／輔助已完成（任務 9 深色 `--text-muted` 對比提升至 #a0a8b8 ≈ 7.9:1；任務 10 卡牌類型 icon ⚔️🛡️➤🛒❤️🔄 + token fallback HP ❤️ icon，只加 HP 不加 MP / ⚡）。
+- 全套 `npx jest --runInBand` 保持 `37 suites / 287 tests` 全綠。
 
 
 
@@ -476,6 +483,11 @@ AI 與部署（`ai_profiles` 接入 / AI decision / local run scripts / integrat
 - 咭牌飛向中央（reveal）/ 飛向目標 + 傷害 popup（attack）
 - token 移動 / 攻擊 / 防禦 / 連擊 / Miss / Hit / Counter 動畫
 - `tests/rules/eventStream.test.js`
+
+### 16. Phase P3 色彩／輔助（已完成）
+- 任務 9：深色 `--text-muted` #8b93a3 → #a0a8b8（對 #0f1115 ≈ 7.9:1 ≥4.5:1）；淺色維持 #5c6675（已達 5.37:1）
+- 任務 10a：卡牌類型 icon（attack ⚔️ / defense 🛡️ / move ➤ / buy 🛒 / recover ❤️ / counter 🔄），未知 type 唔加 icon
+- 任務 10b：token fallback `.token-hp` 加 ❤️（只加 HP，不加 MP / ⚡）
 
 ## 7. 與 CONTEXT.md 對齊的檔案樹 / 共用 API / 固定程式碼
 ### 7.1 檔案樹與主要功能

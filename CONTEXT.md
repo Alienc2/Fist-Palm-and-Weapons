@@ -1,10 +1,10 @@
-# CONTEXT.md V28
+# CONTEXT.md V29
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V28
-- 更新日期時間：2026-08-11 21:30 HKT
+- 版本：V29
+- 更新日期時間：2026-08-11 23:10 HKT
 
 
 
@@ -193,6 +193,10 @@
 - `client/views/handView.js`：`baseWidth` / `overlap` 對齊新卡寬（160 / 32）
 - `tests/rules/eventStream.test.js`：新增事件流測試（move → attack → defend → buy → combo；takeEvents）
 - `tests/rules/createInitialState.test.js`：斷言 `state.events` 係 array
+- Phase P3：色彩／輔助（任務 9 + 任務 10）
+- `client/styles.css`：深色主題 `--text-muted` 由 `#8b93a3` → `#a0a8b8`（對 #0f1115 ≈ 7.9:1 ≥4.5:1）；淺色主題 `#5c6675` 維持不變（已達 5.37:1）
+- `client/layout.js` `cardNode()`：新增卡牌類型 icon map（attack ⚔️ / defense 🛡️ / move ➤ / buy 🛒 / recover ❤️ / counter 🔄），`.card-type` span 顯示 `${icon} ${typeLabel}`；未知 type 唔加 icon（維持原 label）；`cardNode()` 共用於 handView / selectedCardsView / shopModal
+- `client/views/boardView.js` `renderToken()`：fallback 三角形 body 嘅 `.token-hp` 文字由 `HP x/y` 改為 `❤️ x/y`（只加 HP，不加 MP / ⚡，維持 P0「精簡棋盤資訊」決定）；圖片成功載入路徑唔加 icon
 
 
 ### 已驗證結果
@@ -205,6 +209,7 @@
 - 全套 `npx jest --runInBand`：`Test Suites: 37 passed, 37 total`；`Tests: 287 passed, 287 total`（全綠，含 `tests/network/socketServer.e2e.test.js` 與 `tests/stress/stress.test.js`）
 - 前端 JS 語法檢查通過（temp `.mjs` copy，`node --check`；resolveAnimation / boardView / handView / app / gameStore 全部 OK）
 - `/api/play` 事件流 smoke test 通過（round, reveal, move, reveal, defend, reveal, attack, draw, draw, regen, regen）
+- Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）
 
 
 
@@ -287,6 +292,7 @@ shared scenario JSON 係 browser / server / CLI 的 single source of truth。
 - Phase P1 已完成：佈局／層次／引導 + 棋盤佈局（移動卡絕對座標修復、攻擊卡選敵放寬、朝向 5 按鍵、手牌唔遮棋盤、safe-area、摺疊操作提示、精簡玩家狀態列、教學提示浮層）。
 - Phase P0 已完成：阻斷閱讀/操作 + 資產基礎（核心戰鬥文字 ≥14px、棋盤 token 精簡為「角色名 + HP」、資產目錄、token/卡牌圖片 fallback）。因 P0 資產全部為 placeholder，執行後 token 走三角形 fallback、卡牌走銀黑 fallback 屬預期。
 - Phase P2 已完成：觸控舒適度 + 動畫系統（server 結構化回合事件流 `state.events` + `takeEvents`、`/api/play` / `match:round` 回傳 events；按鈕 ≥44px、手牌橫向掃、咭牌飛向中央/目標 + 傷害 popup、token 移動/攻擊/防禦/連擊/Miss 動畫）。
+- Phase P3 已完成：色彩／輔助（任務 9 `--text-muted` 對比提升 + 任務 10 卡牌類型 icon 與 token ❤️ HP icon）。
 
 
 

@@ -163,6 +163,15 @@ export function cardNode(card, options = {}) {
     counter: "反擊",
   }[c.type] || c.type;
 
+  const typeIcon = {
+    attack: "⚔️",
+    defense: "🛡️",
+    move: "➤",
+    buy: "🛒",
+    recover: "❤️",
+    counter: "🔄",
+  }[c.type] || "";
+
   const attrs = {
     class: `card card-${c.type}${selected ? " is-selected" : ""}${
       disabled ? " is-disabled" : ""
@@ -175,7 +184,7 @@ export function cardNode(card, options = {}) {
   // 卡背（showBack）為預留契約，現時冇 view 使用。
   const faceChildren = [
     el("div", { class: "card-header" }, [
-      el("span", { class: "card-type", text: typeLabel }),
+      el("span", { class: "card-type", text: typeIcon ? `${typeIcon} ${typeLabel}` : typeLabel }),
       el("span", { class: "card-cost", text: showCost ? `MP ${c.mpCost}` : "" }),
     ]),
     // name_zh

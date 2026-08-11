@@ -187,7 +187,7 @@ function renderToken(occupant, state) {
           el("div", { class: "token-char", text: charName }),
           el("div", {
             class: "token-hp",
-            text: `HP ${occupant.hp}/${occupant.maxHp}`,
+            text: `❤️ ${occupant.hp}/${occupant.maxHp}`,
           }),
         ])
       );
