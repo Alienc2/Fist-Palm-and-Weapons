@@ -15,7 +15,9 @@ const FACING_OPTIONS = [
 
 export function renderSelectedCards(state) {
   const container = qs("#selectedCardsView");
+  const controls = qs("#selectedCardsControls");
   clear(container);
+  clear(controls);
 
   if (!state) {
     container.appendChild(el("p", { class: "muted-text", text: "尚未選牌。" }));
@@ -48,7 +50,7 @@ export function renderSelectedCards(state) {
 
   // 清空選牌
   if (pending.length > 0) {
-    container.appendChild(
+    controls.appendChild(
       button("清空選牌", "secondary-button", () => gameStore.clearSelections(player.id))
     );
   }
@@ -67,7 +69,7 @@ export function renderSelectedCards(state) {
       })
     );
   }
-  container.appendChild(facingRow);
+  controls.appendChild(facingRow);
 }
 
 

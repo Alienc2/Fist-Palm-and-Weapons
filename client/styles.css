@@ -212,14 +212,16 @@ button:disabled {
 
 /* ---- Player status ---- */
 .player-status-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
 }
 .player-status {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  width: clamp(84px, 13vw, 116px);
   aspect-ratio: 1;
   gap: 2px;
   align-items: flex-start;
@@ -617,6 +619,12 @@ button:disabled {
   height: 158px;
   overflow-y: auto;
 }
+.selected-cards-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
 .selected-list {
   display: flex;
   flex-direction: row;
@@ -644,7 +652,6 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
 }
 .facing-label {
   font-size: 12px;
