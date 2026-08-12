@@ -219,9 +219,11 @@ button:disabled {
 .player-status {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: space-between;
+  aspect-ratio: 1;
+  gap: 2px;
   align-items: flex-start;
-  padding: 10px;
+  padding: 8px;
   background: var(--bg-panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -250,12 +252,30 @@ button:disabled {
 .player-id {
   font-weight: 700;
   color: var(--accent);
+  font-size: clamp(10px, 1.4vw, 12px);
+}
+.player-line-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+}
+.player-char {
+  font-size: clamp(10px, 1.4vw, 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .player-hp {
   color: var(--danger);
+  font-size: clamp(10px, 1.4vw, 12px);
 }
 .player-mp {
   color: var(--success);
+  font-size: clamp(10px, 1.4vw, 12px);
 }
 
 /* ---- Notes ---- */
@@ -594,7 +614,7 @@ button:disabled {
   margin-bottom: 12px;
 }
 .selected-cards-view {
-  max-height: 150px;
+  height: 158px;
   overflow-y: auto;
 }
 .selected-list {

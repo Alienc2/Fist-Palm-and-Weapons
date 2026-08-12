@@ -46,6 +46,13 @@ export function renderSelectedCards(state) {
     container.appendChild(list);
   }
 
+  // 清空選牌
+  if (pending.length > 0) {
+    container.appendChild(
+      button("清空選牌", "secondary-button", () => gameStore.clearSelections(player.id))
+    );
+  }
+
   // 朝向設定：5 個按鍵即時 setPendingFacing，「保持」→ "none"
   const facingRow = el("div", { class: "facing-row" });
   const currentFacing = gameStore.getPendingFacing(player.id) || player.facing;
@@ -61,13 +68,6 @@ export function renderSelectedCards(state) {
     );
   }
   container.appendChild(facingRow);
-
-  // 清空選牌
-  if (pending.length > 0) {
-    container.appendChild(
-      button("清空選牌", "secondary-button", () => gameStore.clearSelections(player.id))
-    );
-  }
 }
 
 

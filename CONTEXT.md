@@ -205,6 +205,10 @@
 - `client/views/selectedCardsView.js`：移除冗餘 `removeBtn`（`×`）；卡本身 onClick 已可點擊移除
 - `client/layout.js` `cardNode` compact 分支：只渲染數值 >0 嘅統計行（ATK/DEF/RNG/MOV），0 值整行唔顯示
 - `client/styles.css`：刪除 `.selected-list .card .mini-button` override；`.selected-list .card .card-name` 2 行 line-clamp 完整顯示長名
+- Phase P5（第三輪）：本回合選牌區 + 回合控制區（UI 調整）
+- `client/views/selectedCardsView.js`：`renderSelectedCards()` 將「清空選牌」按鍵移到朝向設定之前（cards list → 清空選牌 → facingRow）
+- `client/app.js` `renderPlayerStatus()`：玩家狀態由 4 個 span 改為 3 行結構（`.player-line-top` 包住 player-id + player-char → player-hp → player-mp）
+- `client/styles.css`：`.selected-cards-view` 由 `max-height: 150px` 改為 `height: 158px`（等於卡牌高度）；`.player-status` 加 `aspect-ratio: 1`、`justify-content: space-between`、`gap: 2px`、`padding: 8px`；新增 `.player-line-top`（flex + ellipsis）與 `.player-char` ellipsis；`.player-id` / `.player-char` / `.player-hp` / `.player-mp` 字型收細為 `clamp(10px, 1.4vw, 12px)`
 
 
 ### 已驗證結果
@@ -219,6 +223,7 @@
 - `/api/play` 事件流 smoke test 通過（round, reveal, move, reveal, defend, reveal, attack, draw, draw, regen, regen）
 - Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）
 - Phase P5（第二輪）驗證：`npm run test:rules` 通過（200 tests）；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）；handView / selectedCardsView / layout / server temp `.mjs` `node --check` 通過
+- Phase P5（第三輪）驗證：app.js / selectedCardsView.js temp `.mjs` copy 後 `node --check` 通過；純 CSS / DOM 結構改動，無 engine 改動
 
 
 

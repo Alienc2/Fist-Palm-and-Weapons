@@ -58,8 +58,10 @@ function renderPlayerStatus(state) {
       disabled: clickable ? null : "disabled",
       onclick: clickable ? () => gameStore.setActivePlayer(p.id) : null,
     }, [
-      el("span", { class: "player-id", text: p.id }),
-      el("span", { class: "player-char", text: p.characterName }),
+      el("span", { class: "player-line-top" }, [
+        el("span", { class: "player-id", text: p.id }),
+        el("span", { class: "player-char", text: p.characterName }),
+      ]),
       el("span", { class: "player-hp", text: `HP ${p.hp}/${p.maxHp}` }),
       el("span", { class: "player-mp", text: `MP ${p.mp}/${p.maxMp}` }),
     ]);
