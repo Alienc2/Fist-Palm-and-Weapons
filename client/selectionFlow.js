@@ -1,6 +1,6 @@
 // client/selectionFlow.js
 // 選牌流程共用邏輯：依卡牌類型決定 extra。
-// 由 app.js 與 handView.js 共用，確保攻擊選目標 / 移動選方向 / 購買開解封武功一致。
+// 由 app.js 與 handView.js 共用，確保攻擊選目標 / 移動選方向 / 解封武功一致。
 // I-02-H2 / I-02-H3：移動/攻擊卡改為喺棋盤高亮選擇，取代 facingPicker / targetPicker。
 
 

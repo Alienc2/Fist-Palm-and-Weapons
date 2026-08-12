@@ -222,10 +222,10 @@ function resolveMove(state, player, card, extra = {}) {
 
 function resolveBuy(state, player, card, extra = {}) {
   player.lastRevealedSubtype = card.subtype || "shop";
-  log(state, `${player.id} 使用 ${card.id} 進入商店`);
+  log(state, `${player.id} 使用 ${card.id} 進入丹田`);
 
   if (!extra || !extra.shopCardId) {
-    log(state, `${player.id} 未指定要購買的商店卡`);
+    log(state, `${player.id} 未指定要解封的武功卡牌，解封失敗`);
     return;
   }
 

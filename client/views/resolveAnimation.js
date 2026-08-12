@@ -172,7 +172,7 @@ function buildActionSummary(events, players) {
         lines.push(`${name(ev.playerId)} 使用防禦【${label(ev.cardId)}】`);
         break;
       case "buy":
-        lines.push(`${name(ev.playerId)} 解封商店卡【${label(ev.shopCardId)}】`);
+        lines.push(`${name(ev.playerId)} 解封武功【${label(ev.shopCardId)}】`);
         break;
       case "recover":
         lines.push(`${name(ev.playerId)} 回復`);

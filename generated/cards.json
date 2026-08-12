@@ -541,8 +541,8 @@
   },
   {
     "id": "basic_buy",
-    "name_zh": "學習武功",
-    "alias_group": "基本購買",
+    "name_zh": "解封武功",
+    "alias_group": "基本解封",
     "group": "basic",
     "type": "buy",
     "subtype": "shop",
@@ -561,7 +561,7 @@
     "persist_until_triggered": "FALSE",
     "keywords": "basic,buy",
     "target_rule": "shop",
-    "description_template": "按購買費用扣減MP，使用後回到手上。",
+    "description_template": "按解封費用扣減MP，使用後回到手上。",
     "enabled": "TRUE",
     "Default_Card_Set": "ALL",
     "No_of_Cards_in_Hand": "1"

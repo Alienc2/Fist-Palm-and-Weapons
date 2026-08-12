@@ -19,12 +19,12 @@ function buyFromShop(state, player, cardId) {
   const shopCard = getShopCard(state, cardId);
 
   if (!shopCard) {
-    log(state, `${player.id} 嘗試購買 ${cardId}，但商店中不存在`);
+    log(state, `${player.id} 嘗試解封 ${cardId}，但丹田中不存在`);
     return { ok: false, reason: "NOT_FOUND" };
   }
 
   if (shopCard.stock <= 0) {
-    log(state, `${player.id} 嘗試購買 ${cardId}，但已無庫存`);
+    log(state, `${player.id} 嘗試解封 ${cardId}，但已無庫存`);
     return { ok: false, reason: "OUT_OF_STOCK" };
   }
 
@@ -32,7 +32,7 @@ function buyFromShop(state, player, cardId) {
   const effectiveCost = Math.max(shopCard.buyCost - discount, 0);
 
   if (player.mp < effectiveCost) {
-    log(state, `${player.id} 嘗試購買 ${cardId}，但 MP 不足`);
+    log(state, `${player.id} 嘗試解封 ${cardId}，但 MP 不足`);
     return { ok: false, reason: "NOT_ENOUGH_MP" };
   }
 
@@ -42,12 +42,12 @@ function buyFromShop(state, player, cardId) {
 
   if (discount > 0) {
     markFirstShopDiscountUsed(player);
-    log(state, `${player.id} 首次購買折扣 -${discount} MP`);
+    log(state, `${player.id} 首次解封折扣 -${discount} MP`);
   }
 
   log(
     state,
-    `${player.id} 購買 ${shopCard.name || shopCard.name_zh || shopCard.id} 成功，消耗 ${effectiveCost} MP，剩餘庫存 ${shopCard.stock}`
+    `${player.id} 解封 ${shopCard.name || shopCard.name_zh || shopCard.id} 成功，消耗 ${effectiveCost} MP，剩餘庫存 ${shopCard.stock}`
   );
 
   return { ok: true, reason: "BOUGHT", card: shopCard };

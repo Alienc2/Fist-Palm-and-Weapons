@@ -7,7 +7,7 @@
   {
     "id": "shop",
     "category": "group",
-    "description": "商店卡牌"
+    "description": "丹田卡牌"
   },
   {
     "id": "melee",
@@ -47,7 +47,7 @@
   {
     "id": "buy",
     "category": "effect",
-    "description": "購買效果"
+    "description": "解封效果"
   },
   {
     "id": "recover",

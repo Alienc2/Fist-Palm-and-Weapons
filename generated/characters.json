@@ -45,6 +45,6 @@
     "token_color": "yellow",
     "passive_id": "first_shop_discount",
     "passive_params": "{\"mp_discount\":1}",
-    "description": "本局首次購買咭牌費用-1MP。"
+    "description": "本局首次解封咭牌費用-1MP。"
   }
 ]

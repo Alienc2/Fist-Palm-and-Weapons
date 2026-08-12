@@ -159,7 +159,7 @@ export function cardNode(card, options = {}) {
     attack: "攻擊",
     defense: "防禦",
     move: "移動",
-    buy: "購買",
+    buy: "解封",
     recover: "回復",
     counter: "反擊",
   }[c.type] || c.type;
@@ -200,10 +200,10 @@ export function cardNode(card, options = {}) {
   // P5：compact（本回合選牌）只顯示 4 行核心數值，唔顯示長段描述，避免爆版
   if (compact) {
     const stats = [
-      { key: "damage", label: "ATK" },
-      { key: "blockValue", label: "DEF" },
-      { key: "rangeMax", label: "RNG" },
-      { key: "moveMax", label: "MOV" },
+      { key: "damage", label: "⚔️" },
+      { key: "blockValue", label: "🛡️" },
+      { key: "rangeMax", label: "📏" },
+      { key: "moveMax", label: "➤" },
     ].filter(({ key }) => c[key] > 0);
     if (stats.length > 0) {
       faceChildren.push(

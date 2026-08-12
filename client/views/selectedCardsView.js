@@ -6,11 +6,11 @@ import { gameStore } from "../gameStore.js";
 
 // 朝向選擇：本回合內用 5 個按鍵即時設定（上▲ / 下▼ / 左◀ / 右▶ / 保持）
 const FACING_OPTIONS = [
-  { value: "up", label: "上 ▲" },
-  { value: "down", label: "下 ▼" },
-  { value: "left", label: "左 ◀" },
-  { value: "right", label: "右 ▶" },
-  { value: "none", label: "保持" },
+  { value: "up", label: "🔼" },
+  { value: "down", label: "🔽" },
+  { value: "left", label: "◀️" },
+  { value: "right", label: "▶️" },
+  { value: "none", label: "❌" },
 ];
 
 export function renderSelectedCards(state) {
@@ -50,7 +50,7 @@ export function renderSelectedCards(state) {
   const facingRow = el("div", { class: "facing-row" });
   const currentFacing = gameStore.getPendingFacing(player.id) || player.facing;
   facingRow.appendChild(
-    el("span", { class: "facing-label", text: "朝向：" })
+    el("span", { class: "facing-label", text: "面向：" })
   );
   for (const opt of FACING_OPTIONS) {
     const isActive = String(currentFacing) === String(opt.value);
