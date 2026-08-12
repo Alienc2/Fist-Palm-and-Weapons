@@ -38,12 +38,9 @@ export function renderSelectedCards(state) {
     pending.forEach((item, index) => {
       const cardEl = cardNode(item.card, {
         selected: true,
+        compact: true,
         onClick: () => gameStore.removeSelection(player.id, index),
       });
-      const removeBtn = button("×", "mini-button", () =>
-        gameStore.removeSelection(player.id, index)
-      );
-      cardEl.appendChild(removeBtn);
       list.appendChild(cardEl);
     });
     container.appendChild(list);

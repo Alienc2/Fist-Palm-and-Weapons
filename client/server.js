@@ -58,6 +58,7 @@ function serializePlayer(player) {
     maxMp: player.maxMp,
     hand: (player.hand || []).map(serializeCard),
     deckCount: Array.isArray(player.deck) ? player.deck.length : 0,
+    discard: (player.discard || []).map(serializeCard),
     discardCount: Array.isArray(player.discard) ? player.discard.length : 0,
     position: player.position,
     facing: player.facing,

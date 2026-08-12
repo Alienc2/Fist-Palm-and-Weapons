@@ -231,6 +231,14 @@
 - `client/styles.css`：深色主題 `--text-muted` #8b93a3 → #a0a8b8（對 #0f1115 ≈ 7.9:1 ≥4.5:1）；淺色主題 #5c6675 維持不變（已達 5.37:1）
 - `client/layout.js` `cardNode()`：卡牌類型 icon map（attack ⚔️ / defense 🛡️ / move ➤ / buy 🛒 / recover ❤️ / counter 🔄），`.card-type` 顯示 `${icon} ${typeLabel}`，未知 type 唔加 icon
 - `client/views/boardView.js` `renderToken()`：fallback `.token-hp` 由 `HP x/y` 改為 `❤️ x/y`（只加 HP，不加 MP / ⚡）
+- Phase P5（第二輪）UI 修正：對戰紀錄 / 扇形手牌 / 選牌卡面
+- `server/game/rules/shopResolver.js`：買入成功 log 改用 `shopCard.name || shopCard.name_zh || shopCard.id`（`normalizeCard` 已令 `name` = 中文名）
+- `client/server.js` `serializePlayer`：補 `discard: (player.discard || []).map(serializeCard)`，令前端 `buildCardNameMap` 兜底亦可本地化買入卡
+- `client/views/handView.js`：增大 overlap（`max(26, baseWidth * 0.35)`）
+- `client/styles.css`：`.hand-fan` 改 `overflow: visible`（移除底部捲動 bar / 縱向裁切）；`.hand-fan .card` 負 margin 加大 `0 -24px`；hover 改 `translateY(-18px) scale(1.12)` + `z-index:100`
+- `client/views/selectedCardsView.js`：移除冗餘 `removeBtn`（`×`）；卡本身 onClick 已可點擊移除
+- `client/layout.js` `cardNode` compact 分支：只渲染數值 >0 嘅統計行（ATK/DEF/RNG/MOV），0 值整行唔顯示
+- `client/styles.css`：刪除 `.selected-list .card .mini-button` override；`.selected-list .card .card-name` 2 行 line-clamp 完整顯示長名
 
 
 
@@ -251,6 +259,7 @@
 - 前端 JS 語法檢查通過（temp `.mjs` copy，`node --check`；resolveAnimation / boardView / handView / app / gameStore 全部 OK）。
 - `/api/play` 事件流 smoke test 通過（round, reveal, move, defend, reveal, attack, draw, draw, regen, regen）。
 - Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）。
+- Phase P5（第二輪）驗證：`npm run test:rules` 通過（200 tests）；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）；handView / selectedCardsView / layout / server temp `.mjs` `node --check` 通過。
 
 
 

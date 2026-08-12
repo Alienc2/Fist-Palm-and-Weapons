@@ -31,7 +31,8 @@ function localizeComboNames(msg) {
   return result;
 }
 
-// 從 state.players 收集所有卡牌，建立 id -> name_zh 對照表
+// 從 state.players 收集所有卡牌，建立 id -> 顯示名稱對照表
+// 優先順序：name_zh > name（id 唔做替換，避免自指）
 function buildCardNameMap(state) {
   const map = {};
   for (const p of state.players || []) {
@@ -42,8 +43,9 @@ function buildCardNameMap(state) {
       ...(p.selectedCards || []),
     ];
     for (const card of allCards) {
-      if (card && card.id && card.name_zh) {
-        map[card.id] = card.name_zh;
+      const display = card && (card.name_zh || card.name);
+      if (card && card.id && display) {
+        map[card.id] = display;
       }
     }
   }

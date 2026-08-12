@@ -47,7 +47,7 @@ function buyFromShop(state, player, cardId) {
 
   log(
     state,
-    `${player.id} 購買 ${shopCard.id} 成功，消耗 ${effectiveCost} MP，剩餘庫存 ${shopCard.stock}`
+    `${player.id} 購買 ${shopCard.name || shopCard.name_zh || shopCard.id} 成功，消耗 ${effectiveCost} MP，剩餘庫存 ${shopCard.stock}`
   );
 
   return { ok: true, reason: "BOUGHT", card: shopCard };

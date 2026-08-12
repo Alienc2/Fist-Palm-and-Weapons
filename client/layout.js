@@ -149,6 +149,7 @@ export function cardNode(card, options = {}) {
     showCost = true,
     showStock = false,
     showBack = false,
+    compact = false,
   } = options;
 
   // 統一 snake_case → camelCase，確保讀到正確欄位
@@ -196,14 +197,31 @@ export function cardNode(card, options = {}) {
     el("div", { class: "card-subtype", text: c.aliasGroup || "" }),
   ];
 
-  // buy_cost（解封費用）
-  if (showCost && c.buyCost > 0) {
-    faceChildren.push(el("div", { class: "card-buy", text: `解封 ${c.buyCost} MP` }));
-  }
+  // P5：compact（本回合選牌）只顯示 4 行核心數值，唔顯示長段描述，避免爆版
+  if (compact) {
+    const stats = [
+      { key: "damage", label: "ATK" },
+      { key: "blockValue", label: "DEF" },
+      { key: "rangeMax", label: "RNG" },
+      { key: "moveMax", label: "MOV" },
+    ].filter(({ key }) => c[key] > 0);
+    if (stats.length > 0) {
+      faceChildren.push(
+        el("div", { class: "card-stats" }, stats.map(({ key, label }) =>
+          el("span", { class: "card-stat", text: `${label} ${c[key]}` })
+        ))
+      );
+    }
+  } else {
+    // buy_cost（解封費用）
+    if (showCost && c.buyCost > 0) {
+      faceChildren.push(el("div", { class: "card-buy", text: `解封 ${c.buyCost} MP` }));
+    }
 
-  // description_template
-  if (c.description) {
-    faceChildren.push(el("div", { class: "card-desc", text: c.description }));
+    // description_template
+    if (c.description) {
+      faceChildren.push(el("div", { class: "card-desc", text: c.description }));
+    }
   }
 
   if (showStock && c.stock !== undefined && c.stock !== "") {

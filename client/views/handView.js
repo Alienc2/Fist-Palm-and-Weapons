@@ -31,24 +31,30 @@ export function renderHand(state) {
     return;
   }
 
-  // I-02-H：扇形排列（每張牌依 index 旋轉角度，底部對齊）
+  // I-02-H / P5：可壓縮扇形（中央錨點 + 邊界保護）。
+  //   1. 先計可用寬度，依張數動態縮細卡牌與壓縮角度，確保左右唔越界。
+  //   2. 卡牌數量多或窄視窗（手機）時用低角度扇形，保留橫向捲動作後備。
   const fan = el("div", { class: "hand-fan" });
   const count = player.hand.length;
-  const maxAngle = 30; // 最大扇形角度（度）
-  const step = count > 1 ? (maxAngle * 2) / (count - 1) : 0;
-
-  // I-02-H：8 張或以上時縮細卡牌，確保扇形唔超出視窗
-  // P2：基準卡寬對齊 CSS clamp(120px,18vw,160px)
-  const baseWidth = Math.min(160, Math.max(120, window.innerWidth * 0.18));
-  const overlap = 32;
-  const totalWidth = baseWidth + (count - 1) * (baseWidth - overlap);
   const viewportWidth = window.innerWidth || 1280;
-  const availableWidth = viewportWidth - 40; // 左右各 20px padding
-  const scale = Math.min(1, availableWidth / totalWidth);
+  // 可用寬度：viewport 扣除左右 padding + safe-area，預留邊界保護
+  const availableWidth = Math.max(240, viewportWidth - 48);
+
+  // 卡寬隨畫面縮放（手機上細啲，避免過密）
+  const baseWidth = Math.min(150, Math.max(84, availableWidth * 0.22));
+  const overlap = Math.max(26, baseWidth * 0.35);
+  const totalWidth = baseWidth + (count - 1) * (baseWidth - overlap);
+
+  // 依可用寬度壓縮：卡牌縮細 + 角度收窄（多卡 / 窄視窗 → 低角度）
+  const scale = Math.min(1, availableWidth / Math.max(totalWidth, 1));
+  const maxAngle = 24; // 最大扇形角度（度）
+  const spreadFactor = Math.max(0.35, Math.min(1, availableWidth / Math.max(totalWidth, 1)));
+  const spreadAngle = maxAngle * spreadFactor;
+  const step = count > 1 ? (spreadAngle * 2) / (count - 1) : 0;
 
   player.hand.forEach((card, index) => {
     const alreadySelected = pendingInstanceIds.has(card.instanceId || card.id);
-    const angle = count > 1 ? -maxAngle + step * index : 0;
+    const angle = count > 1 ? -spreadAngle + step * index : 0;
     const cardEl = cardNode(card, {
       selected: alreadySelected,
       disabled: alreadySelected,
@@ -58,7 +64,6 @@ export function renderHand(state) {
       },
     });
     cardEl.style.setProperty("--fan-angle", `${angle}deg`);
-    cardEl.style.setProperty("--fan-index", index);
     cardEl.style.setProperty("--card-scale", scale);
     fan.appendChild(cardEl);
   });

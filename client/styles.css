@@ -456,32 +456,32 @@ button:disabled {
 .hand-fan {
   display: flex;
   align-items: flex-end;
-  /* P2：保留扇形但加橫向掃（滑鼠／觸控可左右捲動） */
-  justify-content: flex-start;
+  /* P5：中央錨點，依張數/寬度動態壓縮；左右 padding 做邊界保護 */
+  justify-content: center;
   gap: 0;
   pointer-events: auto;
   width: 100%;
   height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
+  padding: 0 max(12px, env(safe-area-inset-left)) 0 max(12px, env(safe-area-inset-right));
+  overflow: visible;
 }
-/* 啤牌比例（約 2.5:3.5）· P2：寬 clamp(120px,18vw,160px)，高按比例 */
+/* 啤牌比例（約 2.5:3.5）· P5：寬 clamp，高按比例 */
 .hand-fan .card {
-  width: clamp(120px, 18vw, 160px);
-  height: calc(clamp(120px, 18vw, 160px) * 1.4);
+  width: clamp(84px, 22vw, 150px);
+  height: calc(clamp(84px, 22vw, 150px) * 1.4);
   flex: 0 0 auto;
-  transform-origin: bottom center;
-  /* I-02-H：8 張或以上時用 --card-scale 縮細，確保唔超出視窗 */
-  transform: rotate(var(--fan-angle, 0deg)) translateY(calc(var(--fan-index, 0) * 0px)) scale(var(--card-scale, 1));
+  transform-origin: center bottom;
+  /* P5：可壓縮扇形——rotate 角度由 JS 依張數壓縮，scale 縮細以貼合可用寬度 */
+  transform: rotate(var(--fan-angle, 0deg)) scale(var(--card-scale, 1));
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  margin: 0 -16px;
+  margin: 0 -24px;
   box-shadow: var(--shadow);
 }
-.hand-fan .card:hover:not(.is-disabled) {
-  transform: rotate(var(--fan-angle, 0deg)) translateY(-24px) scale(calc(var(--card-scale, 1) * 1.05));
-  z-index: 10;
+.hand-fan .card:hover:not(.is-disabled),
+.hand-fan .card.is-selected:hover {
+  /* P5：hover 升高 + 放大，置頂於所有介面之上 */
+  transform: rotate(var(--fan-angle, 0deg)) translateY(-18px) scale(1.12);
+  z-index: 100;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
@@ -567,6 +567,21 @@ button:disabled {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* P5：compact（本回合選牌）4 行核心數值，極簡避免爆版 */
+.card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  margin-top: 8px;
+}
+.card-stat {
+  font-size: clamp(12px, 2vw, 14px);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .card-stock {
   font-size: 11px;
   color: var(--warning);
@@ -589,9 +604,20 @@ button:disabled {
   gap: 8px;
 }
 .selected-list .card {
-  width: 96px;
-  height: 134px;
+  width: 108px;
+  height: 158px;
   flex: 0 0 auto;
+}
+/* P5：本回合選牌嘅長名稱容許 wrap 至最多 2 行，完整顯示唔用省略號 */
+.selected-list .card .card-name {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: clip;
+  line-height: 1.25;
+  margin-bottom: 4px;
 }
 
 .facing-row {
