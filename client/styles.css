@@ -212,8 +212,8 @@ button:disabled {
 
 /* ---- Player status ---- */
 .player-status-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
   justify-content: center;
   gap: 8px;
 }
@@ -621,7 +621,9 @@ button:disabled {
 }
 .selected-cards-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
