@@ -7,7 +7,8 @@
     "effect_type": "damage_bonus",
     "effect_params": "{\"last_attack_bonus\":1}",
     "duration": "instant",
-    "description": "同一類別攻擊咭連續3張，第3下攻擊傷害+1。"
+    "description": "同一類別攻擊咭連續3張，第3下攻擊傷害+1。",
+    "combo_name": "連環"
   },
   {
     "id": "combo_punch_palm_weapon",
@@ -17,7 +18,8 @@
     "effect_type": "defense_down",
     "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "順序拳、掌、武器，第3張武器攻擊時，敵人防禦力-1。"
+    "description": "順序拳、掌、武器，第3張武器攻擊時，敵人防禦力-1。",
+    "combo_name": "幻變"
   },
   {
     "id": "combo_move_3",
@@ -27,7 +29,8 @@
     "effect_type": "move_bonus",
     "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "連續3張移動，本回合移動距離+1。"
+    "description": "連續3張移動，本回合移動距離+1。",
+    "combo_name": "鬼步"
   },
   {
     "id": "combo_defense_3",
@@ -37,7 +40,8 @@
     "effect_type": "guard_up",
     "effect_params": "{\"value\":1}",
     "duration": "round",
-    "description": "連續3張防禦，全部防禦力+1。"
+    "description": "連續3張防禦，全部防禦力+1。",
+    "combo_name": "鋼山"
   },
   {
     "id": "combo_p_p_advp_advpalm",
@@ -47,7 +51,8 @@
     "effect_type": "range_damage_bonus",
     "effect_params": "{\"range_bonus\":1,\"damage_bonus\":1}",
     "duration": "instant",
-    "description": "拳、掌、進階拳、進階掌，第4下距離+1、傷害+1。"
+    "description": "拳、掌、進階拳、進階掌，第4下距離+1、傷害+1。",
+    "combo_name": "左拳右掌"
   },
   {
     "id": "combo_line_attack",
@@ -57,6 +62,7 @@
     "effect_type": "line_attack",
     "effect_params": "{}",
     "duration": "instant",
-    "description": "多於一名敵人，且兩名或以上同時位於一直線時，該攻擊同時攻擊全部直線上敵人。"
+    "description": "多於一名敵人，且兩名或以上同時位於一直線時，該攻擊同時攻擊全部直線上敵人。",
+    "combo_name": "穿心"
   }
 ]

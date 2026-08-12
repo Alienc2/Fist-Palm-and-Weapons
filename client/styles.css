@@ -212,22 +212,40 @@ button:disabled {
 
 /* ---- Player status ---- */
 .player-status-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 .player-status {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  padding: 8px;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 10px;
   background: var(--bg-panel-2);
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 12px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+}
+.player-status:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.player-status.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(79, 140, 255, 0.3);
+}
+.player-status:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .player-status.is-eliminated {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 .player-id {
   font-weight: 700;
@@ -462,7 +480,7 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 .hand-fan .card:hover:not(.is-disabled) {
-  transform: rotate(var(--fan-angle, 0deg)) translateY(-36px) scale(calc(var(--card-scale, 1) * 1.05));
+  transform: rotate(var(--fan-angle, 0deg)) translateY(-24px) scale(calc(var(--card-scale, 1) * 1.05));
   z-index: 10;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
@@ -532,6 +550,9 @@ button:disabled {
   font-size: clamp(14px, 2.5vw, 18px);
   font-weight: 600;
   margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card-subtype {
   font-size: 11px;
@@ -541,6 +562,10 @@ button:disabled {
   font-size: clamp(14px, 2.5vw, 18px);
   color: var(--text-muted);
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .card-stock {
   font-size: 11px;

@@ -33,41 +33,10 @@ function renderAll(state) {
   renderPlayerStatus(state);
   renderMatchMeta(state);
   updateControls(state);
-  updateActivePlayerSelect(state);
-}
-
-// 更新「目前操作玩家」下拉選單（只列人類玩家）
-function updateActivePlayerSelect(state) {
-  const select = qs("#activePlayerSelect");
-  if (!select) return;
-
-  if (!state) {
-    select.disabled = true;
-    select.innerHTML = "";
-    const opt = el("option", { value: "P1", text: "P1" });
-    select.appendChild(opt);
-    return;
-  }
-
-  const humanPlayers = state.players.filter((p) => !p.isAi);
-  if (humanPlayers.length <= 1) {
-    select.disabled = true;
-    select.innerHTML = "";
-    const opt = el("option", { value: humanPlayers[0]?.id || "P1", text: humanPlayers[0]?.id || "P1" });
-    select.appendChild(opt);
-    return;
-  }
-
-  select.disabled = false;
-  select.innerHTML = "";
-  for (const p of humanPlayers) {
-    const opt = el("option", { value: p.id, text: p.id });
-    if (p.id === gameStore.activePlayerId) opt.selected = true;
-    select.appendChild(opt);
-  }
 }
 
 
+// 顯示玩家狀態：人類玩家可點擊切換為目前操作玩家，AI / 淘汰玩家禁用
 function renderPlayerStatus(state) {
   const container = qs("#playerStatus");
   clear(container);
@@ -78,13 +47,22 @@ function renderPlayerStatus(state) {
   }
 
   for (const p of state.players) {
-    const row = el("div", { class: "player-status" }, [
+    const isActive = p.id === gameStore.activePlayerId;
+    const clickable = !p.isAi && !p.isEliminated;
+    const row = el("button", {
+      type: "button",
+      class: `player-status${isActive ? " is-active" : ""}${
+        p.isAi ? " is-ai" : ""
+      }${p.isEliminated ? " is-eliminated" : ""}`,
+      "aria-pressed": isActive ? "true" : "false",
+      disabled: clickable ? null : "disabled",
+      onclick: clickable ? () => gameStore.setActivePlayer(p.id) : null,
+    }, [
       el("span", { class: "player-id", text: p.id }),
       el("span", { class: "player-char", text: p.characterName }),
       el("span", { class: "player-hp", text: `HP ${p.hp}/${p.maxHp}` }),
       el("span", { class: "player-mp", text: `MP ${p.mp}/${p.maxMp}` }),
     ]);
-    if (p.isEliminated) row.classList.add("is-eliminated");
     container.appendChild(row);
   }
 }
@@ -259,12 +237,6 @@ function bindEvents() {
   });
   qs("#aiCount").addEventListener("change", () => {
     syncPlayerCountLimits();
-  });
-
-
-  // 切換目前操作玩家
-  qs("#activePlayerSelect").addEventListener("change", (event) => {
-    gameStore.setActivePlayer(event.target.value);
   });
 
   qs("#startMatchButton").addEventListener("click", async () => {

@@ -410,6 +410,21 @@ function createRequestHandler(options = {}) {
       return;
     }
 
+    // T4：對戰紀錄需要 combo_name，提供專案根目錄 generated/combos.json
+    if (req.method === "GET" && pathname === "/generated/combos.json") {
+      const combosPath = path.join(__dirname, "..", "generated", "combos.json");
+      if (!fs.existsSync(combosPath)) {
+        sendJson(res, 404, { ok: false, error: "combos.json not found" });
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=UTF-8",
+        "Access-Control-Allow-Origin": "*",
+      });
+      fs.createReadStream(combosPath).pipe(res);
+      return;
+    }
+
     // ---- 靜態檔案 ----
     const filePath = resolveStaticPath(pathname);
     serveFile(res, filePath);

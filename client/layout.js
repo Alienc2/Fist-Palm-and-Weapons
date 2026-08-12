@@ -178,6 +178,9 @@ export function cardNode(card, options = {}) {
     }`,
     dataset: { cardId: c.id, instanceId: c.instanceId || "" },
   };
+  // T3：原生 tooltip，顯示完整名稱 + 描述（避免文字溢出睇唔到全文）
+  const titleText = [c.name || c.id, c.description].filter(Boolean).join(" — ");
+  if (titleText) attrs.title = titleText;
   if (onClick) attrs.onclick = onClick;
 
   // P0：卡面圖片層。載入成功時隱藏文字層，失敗時保留現有銀黑咭面 + 文字。
