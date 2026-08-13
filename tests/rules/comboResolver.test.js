@@ -40,6 +40,13 @@ describe("parseRequiredCards", () => {
     expect(req.subtypeSequence).toEqual(["punch", "palm", "weapon"]);
     expect(req.type).toBeNull();
   });
+
+  test("解析 subtype:same;count:3", () => {
+    const req = parseRequiredCards("subtype:same;count:3");
+    expect(req.sameSubtype).toBe(true);
+    expect(req.count).toBe(3);
+    expect(req.subtypeSequence).toBeNull();
+  });
 });
 
 describe("detectSequenceCombo", () => {
@@ -82,6 +89,28 @@ describe("detectSequenceCombo", () => {
     const combo = { requiredCards: "subtype:punch>palm>weapon" };
     expect(detectSequenceCombo(makeState([player]), player, combo)).toBe(false);
   });
+
+  test("subtype:same;count:3 命中連續 3 張同 subtype", () => {
+    const player = makePlayer("P1", { x: 1, y: 1 });
+    player.selectedCards = [
+      cardEntry("attack", "punch"),
+      cardEntry("attack", "punch"),
+      cardEntry("attack", "punch"),
+    ];
+    const combo = { requiredCards: "subtype:same;count:3" };
+    expect(detectSequenceCombo(makeState([player]), player, combo)).toBe(true);
+  });
+
+  test("subtype:same;count:3 未命中（subtype 唔同）", () => {
+    const player = makePlayer("P1", { x: 1, y: 1 });
+    player.selectedCards = [
+      cardEntry("attack", "punch"),
+      cardEntry("attack", "palm"),
+      cardEntry("attack", "weapon"),
+    ];
+    const combo = { requiredCards: "subtype:same;count:3" };
+    expect(detectSequenceCombo(makeState([player]), player, combo)).toBe(false);
+  });
 });
 
 describe("detectBoardPattern", () => {
@@ -91,10 +120,19 @@ describe("detectBoardPattern", () => {
     expect(detectBoardPattern(makeState([source, target]), source, target, "none")).toBe(true);
   });
 
-  test("line 直線命中", () => {
+  test("line 直線命中（2 名直線敵方）", () => {
     const source = makePlayer("P1", { x: 1, y: 1 });
     const target = makePlayer("P2", { x: 1, y: 3 });
-    expect(detectBoardPattern(makeState([source, target]), source, target, "line")).toBe(true);
+    const ally = makePlayer("P3", { x: 1, y: 4 });
+    expect(
+      detectBoardPattern(makeState([source, target, ally]), source, target, "line")
+    ).toBe(true);
+  });
+
+  test("line 只有 1 名直線敵方未命中", () => {
+    const source = makePlayer("P1", { x: 1, y: 1 });
+    const target = makePlayer("P2", { x: 1, y: 3 });
+    expect(detectBoardPattern(makeState([source, target]), source, target, "line")).toBe(false);
   });
 
   test("line 非直線未命中", () => {
@@ -170,18 +208,18 @@ describe("applyComboEffect", () => {
 });
 
 describe("resolveCombos", () => {
-  test("命中 sequence combo 並套用效果", () => {
+  test("命中 sequence combo 並套用效果（subtype:same 連續 3 張同類攻擊）", () => {
     const player = makePlayer("P1", { x: 1, y: 1 });
     player.selectedCards = [
       cardEntry("attack", "punch"),
-      cardEntry("attack", "palm"),
-      cardEntry("attack", "weapon"),
+      cardEntry("attack", "punch"),
+      cardEntry("attack", "punch"),
     ];
     const state = makeState([player]);
 
     const triggered = resolveCombos(state, player, null);
-    // combo_same_attack_3 與 combo_punch_palm_weapon 都會命中
-    expect(triggered.length).toBeGreaterThan(0);
+    // combo_same_attack_3（同 subtype 連續 3 張）命中 → 傷害 bonus
+    expect(triggered.some((t) => t.id === "combo_same_attack_3")).toBe(true);
     expect(player.comboDamageBonus).toBeGreaterThan(0);
   });
 

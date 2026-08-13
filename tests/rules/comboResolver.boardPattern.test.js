@@ -9,15 +9,22 @@ const {
 } = require("../../server/game/rules/comboResolver");
 
 describe("detectBoardPattern", () => {
-  test("line：同列或同行（dx=0 或 dy=0）為 true", () => {
-    const source = { position: { x: 2, y: 2 } };
-    const sameRow = { position: { x: 4, y: 2 } };
-    const sameCol = { position: { x: 2, y: 4 } };
-    const diagonal = { position: { x: 3, y: 3 } };
+  test("line：同列/同行且有 ≥2 敵方直線為 true，只有 1 個直線敵方為 false", () => {
+    const source = { id: "P1", position: { x: 2, y: 2 } };
+    const sameRowTarget = { id: "P2", position: { x: 4, y: 2 } };
+    const sameColAlly = { id: "P3", position: { x: 4, y: 4 } };
+    const diagonal = { id: "P4", position: { x: 3, y: 3 } };
 
-    expect(detectBoardPattern({}, source, sameRow, "line")).toBe(true);
-    expect(detectBoardPattern({}, source, sameCol, "line")).toBe(true);
-    expect(detectBoardPattern({}, source, diagonal, "line")).toBe(false);
+    const lineState = {
+      players: [source, sameRowTarget, sameColAlly],
+    };
+    expect(detectBoardPattern(lineState, source, sameRowTarget, "line")).toBe(true);
+
+    const singleState = {
+      players: [source, sameRowTarget],
+    };
+    expect(detectBoardPattern(singleState, source, sameRowTarget, "line")).toBe(false);
+    expect(detectBoardPattern(lineState, source, diagonal, "line")).toBe(false);
   });
 
   test("diagonal：dx === dy 且 dx > 0 為 true", () => {
@@ -63,13 +70,17 @@ describe("detectBoardPattern", () => {
 });
 
 describe("resolveCombos board_pattern（方案 A：揭牌時針對實際 target）", () => {
-  test("攻擊與目標成直線時，觸發 combo_line_attack", () => {
-    const state = createMatch();
-    const [p1, p2] = state.players;
+  test("攻擊目標與另一名敵方同一直線時，觸發 combo_line_attack", () => {
+    const state = createMatch({
+      players: [
+        { id: "P1", position: { x: 1, y: 1 }, characterId: "char_attack" },
+        { id: "P2", position: { x: 1, y: 2 }, characterId: "char_defense" },
+        { id: "P3", position: { x: 1, y: 3 }, characterId: "char_move" },
+      ],
+    });
+    const [p1, p2, p3] = state.players;
 
-    // P1 喺 (1,1)，P2 喺 (1,2)：同列（dx=0），成直線
-    p1.position = { x: 1, y: 1 };
-    p2.position = { x: 1, y: 2 };
+    // P1 喺 (1,1)，P2 喺 (1,2)，P3 喺 (1,3)：全部同列（dx=0），≥2 敵方成直線
     p1.facing = "up";
 
     const attackCard = {
@@ -86,11 +97,42 @@ describe("resolveCombos board_pattern（方案 A：揭牌時針對實際 target�
 
     submitSelection(state, "P1", [{ card: attackCard }]);
     submitSelection(state, "P2", []);
+    submitSelection(state, "P3", []);
 
     playOneTurn(state);
 
     // 揭牌時針對實際 target 偵測，觸發 combo_line_attack
     expect(state.log.some((msg) => msg.includes("combo_line_attack"))).toBe(true);
+  });
+
+  test("只有 1 名直線敵人時，唔會觸發 combo_line_attack", () => {
+    const state = createMatch();
+    const [p1, p2] = state.players;
+
+    // P1 喺 (1,1)，P2 喺 (1,2)：同列（dx=0），但只得 1 名直線敵人
+    p1.position = { x: 1, y: 1 };
+    p2.position = { x: 1, y: 2 };
+    p1.facing = "up";
+
+    const attackCard = {
+      id: "test_line_attack_single",
+      type: "attack",
+      subtype: "punch",
+      group: "advanced",
+      targeting: "single_enemy",
+      rangeMin: 1,
+      rangeMax: 1,
+      damage: 1,
+      mpCost: 0,
+    };
+
+    submitSelection(state, "P1", [{ card: attackCard }]);
+    submitSelection(state, "P2", []);
+
+    playOneTurn(state);
+
+    // 只有 1 個直線敵人，唔觸發
+    expect(state.log.some((msg) => msg.includes("combo_line_attack"))).toBe(false);
   });
 
   test("攻擊與目標成斜線時，唔會觸發 combo_line_attack", () => {

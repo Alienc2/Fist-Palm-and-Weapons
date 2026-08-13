@@ -1,5 +1,5 @@
 id,combo_type,required_cards,required_board_pattern,effect_type,effect_params,duration,description,combo_name
-combo_same_attack_3,sequence,"type:attack;count:3","none","damage_bonus","{""last_attack_bonus"":1}","instant","同一類別攻擊咭連續3張，第3下攻擊傷害+1。","連環"
+combo_same_attack_3,sequence,"subtype:same;count:3","none","damage_bonus","{""last_attack_bonus"":1}","instant","同一類別攻擊咭連續3張，第3下攻擊傷害+1。","連環"
 combo_punch_palm_weapon,sequence,"subtype:punch>palm>weapon","none","defense_down","{""value"":1}","round","順序拳、掌、武器，第3張武器攻擊時，敵人防禦力-1。","幻變"
 combo_move_3,sequence,"type:move;count:3","none","move_bonus","{""value"":1}","round","連續3張移動，本回合移動距離+1。","鬼步"
 combo_defense_3,sequence,"type:defense;count:3","none","guard_up","{""value"":1}","round","連續3張防禦，全部防禦力+1。","鋼山"

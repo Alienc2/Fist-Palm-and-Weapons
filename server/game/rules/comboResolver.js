@@ -132,7 +132,18 @@ function detectBoardPattern(state, sourcePlayer, target, pattern) {
   const dy = Math.abs(target.position.y - sourcePlayer.position.y);
 
   if (pattern === "line") {
-    return dx === 0 || dy === 0;
+    // 收緊：除攻擊者外嘅全部敵方 >1，且與目標同列/同行嘅敵方（含目標）≥2 先觸發
+    const players = state.players || [];
+    const enemies = players.filter(
+      (p) => p.id !== sourcePlayer.id && !p.isEliminated
+    );
+    if (enemies.length < 2) return false;
+    const onLine = enemies.filter(
+      (p) =>
+        p.position &&
+        (p.position.x === target.position.x || p.position.y === target.position.y)
+    );
+    return onLine.length >= 2;
   }
   if (pattern === "diagonal") {
     return dx === dy && dx > 0;

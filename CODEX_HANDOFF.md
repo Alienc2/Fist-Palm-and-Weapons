@@ -1,9 +1,9 @@
-# CODEX_HANDOFF.md V29
+# CODEX_HANDOFF.md V30
 
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V29
-- 更新日期時間：2026-08-11 23:10 HKT
+- 版本：V30
+- 更新日期時間：2026-08-13 HKT
 
 
 
@@ -62,6 +62,7 @@
 | AI 對戰接入正式 UI（SLICE-F-02） | `client/server.js`、`client/index.html`、`client/app.js`、`client/gameStore.js`、`client/styles.css` | `npm run client` + AI 整合 smoke test | 已完成 |
 | Phase D 多人同步網路層（SLICE-D-05） | `server/network/roomManager.js`、`server/network/matchManager.js`、`server/rooms/matchmaking.js`、`server/network/socketServer.js`、`client/server.js` | `npx jest --runInBand tests/network` | 已完成 |
 | 多人對戰前端 UI（SLICE-H-01） | `client/socketClient.js`、`client/views/lobbyView.js`、`client/app.js`、`client/gameStore.js`、`client/index.html`、`client/styles.css` | `npm run client` + browser 驗證 + HTTP 200 smoke test | 已完成 |
+| 本回合選牌面板 + 玩家狀態框 UI 鎖定 | `client/styles.css`、`client/index.html`、`client/views/selectedCardsView.js` | `npx jest --runInBand`（37 suites / 287 tests） | 已完成 |
 
 
 
@@ -79,6 +80,7 @@
 - move log expectation 必須由 `initial position + extra.dx + extra.dy` 推導。
 - `browser-engine-adapter.js` 只可作 legacy / deprecated experiment / reference，不可重回主流程。
 - shared scenario JSON 必須作為 browser / server / CLI 的 single source of truth。
+- 本回合選牌面板（標題／158px 卡牌區／同一行控制列＝清空選牌+面向+5 鍵）與玩家狀態框（闊屏 2 個一行、多於 2 自動換行、`clamp(84px,13vw,116px)` 方形置中）的 UI 設定。
 
 ### 3.3 現階段已完成的內容
 - `docs/GAME_SPEC.md`
@@ -207,6 +209,13 @@
 - `client/layout.js` `cardNode()`：新增 `showBack` option；卡面圖層 `assets/cards/<id>.png`，載入成功隱藏文字層、404 移除圖片保留銀黑咭面
 - `client/styles.css`：核心文字 `clamp(14px, 2.5vw, 18px)`（`.card-desc` / `.log-entry` / `.token-name` / `.token-hp`）；移除 `.token-mp`；新增 `.token-img` / `.token-fallback-triangle` / `.card-img` / `.card-face-layer`
 - `client/assets/{tokens,cards,boards}/.gitkeep`：資產目錄（P0 全 placeholder，執行走 fallback 屬預期）
+- Phase P5（第四輪）：本回合選牌面板 + 玩家狀態框 UI 鎖定
+- 本回合選牌面板（`.selected-cards-view`）固定 3 行結構：標題「本回合選牌」／卡牌區／控制列；`#selectedCardsView` `height:158px; overflow-y:auto` 只放卡牌列表或「尚未選牌」訊息
+- `#selectedCardsControls`（`.selected-cards-controls`）：非捲動控制列，`display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px`；「清空選牌」鍵 + 「面向」label + 5 個面向按鍵（上▲／下▼／左◀／右▶／保持❌）全部同一行
+- `.facing-row`：`display:flex; align-items:center; gap:8px`（無 margin-top，間距由 `.selected-cards-controls` 控制）
+- 回合控制玩家狀態框（`.player-status-list`）：`display:grid; grid-template-columns:repeat(2,auto); justify-content:center; gap:8px`；闊屏固定 2 個一行，多於 2 名玩家自動換行成 2+1／2+2
+- `.player-status`：`width:clamp(84px,13vw,116px); aspect-ratio:1`（最小方形置中，不盡用面板闊度）
+- 相關檔案：`client/index.html`（`selected-panel` 內 `#selectedCardsView` 之後新增 `#selectedCardsControls` 容器）、`client/views/selectedCardsView.js`（`renderSelectedCards()` 只將卡牌／訊息 append 到 `#selectedCardsView`，「清空選牌」鍵與「面向 row」append 到 `#selectedCardsControls`，`clear()` 兩個容器）、`client/styles.css`（`.selected-cards-controls`／`.player-status-list`／`.player-status`／`.facing-row` 如上）
 
 
 
@@ -260,6 +269,7 @@
 - `/api/play` 事件流 smoke test 通過（round, reveal, move, defend, reveal, attack, draw, draw, regen, regen）。
 - Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）。
 - Phase P5（第二輪）驗證：`npm run test:rules` 通過（200 tests）；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）；handView / selectedCardsView / layout / server temp `.mjs` `node --check` 通過。
+- Phase P5（第四輪）驗證：本回合選牌面板 + 玩家狀態框 UI 鎖定（純 CSS／DOM 結構改動，無 engine 改動；selectedCardsView.js temp `.mjs` `node --check` 通過；`npx jest --runInBand` 維持全綠 37 suites / 287 tests）。
 
 
 
@@ -707,7 +717,7 @@ Defense extra：
 
 ```text
 【交接狀態】
-- CODEX_HANDOFF.md 是否已更新：已更新至 V28
+- CODEX_HANDOFF.md 是否已更新：已更新至 V30
 - 本次修改檔案：CONTEXT.md、CODEX_HANDOFF.md、server/game/state/createInitialState.js、server/game/rules/{turnEngine,cardResolver,comboResolver,counterChainResolver}.js、server/game/gameEngine.js、server/network/{matchManager,socketServer}.js、client/{server,gameStore,app}.js、client/views/{resolveAnimation,boardView,handView}.js、client/styles.css、tests/rules/eventStream.test.js、tests/rules/createInitialState.test.js
 - 測試結果：build:data 通過；test:rules 200 passed；test:network 47 passed；全套 jest 37 suites / 287 tests 全綠；前端 JS 語法檢查（temp .mjs `node --check`）OK；`/api/play` 事件流 smoke test 通過
 - 目前風險：動畫時序依賴 server 事件順序（已用受控 scenario 鎖定）；手牌橫向掃改用 `overflow-x:auto` 或會裁切扇形邊緣（視覺上可接受）；動畫純 client，唔影響 `/api/play` 主流程

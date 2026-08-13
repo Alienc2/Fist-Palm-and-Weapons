@@ -92,14 +92,16 @@ function isOccupied(state, x, y, excludeId) {
 }
 
 // 計算移動卡可移動格（曼哈頓距離喺 moveMin~moveMax、未被佔據）
+// T5：第二張（或之後）移動卡以預測位置為基座，避免以原位置計算
 function getMoveTargets(state, player, card) {
   const c = normalizeClientCard(card);
   const targets = [];
   const moveMax = c.moveMax + (player.comboMoveBonus || 0);
+  const base = getPredictedPosition(state, player.id) || player.position;
 
   for (let y = 0; y < BOARD_SIZE; y++) {
     for (let x = 0; x < BOARD_SIZE; x++) {
-      const dist = manhattan(player.position, { x, y });
+      const dist = manhattan(base, { x, y });
       if (dist < c.moveMin || dist > moveMax) continue;
 
       if (isOccupied(state, x, y, player.id)) continue;

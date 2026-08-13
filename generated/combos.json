@@ -2,7 +2,7 @@
   {
     "id": "combo_same_attack_3",
     "combo_type": "sequence",
-    "required_cards": "type:attack;count:3",
+    "required_cards": "subtype:same;count:3",
     "required_board_pattern": "none",
     "effect_type": "damage_bonus",
     "effect_params": "{\"last_attack_bonus\":1}",

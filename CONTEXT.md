@@ -1,10 +1,10 @@
-# CONTEXT.md V29
+# CONTEXT.md V30
 
 ---
 ## 1. 程式基本資料
 - 名稱：Fist Palm and Weapons
-- 版本：V29
-- 更新日期時間：2026-08-11 23:10 HKT
+- 版本：V30
+- 更新日期時間：2026-08-13 HKT
 
 
 
@@ -209,6 +209,13 @@
 - `client/views/selectedCardsView.js`：`renderSelectedCards()` 將「清空選牌」按鍵移到朝向設定之前（cards list → 清空選牌 → facingRow）
 - `client/app.js` `renderPlayerStatus()`：玩家狀態由 4 個 span 改為 3 行結構（`.player-line-top` 包住 player-id + player-char → player-hp → player-mp）
 - `client/styles.css`：`.selected-cards-view` 由 `max-height: 150px` 改為 `height: 158px`（等於卡牌高度）；`.player-status` 加 `aspect-ratio: 1`、`justify-content: space-between`、`gap: 2px`、`padding: 8px`；新增 `.player-line-top`（flex + ellipsis）與 `.player-char` ellipsis；`.player-id` / `.player-char` / `.player-hp` / `.player-mp` 字型收細為 `clamp(10px, 1.4vw, 12px)`
+- Phase P5（第四輪）：本回合選牌面板 + 玩家狀態框 UI 鎖定（authoritative 設定）
+- 本回合選牌面板（`.selected-cards-view`）固定 3 行結構：標題「本回合選牌」／卡牌區／控制列；`#selectedCardsView` `height:158px; overflow-y:auto` 只放卡牌列表或「尚未選牌」訊息
+- `#selectedCardsControls`（`.selected-cards-controls`）：非捲動控制列，`display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; gap:8px; margin-top:10px`；「清空選牌」鍵 + 「面向」label + 5 個面向按鍵（上▲／下▼／左◀／右▶／保持❌）全部同一行
+- `.facing-row`：`display:flex; align-items:center; gap:8px`（無 margin-top，間距由 `.selected-cards-controls` 控制）
+- 回合控制玩家狀態框（`.player-status-list`）：`display:grid; grid-template-columns:repeat(2,auto); justify-content:center; gap:8px`；闊屏固定 2 個一行，多於 2 名玩家自動換行成 2+1／2+2
+- `.player-status`：`width:clamp(84px,13vw,116px); aspect-ratio:1`（最小方形置中，不盡用面板闊度）
+- 相關檔案：`client/index.html`（`selected-panel` 內 `#selectedCardsView` 之後新增 `#selectedCardsControls` 容器）、`client/views/selectedCardsView.js`（`renderSelectedCards()` 只將卡牌／訊息 append 到 `#selectedCardsView`，「清空選牌」鍵與「面向 row」append 到 `#selectedCardsControls`，`clear()` 兩個容器）、`client/styles.css`（`.selected-cards-controls`／`.player-status-list`／`.player-status`／`.facing-row` 如上）
 
 
 ### 已驗證結果
@@ -224,6 +231,7 @@
 - Phase P3 驗證：深色 `--text-muted` #a0a8b8 對 #0f1115 ≈ 7.9:1、淺色 #5c6675 對 #f4f6fa ≈ 5.37:1（兩者 ≥4.5:1）；layout.js / boardView.js temp `.mjs` `node --check` 通過；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）
 - Phase P5（第二輪）驗證：`npm run test:rules` 通過（200 tests）；全套 `npx jest --runInBand` 維持全綠（37 suites / 287 tests）；handView / selectedCardsView / layout / server temp `.mjs` `node --check` 通過
 - Phase P5（第三輪）驗證：app.js / selectedCardsView.js temp `.mjs` copy 後 `node --check` 通過；純 CSS / DOM 結構改動，無 engine 改動
+- Phase P5（第四輪）驗證：本回合選牌面板 + 玩家狀態框 UI 鎖定（純 CSS／DOM 結構改動，無 engine 改動；selectedCardsView.js temp `.mjs` `node --check` 通過；`npx jest --runInBand` 維持全綠 37 suites / 287 tests）
 
 
 
@@ -267,6 +275,7 @@
 - `browser-sandbox.js` 只透過 API adapter 呼叫 scenario，不直接 import engine
 - move log expectation 以 `initial position + extra.dx + extra.dy` 推導
 - `browser-engine-adapter.js` 只可作 legacy / deprecated experiment / reference，不可重回主流程
+- 本回合選牌面板（標題／158px 卡牌區／同一行控制列＝清空選牌+面向+5 鍵）與玩家狀態框（闊屏 2 個一行、多於 2 自動換行、`clamp(84px,13vw,116px)` 方形置中）的 UI 設定
 
 ### Scenario source of truth
 shared scenario JSON 係 browser / server / CLI 的 single source of truth。  

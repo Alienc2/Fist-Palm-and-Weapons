@@ -247,6 +247,9 @@ function resolveCardByType(state, player, cardEntry) {
     cardType: card.type,
   });
 
+  // T6：執行順序如實寫入對戰紀錄（id 由前端 localize 成卡名）
+  state.log.push(`${player.id} 使用 ${card.id || "unknown_card"}`);
+
   if (card.type === "attack") {
     const item = createStackItem(state, player, card, extra);
     pushStackItem(state, item);
